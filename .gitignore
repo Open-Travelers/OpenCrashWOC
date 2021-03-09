@@ -30,3 +30,32 @@
 *.exe
 *.out
 *.app
+
+# CrashWOC Files
+ats
+carddemo
+chars
+Debug
+bin
+Gfx
+levels
+sfx
+stuff
+apploader.img
+banner.tpl
+boot.dol
+client_pad.bin
+crashoot.bin
+crashwoc.elf
+icon.tpl
+joytest_050702.bin
+opening.bnr
+
+# CMake
+CMakeFiles
+CMakeCache.txt
+Makefile
+
+OpenCrashWOC.code-workspace
+
+cmake_install.cmake
