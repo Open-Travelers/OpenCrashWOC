@@ -7,11 +7,11 @@ An open-source rewrite of Crash Bandicoot: Wrath of Cortex using clean room reve
 
 * Test numath library.
 
-* Finish nucore library (Almost done!).
+* Finish nucore library (Done!).
 
 * Test nucore library.
 
-* Finish nu3dx library.
+* Finish nu3dx library. (Started)
 
 * Test nu3dx library.
 
