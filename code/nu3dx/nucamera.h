@@ -18,41 +18,66 @@
 */
 
 // Global camera.
-NuCamera global_camera;
+extern struct nucamera_s global_camera;
 
 // View matrix.
-Mtx* vmtx;
+extern struct numtx_s* vmtx;
 
 // Projection matrix.
-Mtx pmtx;
+extern struct numtx_s pmtx;
+
+static struct numtx_s vpmtx;
 
 // VPCS matrix.
-Mtx vpcsmtx;
+extern struct numtx_s vpcsmtx;
+
+static struct numtx_s vpcmtx;
+
+static struct numtx_s ivpcsmtx;
 
 // Camera clipping.
-u32 clip_enable;
+extern s32 clip_enable;;
 
 // Camera axes.
-Vec cam_axes;
+extern struct Vec cam_axes;
+
+static struct Vec4 frustrumplanes[6];
+
+static struct numtx_s vpc_vport_mtx;
+
+static struct numtx_s cmtx;
+
+static struct numtx_s smtx;
+
+static struct numtx_s csmtx;
+
+static struct numtx_s icsmtx;
+
+static struct numtx_s* glassMtx[256];
+
+static struct numtx_s smtx;
+
+static struct Vec4 frustrumplanes[6];
+
 
 // Create a new camera.
-NuCamera* NuCameraCreate();
+struct nucamera_s* NuCameraCreate();
 
 // NuCameraCalcFrustrumPlanes
 
 // NuCameraSet
 
 // Get the camera matrix.
-Mtx* NuCameraGetMtx();
+struct numtx_s* NuCameraGetMtx();
 
 // Get the view matrix.
-Mtx* NuCameraGetViewMtx();
+struct numtx_s* NuCameraGetViewMtx();
 
 // Get the projection matrix.
-Mtx* NuCameraGetProjectionMtx();
+struct numtx_s* NuCameraGetProjectionMtx();
 
 // Get the VPCS matrix.
-Mtx* NuCameraGetVPCSMtx();
+struct numtx_s* NuCameraGetVPCSMtx();
 
 // NuCameraTransformView
 
@@ -65,15 +90,15 @@ Mtx* NuCameraGetVPCSMtx();
 // NuCameraClipTestPoints
 
 // Get the squared distance from the camera to the point.
-f32 NuCameraDistSqr(Vec* point);
+f32 NuCameraDistSqr(struct Vec* point);
 
 // Fix the axes of a matrix.
-void FixAxes(Mtx* m);
+void FixAxes(struct Mtx* m);
 
 // SetProjectionMatrix
 
 // Enable or disable camera clipping.
-void NuCameraEnableClipping(u32 enable);
+void NuCameraEnableClipping(s32 enable);
 
 // NuCameraTransformScreenClip
 

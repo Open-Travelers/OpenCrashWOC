@@ -4,10 +4,10 @@
 #include "../types.h"
 
 // Float random seed.
-u32 fseed;
+extern u32 fseed;
 
 // Current random number.
-u32 global_rand;
+extern u32 global_rand;
 
 // Get a random number.
 void NuRand(u32* rand);

@@ -5,18 +5,18 @@
 #include "numathtypes.h"
 
 // Convert a matric into a quaternion.
-void NuMtxToQuat(Mtx* m, Quat* q);
+void NuMtxToQuat(struct Mtx* m, struct Quat* q);
 
 // Convert a quaternion to a matrix.
-void NuQuatToMtx(Quat* q, Mtx* m);
+void NuQuatToMtx(struct Quat* q, struct Mtx* m);
 
 // Multiply quaternions.
-void NuQuatMul(Quat* dest, Quat* a, Quat* b);
+void NuQuatMul(struct Quat* dest, struct Quat* a, struct Quat* b);
 
 // Normalize a quaternion.
-void NuQuatNormalise(Quat* dest, Quat* q);
+void NuQuatNormalise(struct Quat* dest, struct Quat* q);
 
 // Interpolate a quaternion given the start a, ending b, and the alpha value.
-void NuQuatSlerp(f32 alpha, Quat* dest, Quat* a, Quat* b);
+void NuQuatSlerp(f32 alpha, struct Quat* dest, struct Quat* a, struct Quat* b);
 
 #endif // !NUQUAT_H

@@ -3,6 +3,7 @@
 
 #include "../types.h"
 #include "nu3dxtypes.h"
+#include "nu3dx/numtl.h"
 
 /*
   800b14dc 0000cc 800b14dc  4 NuLightInit 	Global
@@ -24,18 +25,152 @@
 */
 
 // If the lights are initialised.
-u32 initialised;
+//extern u32 initialised;
 
 // Maximum amount of lights allowed.
-u32 maxlights;
+extern s32 maxlights;
 
 // Number of lights currently.
-u32 numlights;
+extern s32 numlights;
+
+static s32 freelight;
+
+static s32 alloclight;
+
+static s32 current_lights_stored;
+static s32 num_stored_lights;
+
+// Size: 0x58
+struct nulight_s
+{
+    struct nucolour3_s ambient;
+    struct nucolour3_s diffuse;
+    struct numtx_s mtx;
+};
+
+// Size: 0x64
+struct nusyslight_s
+{
+    struct nulight_s light;
+    s32 index;
+    s32 next;
+    s32 last;
+};
+
+// Size: 0x108
+struct nulights_s
+{
+    struct nulight_s light[3];
+};
+
+// Size: 0x40
+struct LgtArcLaserData
+{
+    struct nuvec_s start;
+    struct nuvec_s target;
+    struct nuvec_s lasdir;
+    f32 sizew;
+    f32 sizel;
+    f32 sizewob;
+    f32 arcsize;
+    u8 type;
+    u8 p1;
+    u8 p2;
+    u8 p3;
+    s32 col;
+    s32 seed;
+};
+
+struct nusyslight_s light[3];
+struct nulights_s StoredLights[1000];
+struct nulight_s* currentlight1;
+struct nulight_s* currentlight2;
+struct nulight_s* currentlight3;
+float buglight_distance;
+struct numtl_s* NuLightAddMat;
+s32 NuLgtSeed;
+struct numtl_s* NuLgtArcMtl;
+float NuLgtArcU0;
+float NuLgtArcV0;
+float NuLgtArcU1;
+float NuLgtArcV1;
+s32 NuLgtArcLaserFrame;
+s32 NuLgtArcLaserOldCnt;
+s32 NuLgtArcLaserCnt;
+struct LgtArcLaserData NuLgtArcLaserData[16];
+
+
+
+extern s32 HazeValue;
+extern f32 NuRndrFogNear;
+extern f32 NuRndrFogFar;
+extern u32 NuRndrFogBlur;
+extern u32 NuRndrFogCol;
+
+/**********************************************************/
+// D3D and GS var
+/**********************************************************/
+
+// Size: 0x4
+enum _D3DLIGHTTYPE
+{
+    D3DLIGHT_FORCE_DWORD = 2147483647,
+    D3DLIGHT_DIRECTIONAL = 3,
+    D3DLIGHT_SPOT = 2,
+    D3DLIGHT_POINT = 1
+};
+
+
+struct _D3DVECTOR
+{
+    f32 x;
+    f32 y;
+    f32 z;
+};
+
+
+// Size: 0x68
+struct _D3DLIGHT8
+{
+    enum _D3DLIGHTTYPE Type;
+    struct _D3DCOLORVALUE Diffuse;
+    struct _D3DCOLORVALUE Specular;
+    struct _D3DCOLORVALUE Ambient;
+    struct _D3DVECTOR Position;
+    struct _D3DVECTOR Direction;
+    f32 range;
+    f32 falloff;
+    f32 attenuation0;
+    f32 attenuation1;
+    f32 attenuation2;
+    f32 Theta;
+    f32 Phi;
+};
+
+
+// Size: 0x6C
+struct _LIGHTLIST
+{
+    int EnableLight;
+    struct _D3DLIGHT8 Light;
+};
+
+struct _LIGHTLIST GS_LightList[3];
+
+
+
+/**********************************************************/
+// END D3D\GS Var
+/**********************************************************/
+
 
 // NuLightInit
 
 // Close the lights.
 void NuLightClose();
+
+void GS_SetupFog(int type, float startz, float endz, u32 colour);
+
 
 // NuLightCreate
 
@@ -53,7 +188,7 @@ void NuLightClose();
 
 // NuLightClearStoredLights
 
-// NuLightFog
+void NuLightFog(f32 pnear, f32 pfar, u32 colour, s32 blur, s32 haze);
 
 // NuLightAddSpotXSpanFade
 

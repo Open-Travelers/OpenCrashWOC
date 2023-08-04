@@ -1,23 +1,25 @@
+#include <nu3dx/nucamera.h>
 #include "numtx.h"
 #include "nu_asm.h"
 #include "nutrig.h"
 #include "nuvec.h"
+#include "nufloat.h"
 
-Mtx mident = {
+struct Mtx mident = {
 	1.0, 0.0, 0.0, 0.0,
 	0.0, 1.0, 0.0, 0.0,
 	0.0, 0.0, 1.0, 0.0,
 	0.0, 0.0, 0.0, 1.0
 };
 
-Mtx gm = {
+struct Mtx gm = {
 	1.0, 0.0, 0.0, 0.0,
 	0.0, 1.0, 0.0, 0.0,
 	0.0, 0.0, 1.0, 0.0,
 	0.0, 0.0, 0.0, 1.0
 };
 
-void NuMtxSetIdentity(Mtx* m)
+void NuMtxSetIdentity(struct Mtx* m)
 {
 	m->m11 = mident.m11;
 	m->m12 = mident.m12;
@@ -37,7 +39,7 @@ void NuMtxSetIdentity(Mtx* m)
 	m->m44 = mident.m44;
 }
 
-void NuMtxSetTranslation(Mtx* m, Vec* v)
+void NuMtxSetTranslation(struct Mtx* m, struct Vec* v)
 {
 	m->m11 = 1.0;
 	m->m12 = 0.0;
@@ -57,7 +59,7 @@ void NuMtxSetTranslation(Mtx* m, Vec* v)
 	m->m44 = 1.0;
 }
 
-void NuMtxSetScale(Mtx* m, Vec* v)
+void NuMtxSetScale(struct Mtx* m, struct Vec* v)
 {
 	m->m11 = v->x;
 	m->m12 = 0.0;
@@ -77,10 +79,10 @@ void NuMtxSetScale(Mtx* m, Vec* v)
 	m->m44 = 1.0;
 }
 
-void NuMtxSetRotationX(Mtx* m, angle a)
+void NuMtxSetRotationX(struct Mtx* m, s32 angle)
 {
-	f32 s = ANG_SIN(a);
-	f32 c = ANG_COS(a);
+	f32 s = ANG_SIN(angle);
+	f32 c = ANG_COS(angle);
 	m->m11 = 1.0;
 	m->m12 = 0.0;
 	m->m13 = 0.0;
@@ -99,10 +101,10 @@ void NuMtxSetRotationX(Mtx* m, angle a)
 	m->m44 = 1.0;
 }
 
-void NuMtxSetRotationY(Mtx* m, angle a)
+void NuMtxSetRotationY(struct Mtx* m, s32 angle)
 {
-	f32 s = ANG_SIN(a);
-	f32 c = ANG_COS(a);
+	f32 s = ANG_SIN(angle);
+	f32 c = ANG_COS(angle);
 	m->m11 = c;
 	m->m12 = 0.0;
 	m->m13 = -s;
@@ -121,7 +123,7 @@ void NuMtxSetRotationY(Mtx* m, angle a)
 	m->m44 = 1.0;
 }
 
-void NuMtxSetRotationZ(Mtx* m, angle a)
+void NuMtxSetRotationZ(struct Mtx* m, s32 a)
 {
 	f32 s = ANG_SIN(a);
 	f32 c = ANG_COS(a);
@@ -143,21 +145,21 @@ void NuMtxSetRotationZ(Mtx* m, angle a)
 	m->m44 = 1.0;
 }
 
-void NuMtxTranslate(Mtx* m, Vec* v)
+void NuMtxTranslate(struct Mtx* m, struct Vec* v)
 {
 	m->m41 = m->m41 + v->x;
 	m->m42 = m->m42 + v->y;
 	m->m43 = m->m43 + v->z;
 }
 
-void NuMtxPreTranslate(Mtx* m, Vec* v)
+void NuMtxPreTranslate(struct Mtx* m, struct Vec* v)
 {
 	m->m41 = v->x * m->m11 + v->y * m->m21 + m->m41 + v->z * m->m31;
 	m->m42 = v->x * m->m12 + v->y * m->m22 + m->m42 + v->z * m->m32;
 	m->m43 = v->x * m->m13 + v->y * m->m23 + m->m43 + v->z * m->m33;
 }
 
-void NuMtxScale(Mtx* m, Vec* v)
+void NuMtxScale(struct Mtx* m, struct Vec* v)
 {
 	m->m11 = m->m11 * v->x;
 	m->m12 = m->m12 * v->y;
@@ -173,14 +175,14 @@ void NuMtxScale(Mtx* m, Vec* v)
 	m->m43 = m->m43 * v->z;
 }
 
-void NuMtxGetScale(Vec* dest, Mtx* m)
+void NuMtxGetScale(struct Vec* dest, struct Mtx* m)
 {
 	dest->x = NuFsqrt(m->m11 * m->m11 + m->m12 * m->m12 + m->m13 * m->m13);
 	dest->y = NuFsqrt(m->m21 * m->m21 + m->m22 * m->m22 + m->m23 * m->m23);
 	dest->z = NuFsqrt(m->m31 * m->m31 + m->m32 * m->m32 + m->m33 * m->m33);
 }
 
-void NuMtxPreScale(Mtx* m, Vec* v)
+void NuMtxPreScale(struct Mtx* m, struct Vec* v)
 {
 	m->m11 = m->m11 * v->x;
 	m->m12 = m->m12 * v->x;
@@ -193,7 +195,7 @@ void NuMtxPreScale(Mtx* m, Vec* v)
 	m->m33 = m->m33 * v->z;
 }
 
-void NuMtxRotateX(Mtx* m, angle a)
+void NuMtxRotateX(struct Mtx* m, s32 a)
 {
 	f32 m13 = m->m13;
 	f32 m23 = m->m23;
@@ -211,7 +213,7 @@ void NuMtxRotateX(Mtx* m, angle a)
 	m->m42 = m->m42 * c - m43 * s;
 }
 
-void NuMtxPreRotateX(Mtx* m, angle a)
+void NuMtxPreRotateX(struct Mtx* m, s32 a)
 {
 	f32 m31 = m->m31;
 	f32 m32 = m->m32;
@@ -226,7 +228,7 @@ void NuMtxPreRotateX(Mtx* m, angle a)
 	m->m23 = c * m->m23 + s * m33;
 }
 
-void NuMtxRotateY(Mtx* m, angle a)
+void NuMtxRotateY(struct Mtx* m, s32 a)
 {
 	f32 m13 = m->m13;
 	f32 m23 = m->m23;
@@ -244,7 +246,7 @@ void NuMtxRotateY(Mtx* m, angle a)
 	m->m41 = m->m41 * c + m43 * s;
 }
 
-void NuMtxPreRotateY(Mtx* m, angle a)
+void NuMtxPreRotateY(struct Mtx* m, s32 a)
 {
 	f32 m31 = m->m31;
 	f32 m32 = m->m32;
@@ -259,7 +261,7 @@ void NuMtxPreRotateY(Mtx* m, angle a)
 	m->m13 = c * m->m13 - s * m33;
 }
 
-void NuMtxRotateZ(Mtx* m, angle a)
+void NuMtxRotateZ(struct Mtx* m, s32 a)
 {
 	f32 m12 = m->m12;
 	f32 m22 = m->m22;
@@ -277,7 +279,7 @@ void NuMtxRotateZ(Mtx* m, angle a)
 	m->m41 = m->m41 * c - m42 * s;
 }
 
-void NuMtxPreRotateZ(Mtx* m, angle a)
+void NuMtxPreRotateZ(struct Mtx* m, s32 a)
 {
 	f32 m21 = m->m21;
 	f32 m22 = m->m22;
@@ -292,7 +294,7 @@ void NuMtxPreRotateZ(Mtx* m, angle a)
 	m->m13 = c * m->m13 + s * m23;
 }
 
-void NuMtxSetRotateXYZ(Mtx* m, angle a[3])
+void NuMtxSetRotateXYZ(struct Mtx* m, s32 a[3])
 {
 	f32 sx = ANG_SIN(a[0]);
 	f32 cx = ANG_COS(a[0]);
@@ -318,7 +320,7 @@ void NuMtxSetRotateXYZ(Mtx* m, angle a[3])
 	m->m44 = 1.00000000;
 }
 
-void NuMtxMul(Mtx* dest, Mtx* a, Mtx* b)
+void NuMtxMul(struct Mtx* dest, struct Mtx* a, struct Mtx* b)
 {
 	gm.m11 = a->m13 * b->m31 + a->m11 * b->m11 + a->m12 * b->m21;
 	gm.m12 = a->m13 * b->m32 + a->m11 * b->m12 + a->m12 * b->m22;
@@ -354,7 +356,7 @@ void NuMtxMul(Mtx* dest, Mtx* a, Mtx* b)
 	dest->m44 = gm.m44;
 }
 
-void NuMtxMulH(Mtx* dest, Mtx* a, Mtx* b)
+void NuMtxMulH(struct Mtx* dest, struct Mtx* a, struct Mtx* b)
 {
 	gm.m11 = a->m14 * b->m41 + a->m13 * b->m31 + a->m11 * b->m11 + a->m12 * b->m21;
 	gm.m12 = a->m14 * b->m42 + a->m13 * b->m32 + a->m11 * b->m12 + a->m12 * b->m22;
@@ -390,7 +392,7 @@ void NuMtxMulH(Mtx* dest, Mtx* a, Mtx* b)
 	dest->m44 = gm.m44;
 }
 
-void NuMtxMulR(Mtx* dest, Mtx* a, Mtx* b)
+void NuMtxMulR(struct Mtx* dest, struct Mtx* a, struct Mtx* b)
 {
 	gm.m11 = a->m13 * b->m31 + a->m11 * b->m11 + a->m12 * b->m21;
 	gm.m12 = a->m13 * b->m32 + a->m11 * b->m12 + a->m12 * b->m22;
@@ -426,7 +428,7 @@ void NuMtxMulR(Mtx* dest, Mtx* a, Mtx* b)
 	dest->m44 = gm.m44;
 }
 
-void NuMtxTranspose(Mtx* dest, Mtx* m)
+void NuMtxTranspose(struct Mtx* dest, struct Mtx* m)
 {
 	f32 tmp = m->m21;
 	dest->m21 = m->m12;
@@ -452,7 +454,7 @@ void NuMtxTranspose(Mtx* dest, Mtx* m)
 	dest->m44 = m->m44;
 }
 
-void NuMtxInv(Mtx* dest, Mtx* m)
+void NuMtxInv(struct Mtx* dest, struct Mtx* m)
 {
 	f32 m12 = m->m12;
 	f32 m21 = m->m21;
@@ -486,7 +488,7 @@ void NuMtxInv(Mtx* dest, Mtx* m)
 	dest->m44 = 1.00000000;
 }
 
-void NuMtxInvR(Mtx* dest, Mtx* m)
+void NuMtxInvR(struct Mtx* dest, struct Mtx* m)
 {
 	f32 tmp = m->m21;
 	dest->m21 = m->m12;
@@ -510,7 +512,7 @@ void NuMtxInvR(Mtx* dest, Mtx* m)
 	dest->m44 = 1.00000000;
 }
 
-void NuMtxInvRSS(Mtx* dest, Mtx* m)
+void NuMtxInvRSS(struct Mtx* dest, struct Mtx* m)
 {
 	f32 diff = m->m22 * m->m33 - m->m23 * m->m32;
 	f32 scale = 1.0 / (m->m13 * (m->m21 * m->m32 - m->m22 * m->m31) + (m->m11 * diff - m->m12 * (m->m21 * m->m33 - m->m23 * m->m31)));
@@ -537,9 +539,88 @@ void NuMtxInvRSS(Mtx* dest, Mtx* m)
 	dest->m42 = 0.0;
 }
 
-void NuMtxLookAtZ(Mtx* dest, Vec* v)
+// TODO: Clean this function up
+void NuMtxAlignZ(struct Mtx* dest, struct Mtx* m)
 {
-	Vec tmp;
+	float tmp1;
+	float tmp2;
+	float *tmp3;
+	float *tmp4;
+	double tmp5;
+	double tmp6;
+	double tmp7;
+
+    tmp2 = m->m13 * m->m13 + m->m11 * m->m11 + m->m12 * m->m12;
+    tmp1 = 0.0;
+    tmp6 = dest->m13 * dest->m13 + dest->m11 * dest->m11 + dest->m12 * dest->m12;
+    tmp7 = dest->m23 * dest->m23 + dest->m21 * dest->m21 + dest->m22 * dest->m22;
+	if (tmp2 != 0.0)
+	{
+        tmp5 = sqrt((dest->m33 * dest->m33 + dest->m31 * dest->m31 + dest->m32 * dest->m32) / tmp2);
+        tmp1 = tmp5;
+	}
+    tmp3 = &dest->m21;
+    tmp4 = &dest->m31;
+	dest->m31 = tmp1 * m->m11;
+	dest->m32 = tmp1 * m->m12;
+	dest->m33 = tmp1 * m->m13;
+	NuVecDot(tmp3, tmp4);
+    tmp5 = NuFabs(tmp5);
+	if (tmp5 <= 0.8660253882408142)
+	{
+		NuVecCross(dest, tmp3, tmp4);
+        tmp1 = 0.0;
+        tmp5 = dest->m13 * dest->m13 + dest->m11 * dest->m11 + dest->m12 * dest->m12;
+		if (tmp5 != 0.0)
+		{
+            tmp6 = sqrt(tmp6 / tmp5);
+            tmp1 = tmp6;
+		}
+		dest->m11 = dest->m11 * tmp1;
+		dest->m12 = dest->m12 * tmp1;
+		dest->m13 = dest->m13 * tmp1;
+		NuVecCross(tmp3, tmp4, dest);
+        tmp1 = 0.0;
+        tmp6 = dest->m23 * dest->m23 + dest->m21 * dest->m21 + dest->m22 * dest->m22;
+		if (tmp6 != 0.0)
+		{
+            tmp6 = sqrt(tmp7 / tmp6);
+            tmp1 = tmp6;
+		}
+		dest->m21 = dest->m21 * tmp1;
+		dest->m22 = dest->m22 * tmp1;
+		dest->m23 = dest->m23 * tmp1;
+	}
+	else
+	{
+		NuVecCross(tmp3, tmp4, dest);
+        tmp1 = 0.0;
+        tmp5 = dest->m23 * dest->m23 + dest->m21 * dest->m21 + dest->m22 * dest->m22;
+		if (tmp5 != 0.0)
+		{
+            tmp7 = sqrt(tmp7 / tmp5);
+            tmp1 = tmp7;
+		}
+		dest->m21 = dest->m21 * tmp1;
+		dest->m22 = dest->m22 * tmp1;
+		dest->m23 = dest->m23 * tmp1;
+		NuVecCross(dest, tmp3, tmp4);
+        tmp1 = 0.0;
+        tmp7 = dest->m13 * dest->m13 + dest->m11 * dest->m11 + dest->m12 * dest->m12;
+		if (tmp7 != 0.0)
+		{
+            tmp6 = sqrt(tmp6 / tmp7);
+            tmp1 = tmp6;
+		}
+		dest->m11 = dest->m11 * tmp1;
+		dest->m12 = dest->m12 * tmp1;
+		dest->m13 = dest->m13 * tmp1;
+	}
+}
+
+void NuMtxLookAtZ(struct Mtx* dest, struct Vec* v)
+{
+	struct Vec tmp;
 	tmp.x = v->x - dest->m41;
 	tmp.y = v->y - dest->m42;
 	tmp.z = v->z - dest->m43;
@@ -547,7 +628,7 @@ void NuMtxLookAtZ(Mtx* dest, Vec* v)
 	NuMtxAlignZ(dest, &tmp);
 }
 
-void NuMtxAddR(Mtx* dest, Mtx* a, Mtx* b)
+void NuMtxAddR(struct Mtx* dest, struct Mtx* a, struct Mtx* b)
 {
 	dest->m11 = a->m11 + b->m11;
 	dest->m12 = a->m12 + b->m12;
@@ -573,7 +654,7 @@ void NuMtxAddR(Mtx* dest, Mtx* a, Mtx* b)
 	dest->m44 = 1.0;
 }
 
-void NuMtxSkewSymmetric(Mtx* m, Vec* v)
+void NuMtxSkewSymmetric(struct Mtx* m, struct Vec* v)
 {
 	m->m11 = 0.0;
 	m->m12 = -v->z;
@@ -597,7 +678,7 @@ void NuMtxSkewSymmetric(Mtx* m, Vec* v)
 	m->m42 = 0.0;
 }
 
-void NuMtxOrth(Mtx* m)
+void NuMtxOrth(struct Mtx* m)
 {
 	f32 mag = NuFsqrt(m->m13 * m->m13 + m->m11 * m->m11 + m->m12 * m->m12);
 	f32 t5 = 1.0;
@@ -624,9 +705,9 @@ void NuMtxOrth(Mtx* m)
 	m->m21 = t3 * m13 - t4 * m12;
 }
 
-void NuMtxCalcCheapFaceOn(Mtx* dest, Vec* v)
+void NuMtxCalcCheapFaceOn(struct Mtx* dest, struct Vec* v)
 {
-	Mtx* view = NuCameraGetViewMtx();
+	struct Mtx* view = NuCameraGetViewMtx();
 	dest->m11 = -view->m11;
 	dest->m21 = view->m12;
 	dest->m31 = -view->m13;
@@ -646,9 +727,9 @@ void NuMtxCalcCheapFaceOn(Mtx* dest, Vec* v)
 	dest->m43 = v->z;
 }
 
-void NuMtxCalcDebrisFaceOn(Mtx* m)
+void NuMtxCalcDebrisFaceOn(struct Mtx* m)
 {
-  Mtx* view = NuCameraGetViewMtx();
+  struct Mtx* view = NuCameraGetViewMtx();
   m->m11 = -view->m11;
   m->m21 = view->m12;
   m->m31 = -view->m13;
@@ -664,3 +745,12 @@ void NuMtxCalcDebrisFaceOn(Mtx* m)
   m->m34 = 0.0;
   m->m24 = 0.0;
 }
+
+
+/*
+void NuMtxInvH(void) //TODO
+{
+
+}
+
+*/

@@ -42,4 +42,109 @@
   800bb8a4 000044 800bb8a4  4 NuTexAnimProcess 	Global
 */
 
+
+struct nutexanimprog_s* sys_progs;
+struct nutexanimlist_s ntalsysbuff[64];
+struct nutexanimlist_s* ntal_first;
+struct nutexanimlist_s* ntal_free;
+static struct nutexanimprog_s* parprog;
+static u32 nta_sig_on;
+static u32 nta_sig_off;
+static u32 nta_sig_old;
+s32 nta_labels[64];
+char texanimbuff[32768];
+u32 texanimbits;
+static char xdeflabtab[21][256];
+static s32 xdeflabtabcnt;
+static s32 labtabcnt;
+static texanimscripts texanmscripts[24];
+static nufpcomjmp_s nutexanimcomtab[19];
+
+
+// Size: 0x10
+struct
+{
+    char* path;
+    int pad1;
+    <unknown type 0x8208> levbits; //UNK TYPE
+} texanimscripts;
+
+
+
+// Size: 0x20
+struct nutexanim_s
+{
+    nutexanim_s* succ;
+    nutexanim_s* prev;
+    short* tids;
+    short numtids;
+    short dynalloc : 1; // Offset: 0xE, Bit Offset: 0, Bit Size: 1
+    numtl_s* mtl; // Offset: 0x10
+    nutexanimenv_s* env;
+    char* ntaname;
+    char* scriptname;
+};
+
+// Size: 0xEC
+struct nutexanimenv_s
+{
+    nutexanimprog_s* prog;
+    int pc;
+    int rep_count[16];
+    int rep_start[16];
+    int rep_ix;
+    int ra[16];
+    int ra_ix;
+    int pause;
+    int pause_r;
+    int pause_cnt;
+    numtl_s* mtl;
+    short* tids;
+    int tex_ix;
+    int dynalloc : 1; // Offset: 0xE8, Bit Offset: 0, Bit Size: 1
+};
+
+
+// Size: 0x1BC
+struct nutexanimprog_s
+{
+    nutexanimprog_s* succ;
+    nutexanimprog_s* prev;
+    char name[32];
+    int on_sig[32];
+    int off_sig[32];
+    unsigned int on_mask;
+    unsigned int off_mask;
+    short xdef_ids[32];
+    short xdef_addrs[32];
+    int xdef_cnt;
+    short eop;
+    short dynalloc : 1; // Offset: 0x1B6, Bit Offset: 0, Bit Size: 1
+    short code[1]; // Offset: 0x1B8
+};
+
+
+// Size: 0x20, nutexanimFile
+struct nutexanimf_s
+{
+    nutexanim_s* succ;
+    nutexanim_s* prev;
+    int tids;
+    short numtids; // Offset: 0xC
+    short dynalloc : 1; // Offset: 0xE, DWARF: 0x1DFFB, Bit Offset: 0, Bit Size: 1
+    int mtl; // Offset: 0x10
+    nutexanimenv_s* env;
+    int ntaname;
+    int scriptname;
+};
+
+
+// Size: 0xC
+struct nutexanimlist_s
+{
+    nutexanim_s* nta;
+    nutexanimlist_s* succ;
+    nutexanimlist_s* prev;
+};
+
 #endif // !NUTEXANM_H

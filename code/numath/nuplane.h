@@ -5,6 +5,6 @@
 #include "numathtypes.h"
 
 // Check if there is an intersection between a plane and a line, parameters and variables currently unknown.
-u32 NuPlnLine(Vec4* p1, Vec* p2, Vec* p3, Vec* p4);
+u32 NuPlnLine(struct Vec4* p1, struct Vec* p2, struct Vec* p3, struct Vec* p4);
 
 #endif // !NUPLANE_H

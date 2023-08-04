@@ -18,4 +18,56 @@
   800af620 0000e0 800af620  4 NuGlassRenderStatic 	Global
 */
 
+
+static int spectid;
+
+numtl_s* glass_mtl_blendskin;
+
+numtl_s* glass_mtl_blendskin2;
+
+static int num_glass_inst;
+
+static nugobj_s* glassGobj[256];
+
+static nuinstance_s* glass_inst[256]; 
+
+static int num_glass_inst;
+
+int SKELETALCRASH;
+
+float glass_mix;
+
+float glass_mix_speed;
+
+float WATERBOSSGLASSMIX;
+
+float MAXGLASSMIX;
+
+int glass_enabled; 
+
+float ANGELGLASSMIX;
+
+float glass_col_mix;
+
+int glass_col_enabled;
+
+float glass_col_mix_speed;
+
+nucolour3_s glass_col[2];
+
+int GLASSPLAYERFADE;
+
+int GLASSPLAYER;
+
+int glass_phase;
+
+int glass_draw;
+
+int force_glass_screencopy_enable;
+
+float glass_strength;
+
+float plr_invisibility_time;
+
+
 #endif // !NUGLASS_H

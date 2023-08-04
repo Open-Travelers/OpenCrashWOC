@@ -3,7 +3,7 @@
 
 fileHandle edfile_handle = -1;
 
-u32 EdFileOpen(char* filename)
+s32 EdFileOpen(char* filename)
 {
 	if (edfile_handle == -1)
 	{
@@ -16,9 +16,9 @@ u32 EdFileOpen(char* filename)
 	return 0;
 }
 
-u32 EdFileClose()
+s32 EdFileClose()
 {
-	u32 fileOpened = edfile_handle != -1;
+	s32 fileOpened = edfile_handle != -1;
 	if (fileOpened) {
 		NuFileClose(edfile_handle);
 		edfile_handle = -1;

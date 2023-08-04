@@ -2,7 +2,7 @@
 #define DXFRAME_H
 
 #include "../types.h"
-#include "nurastertypes.h"
+#include "nuraster/nurastertypes.h"
 //#include <d3d11.h>
 
 /*
@@ -28,10 +28,12 @@
 */
 
 // If the backbuffer has been grabbed this frame.
-u32 backbuffer_grabbed_this_frame;
+extern s32 backbuffer_grabbed_this_frame;
 
 // Back buffer TID.
-u32 backbuffer_tid;
+extern s32 backbuffer_tid;
+
+static int g_dwCurrentRT;
 
 // Reset the globals.
 void ResetFwGlobals(); // TODO: IMPLEMENT THIS!!!
@@ -40,19 +42,20 @@ void ResetFwGlobals(); // TODO: IMPLEMENT THIS!!!
 void NudxFw_DestroyBackBufferCopy();
 
 // Make a copy of the backbuffer. Set force to 1 to copy regardless if a backbuffer has been grabbed this frame.
-void NudxFw_MakeBackBufferCopy(u32 force);
+void NudxFw_MakeBackBufferCopy(s32 force);
 
 // Get the back buffer copy TID.
-u32 NudxFw_GetBackBufferCopyTID();
+s32 NudxFw_GetBackBufferCopyTID();
 
 // Set if the back buffer has been copied or not.
-void NudxFw_SetBackBufferCopied(u32 grabbed);
+void NudxFw_SetBackBufferCopied(s32 copied);
 
 // Init graphics, returns 0 if successful, -1 otherwise.
 s32 NudxFw_Init();
 
 // Create the graphics environment.
 //s32 CreateEnvironment(HWND* hwnd); // TODO: IMPLEMENT THIS!!!
+//s32 CreateEnvironment(struct HWND__ *hwnd);
 
 // TODO FUNCTIONS!!!
 

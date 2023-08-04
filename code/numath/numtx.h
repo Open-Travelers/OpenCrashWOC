@@ -9,104 +9,105 @@
   800c023c 0002d0 800c023c  4 NuMtxAlignZ 	Global
 */
 
-Mtx mident;
-Mtx gm;
+extern struct Mtx mident;
+extern struct Mtx gm;
 
 // Set m to the identity matrix.
-void NuMtxSetIdentity(Mtx* m);
+void NuMtxSetIdentity(struct Mtx* m);
 
 // Set the translation vector of the matrix.
-void NuMtxSetTranslation(Mtx* m, Vec* v);
+void NuMtxSetTranslation(struct Mtx* m, struct Vec* v);
 
 // Set the scale vector of the matrix.
-void NuMtxSetScale(Mtx* m, Vec* v);
+void NuMtxSetScale(struct Mtx* m, struct Vec* v);
 
 // Set a rotation matrix around the x axis.
-void NuMtxSetRotationX(Mtx* m, angle a);
+void NuMtxSetRotationX(struct Mtx* m, s32 a);
 
 // Set a rotation matrix around the y axis.
-void NuMtxSetRotationY(Mtx* m, angle a);
+void NuMtxSetRotationY(struct Mtx* m, s32 a);
 
 // Set a rotation matrix around the z axis.
-void NuMtxSetRotationZ(Mtx* m, angle a);
+void NuMtxSetRotationZ(struct Mtx* m, s32 a);
 
 // Translate the matrix by a vector.
-void NuMtxTranslate(Mtx* m, Vec* v);
+void NuMtxTranslate(struct Mtx* m, struct Vec* v);
 
 // Before translating???
-void NuMtxPreTranslate(Mtx* m, Vec* v);
+void NuMtxPreTranslate(struct Mtx* m, struct Vec* v);
 
 // Scale a matrix by a vector.
-void NuMtxScale(Mtx* m, Vec* v);
+void NuMtxScale(struct Mtx* m, struct Vec* v);
 
 // Get the scale of a matrix and put it into the destination.
-void NuMtxGetScale(Vec* dest, Mtx* m);
+void NuMtxGetScale(struct Vec* dest, struct Mtx* m);
 
 // Before scale???
-void NuMtxPreScale(Mtx* m, Vec* v);
+void NuMtxPreScale(struct Mtx* m, struct Vec* v);
 
 // Rotate a matrix around the x axis.
-void NuMtxRotateX(Mtx* m, angle a);
+void NuMtxRotateX(struct Mtx* m, s32 a);
 
 // Pre-rotate a matrix around the x axis.
-void NuMtxPreRotateX(Mtx* m, angle a);
+void NuMtxPreRotateX(struct Mtx* m, s32 a);
 
 // Rotate a matrix around the y axis.
-void NuMtxRotateY(Mtx* m, angle a);
+void NuMtxRotateY(struct Mtx* m, s32 a);
 
 // Pre-rotate a matrix around the y axis.
-void NuMtxPreRotateY(Mtx* m, angle a);
+void NuMtxPreRotateY(struct Mtx* m, s32 a);
 
 // Rotate a matrix around the z axis.
-void NuMtxRotateZ(Mtx* m, angle a);
+void NuMtxRotateZ(struct Mtx* m, s32 a);
 
 // Pre-rotate a matrix around the z axis.
-void NuMtxPreRotateZ(Mtx* m, angle a);
+void NuMtxPreRotateZ(struct Mtx* m, s32 a);
 
 // Set the x, y, and z rotation.
-void NuMtxSetRotateXYZ(Mtx* m, angle a[3]);
+void NuMtxSetRotateXYZ(struct Mtx* m, s32 a[3]);
 
 // Multiply a and b and place them into the destination.
-void NuMtxMul(Mtx* dest, Mtx* a, Mtx* b);
+void NuMtxMul(struct Mtx* dest, struct Mtx* a, struct Mtx* b);
 
 // Multiply a and b and place them into the destination.
-void NuMtxMulH(Mtx* dest, Mtx* a, Mtx* b);
+void NuMtxMulH(struct Mtx* dest, struct Mtx* a, struct Mtx* b);
 
 // Multiply a and b and place them into the destination.
-void NuMtxMulR(Mtx* dest, Mtx* a, Mtx* b);
+void NuMtxMulR(struct Mtx* dest, struct Mtx* a, struct Mtx* b);
 
 // Transpose a matrix and place it into the destination.
-void NuMtxTranspose(Mtx* dest, Mtx* m);
+void NuMtxTranspose(struct Mtx* dest, struct Mtx* m);
 
 // Take the inverse of a matrix and put it into the destination.
-void NuMtxInv(Mtx* dest, Mtx* m);
+void NuMtxInv(struct Mtx* dest, struct Mtx* m);
 
 // Take the inverse of a matrix and put it into the destination.
-void NuMtxInvR(Mtx* dest, Mtx* m);
+void NuMtxInvR(struct Mtx* dest, struct Mtx* m);
 
 // Take the inverse of a matrix and apply a scale?
-void NuMtxInvRSS(Mtx* dest, Mtx* m);
+void NuMtxInvRSS(struct Mtx* dest, struct Mtx* m);
 
 //NuMtxInvH
 
 //NuMtxAlignZ
+void NuMtxAlignZ(struct Mtx* dest, struct Mtx* m);
 
 // Create a matrix to look at Z.
-void NuMtxLookAtZ(Mtx* dest, Vec* v);
+void NuMtxLookAtZ(struct Mtx* dest, struct Vec* v);
 
 // Add two matrices.
-void NuMtxAddR(Mtx* dest, Mtx* a, Mtx* b);
+void NuMtxAddR(struct Mtx* dest, struct Mtx* a, struct Mtx* b);
 
 // Skew a matrix by a vector.
-void NuMtxSkewSymmetric(Mtx* m, Vec* v);
+void NuMtxSkewSymmetric(struct Mtx* m, struct Vec* v);
 
 // Make a matrix into ortho.
-void NuMtxOrth(Mtx* m);
+void NuMtxOrth(struct Mtx* m);
 
 // Face a vector?
-void NuMtxCalcCheapFaceOn(Mtx* dest, Vec* v);
+void NuMtxCalcCheapFaceOn(struct Mtx* dest, struct Vec* v);
 
 // Calculate where debris should face?
-void NuMtxCalcDebrisFaceOn(Mtx* m);
+void NuMtxCalcDebrisFaceOn(struct Mtx* m);
 
 #endif // !NUMTX_H

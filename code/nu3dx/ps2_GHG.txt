@@ -1,0 +1,48 @@
+NuFileLoad
+{
+	NuDatFileOpenSize
+	NuMemAllocFn
+	NuMemFileClose
+	NuDebugMsgProlog
+	sceClose
+	memset
+}
+
+NuHGobjLoad
+{
+	NuFileSize
+	NuMemAllocFn
+	NuFileSeek
+	NuDatFilePos
+	sceLseek
+	NuMemFileClose
+	NuFileLoadBuffer
+	NuMemFileOpen
+	NuFileBeginBlkRead
+	ReadNuIFFHGobj
+	NuFileEndBlkRead
+	NuMemFreeFn
+}
+
+NuGHGRead
+{
+	NuFileLoadBuffer
+		NuDatFileLoadBuffer
+		NuFileOpen
+		NuPPLoadBuffer
+		NuDatFileOpenSize
+		NuFileSeek
+		NuFileRead
+		NuMemFileClose
+		memset
+		sceClose
+	NuTexCreateNative
+	NuDisableVblank
+	NuMtlAdd
+	NuMtlUpdate
+	NuEnableVblank
+	NuCvtSkinInstFix
+	NuTexAnimProgFind
+	NuTexAnimEnvCreate
+	NuTexAnimAddList
+}

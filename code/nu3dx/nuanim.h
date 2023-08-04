@@ -32,4 +32,182 @@
   800ac51c 0001ec 800ac51c  4 NuAnimCurve2SetApplyToMatrix 	Global
 */
 
+
+struct NuAnimData* NuAnimDataRead(fileHandle handle);
+
+
+// Size: 0x10
+struct nuanimcurveset_s
+{
+    s32 flags;
+    f32* constants;
+    struct nuanimcurve_s** set;
+    char ncurves;
+    char pad[3];
+};
+
+
+// Size: 0x10
+struct nuanimcurve_s
+{
+    u32 mask;
+    struct nuanimkey_s* animkeys;
+    u32 numkeys;
+    u32 flags;
+};
+
+
+// Size: 0x4
+union Curve2data
+{
+    f32 constant;
+    struct nuanimcurvedata_s* curvedata;
+};
+
+
+// Size: 0x4
+struct nuanimcurve2_s
+{
+    union Curve2data* data;
+};
+
+// Size: 0x10
+struct nuanimkey_s
+{
+    f32 time;
+    f32 dtime;
+    f32 c;
+    f32 d;
+};
+
+
+// DWARF: 0x20F6A
+enum NUANIMKEYTYPES_e
+{
+    NUANIMKEYTYPE_BOOLEAN = 4,
+    NUANIMKEYTYPE_INTEGER = 3,
+    NUANIMKEYTYPE_SMALL = 2,
+    NUANIMKEYTYPE_BIG = 1,
+    NUANIMKEYTYPE_NONE = 0
+};
+
+
+// Size: 0x4
+struct NUANIMKEYSMALL_s
+{
+    s16 val;
+    char grad;
+    char time;
+};
+
+
+// Size: 0x8
+struct NUANIMKEYINTEGER_s
+{
+    f32 val;
+    f32 time;
+};
+
+
+// Size: 0x10
+struct NUANIMKEYBIG_s
+{
+    f32 time;
+    f32 dtime;
+    f32 val;
+    f32 grad;
+};
+
+// Size: 0xC
+struct NUANIMDATAHDR_s
+{
+    s32 version;
+    s32 address_offset;
+    nuanimdata_s* animdata;
+};
+
+// Size: 0x14, DWARF: 0x1D4D6
+struct nuanim_s
+{
+    struct nuanimdata_s* animdata;
+    struct NUNODE_s* node;
+    s32* prev_keys;
+    s32 prev_key_ix;
+    struct nuanimkey_s** prev_anim_key;
+};
+
+
+enum nuanimcomponents_e
+{
+    NUANIM_NUMMTXOPERATIONS = 9,
+    NUANIM_Z_SCALE = 8,
+    NUANIM_Y_SCALE = 7,
+    NUANIM_X_SCALE = 6,
+    NUANIM_Z_ROTATION = 5,
+    NUANIM_Y_ROTATION = 4,
+    NUANIM_X_ROTATION = 3,
+    NUANIM_Z_TRANSLATION = 2,
+    NUANIM_Y_TRANSLATION = 1,
+    NUANIM_X_TRANSLATION = 0
+};
+
+enum nuanimmode_e
+{
+    NUANIM_NUMMODES = 3,
+    NUANIM_PLAYBACK_OSCILLATE = 2,
+    NUANIM_PLAYBACK_LOOP = 1,
+    NUANIM_PLAYBACK_ONCE = 0
+};
+
+// Size: 0xC
+struct nuanimcurvedata_s
+{
+    u32* mask;
+    u16* key_ixs;
+    void* key_array;
+};
+
+
+// Size: 0x18, DWARF: 0x1D88D
+struct nuanimdata2_s
+{
+    f32 endframe;
+    s16 nnodes;
+    s16 ncurves;
+    s16 nchunks;
+    s16 pad;
+    struct nuanimcurve2_s* curves;
+    char* curveflags;
+    char* curvesetflags;
+};
+
+// Size: 0x10
+struct nuanimdata_s
+{
+    f32 time;
+    char* node_name;
+    s32 nchunks;
+    struct nuanimdatachunk_s** chunks;
+};
+
+// Size: 0x14
+struct nuanimdatachunk_s
+{
+    s32 numnodes;
+    s32 num_valid_animcurvesets;
+    struct nuanimcurveset_s** animcurvesets;
+    struct nuanimkey_s* keys;
+    struct nuanimcurve_s* curves;
+};
+
+// Size: 0x14
+struct nuanimtime_s
+{
+    f32 time;
+    f32 time_offset;
+    s32 chunk;
+    u32 time_mask;
+    u32 time_byte;
+};
+
 #endif // !NUANIM_H

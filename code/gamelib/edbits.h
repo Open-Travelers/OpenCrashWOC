@@ -5,31 +5,55 @@
 #include "../nu.h"
 
 // Ed random seed.
-u32 edqseed;
+extern u32 edqseed;
 
 // SFX volume.
-u32 edbitsSfxVol;
+extern u32 edbitsSfxVol;
 
 // SFX name global tab.
-char* edSfxGlobalTab;
+extern char* edSfxGlobalTab;
 
 // SFX name level tab.
-char* edSfxLevelTab;
+extern char* edSfxLevelTab;
 
 // SFX name global count.
-u32 edSfxGlobalCount;
+extern s32 edSfxGlobalCount;
 
 // SFX name total count.
-u32 edSfxAllCount;
+extern u32 edSfxAllCount;
+
+extern pSFX* edSfxLevelTab;
+
+extern char edbits_what_game;
 
 // Base scene.
-NuScene* edbits_base_scene;
+extern nugscn_s* edbits_base_scene;
 
 /*
   80084750 0000ec 80084750  4 edbitsLookupSoundFX 	Global
   80084844 000118 80084844  4 edbitsSoundPlay 	Global
   8008495c 00008c 8008495c  4 edbitsLookupInstance 	Global
 */
+
+
+// Size: 0x30
+struct
+{
+    char name[16];
+    unsigned short pitch;
+    unsigned short volume;
+    unsigned char buzz;
+    unsigned char rumble;
+    unsigned char delay;
+    unsigned char wait;
+    char* path;
+    unsigned short frequency;
+    unsigned short stream;
+    signed char type;
+    char pad1;
+    unsigned short id;
+    nuvec_s Pos;
+}pSFX;
 
 // Get a random number.
 u32 edqrand();

@@ -14,7 +14,7 @@ f32 NuFDiv(f32 dividend, f32 divisor)
 	return 0.0;
 }
 
-void NuVec4MtxTransformVU0(Vec4* dest, Vec4* a, Mtx* b)
+void NuVec4MtxTransformVU0(struct Vec4* dest, struct Vec4* a, struct Mtx* b)
 {
 	dest->x = a->x * b->m11 + a->y * b->m21 + a->z * b->m31 + a->w * b->m41;
 	dest->y = a->x * b->m12 + a->y * b->m22 + a->z * b->m32 + a->w * b->m42;

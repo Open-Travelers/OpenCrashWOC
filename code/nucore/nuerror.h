@@ -4,13 +4,13 @@
 #include "../types.h"
 #include "nucoretypes.h"
 #include <stdarg.h>
-#include <stdlib.h>
-#include <stdio.h>
+//#include <stdlib.h>
+//#include <stdio.h>
 
-char txt[0x400];
-char captxt[0x100];
-char* nufile;
-u32 nuline;
+extern char txt[0x400];
+extern char captxt[0x100];
+extern char* nufile;
+extern u32 nuline;
 
 // Print an error to the console.
 void NuErrorFunction(char message[0x60], ...);

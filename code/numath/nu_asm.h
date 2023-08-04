@@ -3,7 +3,7 @@
 
 #include "../types.h"
 #include "numathtypes.h"
-#include <math.h>
+#include <numath.h>
 
 // Take square root of value.
 f32 NuFsqrt(f32 f);
@@ -12,6 +12,6 @@ f32 NuFsqrt(f32 f);
 f32 NuFdiv(f32 f);
 
 // Multiply a vector by a scalar, and place it into the destination.
-void NuVec4MtxTransformVU0(Vec4* dest, Vec4* a, Mtx* b);
+void NuVec4MtxTransformVU0(struct Vec4* dest, struct Vec4* a, struct Mtx* b);
 
 #endif // !NU_ASM_H

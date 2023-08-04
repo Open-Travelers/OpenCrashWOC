@@ -4,18 +4,19 @@
 #include "../types.h"
 #include "../nucore.h"
 #include "nu3dxtypes.h"
+#include "nuraster/nurastertypes.h"
 
 // Texture infos.
-NuTex tinfo[0x400];
+extern struct nusystex_s tinfo[0x400];
 
 // If textures are initialized.
-u32 initialised;
+//s32 initialised;
 
 // Current texture ID in tinfo list.
-s32 tpid;
+extern s32 tpid;
 
 // Number of textures.
-u32 ntex;
+extern s32 ntex;
 
 /*
   800b97e8 000068 800b97e8  4 NuTexClose 	Global
@@ -25,6 +26,30 @@ u32 ntex;
   800b9cf8 00003c 800b9cf8  4 NuTexSetTexture 	Global
   800b9d34 00038c 800b9d34  4 NuTexReadBitmapMM 	Global
 */
+
+
+struct tagBITMAPFILEHEADER {
+    u16 pad;
+    u16 bfType;
+    u32 bfSize;
+    u16 bfReserved1;
+    u16 bfReserved2;
+    u32 bfOffBits;
+};
+
+struct tagBITMAPINFOHEADER {
+    u32 biSize;
+    u32 biWidth;
+    u32 biHeight;
+    u16 biPlanes;
+    u16 biBitCount;
+    u32 biCompression;
+    u32 biSizeImage;
+    u32 biXPelsPerMeter;
+    u32 biYPelsPerMeter;
+    u32 biClrUsed;
+    u32 biClrImportant;
+};
 
 // Initialize the texture system.
 void NuTexInit();
@@ -36,10 +61,10 @@ void NuTexClose(); // TODO: IMPLEMENT THIS!!!
 s32 GetTPID();
 
 // Create a texture from texture data.
-NuTex* NuTexCreate(NuTexData* dat); // TODO: IMPLEMENT THIS!!!
+s32 NuTexCreate(struct nutex_s *nutex); // TODO: IMPLEMENT THIS!!!
 
 // Create a texture from a surface. Returns the texture ID.
-s32 NuTexCreateFromSurface(NuTexData* tex, NuSurface* surface);
+s32 NuTexCreateFromSurface(struct nutex_s *tex, struct D3DTexture *surface);
 
 // Destroy a texture given an ID.
 void NuTexDestroy(s32 id);
@@ -48,21 +73,21 @@ void NuTexDestroy(s32 id);
 u32 NuTexUnRef(s32 id);
 
 // Get the pixel size for a format.
-u32 NuTexPixelSize(u32 format);
+s32 NuTexPixelSize(enum nutextype_e type);
 
 // Get the size of an image.
-u32 NuTexImgSize(u32 format, u32 width, u32 height);
+s32 NuTexImgSize(enum nutextype_e type, s32 width, s32 height);
 
 // Get the texture palette size.
-u32 NuTexPalSize(u32 format);
+s32 NuTexPalSize(enum nutextype_e type);
 
 // Read bitmap data into a texture.
-s32 NuTexReadBitmapMM(char* fileName, u32 mode, NuTexData* tex); // TODO!!! FINISH!!!
+s32 NuTexReadBitmapMM(char* fileName, s32 mmlevel, struct nutex_s* tex); // TODO!!! FINISH!!!
 
 // Read a texture from a BMP.
-NuTexData* NuTexReadBitmap(char* fileName);
+struct nutex_s * NuTexReadBitmap(char* fileName);
 
 // This function was never implemented, DO NOT USE!
-NuSurface* NuTexLoadTextureFromDDSFile(char* fileName);
+struct D3DTexture* NuTexLoadTextureFromDDSFile(char* fileName);
 
 #endif // !NUTEX_H

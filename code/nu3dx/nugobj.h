@@ -2,28 +2,46 @@
 #define NUGOBJ_H
 
 #include "../types.h"
+#include "numath/numathtypes.h"
 #include "nu3dxtypes.h"
-
-/*
-  800af700 000058 800af700  4 NuGobjInit 	Global
-  800af758 000058 800af758  4 NuGobjClose 	Global
-  800af7b0 000070 800af7b0  4 NuGobjCreate 	Global
-  800af820 000084 800af820  4 NuGobjDestroy 	Global
-  800af8a4 000038 800af8a4  4 NuGobjAddGeom 	Global
-  800af8dc 000038 800af8dc  4 NuGobjAddFaceOnGeom 	Global
-  800af914 0002c8 800af914  4 NuGobjCalcFaceOnDims 	Global
-  800afbdc 0002a8 800afbdc  4 NuGobjCalcDims 	Global
-  800afe84 000044 800afe84  4 NuGeomCreate 	Global
-  800afec8 000044 800afec8  4 NuFaceOnGeomCreate 	Global
-  800aff0c 00006c 800aff0c  4 NuGeomDestroy 	Global
-  800aff78 00010c 800aff78  4 NuGeomCreateVB 	Global
-  800b0084 000044 800b0084  4 NuGeomDestroyVB 	Global
-  800b00c8 000038 800b00c8  4 NuGeomAddPrim 	Global
-  800b0100 000038 800b0100  4 NuGeomAddSkin 	Global
-  800b0138 000084 800b0138  4 NuPrimCreate 	Global
-  800b01bc 000048 800b01bc  4 NuPrimDestroy 	Global
-  800b0204 0000a8 800b0204  4 NuVtxStride 	Global
-  800b02ac 000070 800b02ac  4 NuAnimUV 	Global
-*/
+#include "../nucore/nuerror.h"
+/**********************************************************/
+// Prototypes
+/**********************************************************/
+/*void NuGobjInit(void);
+void NuGobjClose(void);
+struct nugobj_s* NuGobjCreate(void);
+void NuGobjDestroy(struct nugobj_s* obj);
+void NuGobjAddGeom(struct nugobj_s* gobj, struct nugeom_s* geom);
+void NuGobjAddFaceOnGeom(struct nugobj_s* gobj, struct nufaceongeom_s* Fgeom);
+struct nugeom_s* NuGeomCreate(void);
+struct nufaceongeom_s* NuFaceOnGeomCreate(void);
+void NuGeomDestroy(struct nugeom_s* geom);
+void NuGeomCreateVB(struct nugeom_s* geom, u32 vtxCount, enum nuvtxtype_e vtxType, s32 dynamic);
+void NuGeomDestroyVB(struct nugeom_s* geom);
+void NuGeomAddPrim(struct nugeom_s* geom, struct nuprim_s* prim);
+void NuGeomAddSkin(struct nugeom_s* geom, struct nuskin_s* skin);
+struct nuprim_s* NuPrimCreate(int amount, enum nuprimtype_e type);
+void NuPrimDestroy(struct nuprim_s* prim);
+void* GS_CreateBuffer(u32 bufsize, s32 bufferType);
+void GS_DeleteBuffer(void* ptr);
+int NuVtxStride(enum nuvtxtype_e type);
+void NuAnimUV(void);*/
+void NuGobjCalcDims(struct nugobj_s* gobj);
+void* GS_CreateBuffer(u32 bufsize, s32 bufferType);
+/**********************************************************/
+// Variables
+/**********************************************************/
+static s32 sysinit;
+extern s32 Paused;
+extern s32 _timer;
+extern u32 GS_BufferSize;
+extern u32 BufferTypes[4];
+static struct nugobj_s* sysgobj;
+/**************************************************************/
+typedef struct GS_Buffer {
+    u32 size;
+    u32 type;
+}; // 0x8
 
 #endif // !NUGOBJ_H

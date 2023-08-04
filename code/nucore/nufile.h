@@ -1,82 +1,84 @@
 #ifndef NUFILE_H
 #define NUFILE_H
 
-#include "../types.h"
+#include "types.h"
 #include "nucoretypes.h"
 #include "numem.h"
-#include <string.h>
+//#include <string.h>
 #include <stdio.h>
-#include <memory.h>
+//#include <memory.h>
 
 #define MAX_FILES 10
 #define MAX_MEM_FILES 20
 #define MAX_DAT_FILES 20
 
+#ifndef FIRST
 // Number of blocks.
-u32 blkcnt;
+extern s32 blkcnt;
 
 // Block info.
-BlockInfo blkinfo[0x400];
+extern struct BlockInfo blkinfo[0x400];
+
 
 // Current file buffer.
-void* filebuffer;
+extern void* filebuffer;
 
 // Some kind of file pointer.
-void* bpointer;
-
-// If the game disk is bad.
-u32 badGameDisk;
-
-// Current file pointer.
-fileHandle currentpointer;
-
-// Bytes left to read.
-u32 bytesleft;
-
-// Bytes read.
-u32 thisbytesread;
-
-// File pointers.
-FILE* fpointers[MAX_FILES];
-
-// Memory files.
-MemFile memfiles[MAX_MEM_FILES];
-
-// Data files.
-MemFile datfiles[MAX_MEM_FILES];
-
-// Loading screen.
-s32 loadscreen;
+extern void* bpointer;
 
 // Load screen fade direction.
-u32 loadscreenfadedir;
+extern u32 loadscreenfadedir;
+#endif
+// If the game disk is bad.
+extern s32 badGameDisk;
+
+// Current file pointer.
+extern fileHandle currentpointer;
+
+// Bytes left to read.
+extern s32 bytesleft;
+
+// Bytes read.
+extern s32 thisbytesread;
+
+// File pointers.
+extern FILE* fpointers[MAX_FILES];
+
+// Memory files.
+extern struct numemfile_s memfiles[MAX_MEM_FILES];
+
+// Data files.
+extern struct nudatfile_s datfiles[MAX_MEM_FILES];
+
+// Loading screen.
+extern s32 loadscreen;
 
 // Load screen %.
-u32 datacounter;
+extern s32 datacounter;
 
 // If the load screen is done.
-u32 datafull;
+extern s32 datafull;
 
 // Number of bytes read.
-u32 totalbytesread;
+extern s32 totalbytesread;
 
 // If the game disk is bad.
-u32 NuFileGetBadGameDisc();
+s32 NuFileGetBadGameDisc();
 
 // Initialize files and the file buffer.
-void NuFileInitEx();
+void NuFileInitEx(int deviceid, int rebootiop);
 
 // Check if a file exists.
-u32 NuFileExists(char* filename);
+s32 NuFileExists(char* filename);
 
 // For sanity sake.
-s32 checkmemfile();
+s32 checkmemfile(char* name);
 
 // For sanity sake.
-s32 checkdiskfile();
+s32 checkdiskfile(char* name);
 
 // Open a file with a given name, and FileMode. Returns the file handle if successful, 0 otherwise.
-fileHandle NuFileOpen(char* filename, u32 mode);
+fileHandle NuFileOpen(char* filename, enum nufilemode_e mode);
 
 // Close a file with fileIndex - 1.
 void NuFileClose(fileHandle handle);
@@ -85,13 +87,13 @@ void NuFileClose(fileHandle handle);
 fileHandle NuMemFileOpen(void* buffer, u32 size, u32 mode);
 
 // Data file position.
-s64 NuDatFilePos(fileHandle handle);
+s32 NuDatFilePos(fileHandle handle);
 
 // Read from a data file.
-size_t NuDatFileRead(fileHandle handle, void* dest, size_t size);
+s32 NuDatFileRead(s32 fh, void* data, s32 size);
 
 // Seek from a data file.
-s32 NuDatFileSeek(fileHandle handle, s64 off, s32 whence);
+s32 NuDatFileSeek(s32 fh, s32 offset, s32 origin);
 
 // Close a data file.
 void NuDatFileClose(fileHandle handle);
@@ -100,19 +102,19 @@ void NuDatFileClose(fileHandle handle);
 void NuMemFileClose(fileHandle handle);
 
 // Get the memory file position.
-s64 NuMemFilePos(fileHandle handle);
+s32 NuMemFilePos(fileHandle handle);
 
 // Read a memory file.
-size_t NuMemFileRead(fileHandle handle, void* dest, size_t size);
+s32 NuMemFileRead(fileHandle handle, void* data, s32 size);
 
 // Seek in a data file.
-s32 NuMemFileSeek(fileHandle handle, s64 off, s32 whence);
+s32 NuMemFileSeek(fileHandle handle, s32 offset, s32 origin);
 
 // Get the file position.
-s64 NuFilePos(fileHandle handle);
+s32 NuFilePos(fileHandle handle);
 
 // Seek a file.
-s32 NuFileSeek(fileHandle handle, s64 off, s32 whence);
+s32 NuFileSeek(fileHandle handle, s32 offset, s32 origin);
 
 // Get the size of a file.
 s32 NuFileSize(char* fileName);
@@ -121,10 +123,10 @@ s32 NuFileSize(char* fileName);
 void* NuFileLoad(char* fileName);
 
 // Load a file into a buffer.
-size_t NuFileLoadBuffer(char* fileName, void* dest, s32 maxSize);
+s32 NuFileLoadBuffer(char* fileName, void* dest, s32 maxSize);
 
 // Read a file into a destination.
-size_t NuFileRead(fileHandle handle, void* dest, size_t size);
+s32 NuFileRead(fileHandle handle, void* data, s32 size);
 
 // Start a loading screen.
 void NuStartLoadScreen(s32 screen);
@@ -145,12 +147,12 @@ s16 NuFileReadShort(fileHandle handle);
 char NuFileReadChar(fileHandle handle);
 
 // Begin reading a block. Magic is the expected value, can be 0 to not check. Returns the magic.
-u32 NuFileBeginBlkRead(fileHandle handle, u32 magic);
+s32 NuFileBeginBlkRead(fileHandle handle, s32 blkType);
 
 // Stop reading a block.
-void NuFileEndBlkRead(fileHandle handle);
+s32 NuFileEndBlkRead(fileHandle handle);
 
 // Close a dat file.
-void NuDatClose(DatFile* datFile);
+void NuDatClose(struct nudathdr_s* ndh);
 
 #endif // !NUFILE_H

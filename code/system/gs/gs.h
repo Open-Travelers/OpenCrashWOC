@@ -1,4 +1,6 @@
 #pragma once
+#include "stdio.h"
+#include "nuraster/nurastertypes.h"
 
 /*
   800c8b14 00002c 800c8b14  4 GS_SetFBCopyTexturePause 	Global
@@ -30,3 +32,39 @@
   800c9a6c 000004 800c9a6c  4 GS_CopyTextureFromFB 	Global
   800c9a70 00008c 800c9a70  4 GS_CopyFBToPause 	Global
 */
+
+void GS_SetRenderState(int state, int data);
+void GS_SetBlendSrc(int enable,int src,int dest);
+
+
+struct nuviewport_s {
+    u32 x;
+    u32 y;
+    u32 width;
+    u32 height;
+    float zmin;
+    float zmax;
+    float centre_x;
+    float centre_y;
+    float clipmin_x;
+    float clipmin_y;
+    float clipmax_x;
+    float clipmax_y;
+    float clip_w;
+    float clip_h;
+    float scis_w;
+    float scis_h;
+};
+
+
+enum _GXCompare
+{
+    GX_ALWAYS = 7,
+    GX_GEQUAL = 6,
+    GX_NEQUAL = 5,
+    GX_GREATER = 4,
+    GX_LEQUAL = 3,
+    GX_EQUAL = 2,
+    GX_LESS = 1,
+    GX_NEVER = 0
+};

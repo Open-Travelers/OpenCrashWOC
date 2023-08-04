@@ -1,4 +1,10 @@
-#pragma once
+#ifndef GSTEX_H
+#define GSTEX_H
+
+#include "types.h"
+#include "nu3dx/nu3dxtypes.h"
+#include "nuraster/nurastertypes.h"
+
 
 /*
   800cb6d8 0000a4 800cb6d8  4 GS_TexInit 	Global
@@ -14,5 +20,4 @@
   800cc0f0 000004 800cc0f0  4 GS_SetTextureStageState 	Global
 */
 
-// Re-initialize textures.
-void GS_TexReInit(); // TODO!!!
+#endif

@@ -1,7 +1,7 @@
 #ifndef NUSOUND_H
 #define NUSOUND_H
 
-#include "../types.h"
+#include "types.h"
 #include "nusoundtypes.h"
 
 /*
@@ -25,10 +25,10 @@
 */
 
 // If the track is currently playing.
-u32 SS_TrackPlayingFlag;
+extern u32 SS_TrackPlayingFlag;
 
 // The current channel.
-s32 SS_CurrentChannel;
+extern s32 SS_CurrentChannel;
 
 // TODO: FUNCTIONS!!!
 

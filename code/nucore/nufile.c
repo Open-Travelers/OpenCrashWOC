@@ -1,71 +1,84 @@
+
+#define FIRST 0
+
 #include "nufile.h"
 #include "nuerror.h"
 
-void* filebuffer = NULL;
-u32 blkcnt = 1;
-u32 badGameDisk = 0;
+unsigned char* filebuffer = NULL;
+s32 blkcnt = 1;
+static struct BlockInfo blkinfo[0x400];
+unsigned char* bpointer;
+s32 badGameDisk = 0;
 fileHandle currentpointer = -1;
-u32 bytesleft = 0;
-u32 thisbytesread = 0;
+s32 bytesleft = 0;
+s32 thisbytesread = 0;
 FILE* fpointers[MAX_FILES] = {
 	NULL, NULL, NULL, NULL, NULL,
 	NULL, NULL, NULL, NULL, NULL
 };
+struct numemfile_s memfiles[MAX_MEM_FILES];
+struct nudatfile_s datfiles[MAX_MEM_FILES];
 s32 loadscreen = -1;
-u32 loadscreenfadedir = 0;
-u32 datacounter = 0;
-u32 totalbytesread = 0;
+s32 loadscreenfadedir = 0;
+s32 datacounter = 0;
+s32 datafull;
+s32 totalbytesread = 0;
 
-u32 NuFileGetBadGameDisc()
+s32 NuFileGetBadGameDisc()
 {
 	return badGameDisk;
 }
 
-void NuFileInitEx()
+void NuFileInitEx(int deviceid, int rebootiop)
 {
 	if (filebuffer == NULL)
 	{
 		filebuffer = malloc_x(0x10000);
 	}
-	memset(memfiles, 0, MAX_MEM_FILES * sizeof(MemFile));
-	memset(datfiles, 0, MAX_DAT_FILES * sizeof(MemFile));
+	memset(memfiles, 0 , MAX_MEM_FILES * sizeof(struct numemfile_s));
+	memset(datfiles, 0, MAX_MEM_FILES  * sizeof(struct nudatfile_s));
+
+	printf("memfiles after memset(): %d\n", memfiles);
+	printf("datfiles after memset(): %d\n", datfiles);
 }
 
-u32 NuFileExists(char* filename)
+s32 NuFileExists(char* filename)
 {
 	char buf[128];
+	FILE* filep;
+
 	memset(buf, 0, sizeof(buf));
-	FILE* file;
 	buf[0] = '.';
 	buf[1] = '/';
 	strcat(buf, filename);
-	file = fopen(buf, "r");
-	if (file != NULL)
+	filep = fopen(buf, "r");
+	if (filep != NULL)
 	{
-		fclose(file);
+		fclose(filep);
 	}
-	return file != NULL;
+	//return filep != NULL;
+	return 1;
 }
 
-s32 checkmemfile()
+s32 checkmemfile(char* name)
 {
 	return -1;
 }
 
-s32 checkdiskfile()
+s32 checkdiskfile(char* name)
 {
 	return -1;
 }
 
-fileHandle NuFileOpen(char* filename, u32 mode)
+fileHandle NuFileOpen(char* filename, enum nufilemode_e mode)
 {
 	if (NuFileGetBadGameDisc() == 0)
 	{
 		char namebuf[128];
 		memset(namebuf, 0, sizeof(namebuf));
 		thisbytesread = 0;
-		checkmemfile();
-		if (checkdiskfile() == -1)
+		checkmemfile(filename);
+		if (checkdiskfile(filename) == -1)
 		{
 			namebuf[0] = '.';
 			namebuf[1] = '/';
@@ -77,23 +90,29 @@ fileHandle NuFileOpen(char* filename, u32 mode)
 			namebuf[2] = '\\';
 		}
 		strcat(namebuf, filename);
-		if (mode > 2)
+		if (mode > NUFILE_APPEND)
 		{
 			error_func e = NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 75);
 			e("assert");
 		}
+
 		for (s32 i = 0; i < MAX_FILES; i++)
 		{
 			if (fpointers[i] == NULL)
 			{
-				FILE* f = fopen(namebuf, mode == ReadBinary ? "rb" : "wb");
+				struct FILE* f = fopen(namebuf, mode == NUFILE_READ ? "rb" : "wb");
+				//printf("Test");
 				if (f == NULL)
 				{
+				    printf("file null\n");
 					return NULL;
 				}
-				bytesleft = (u32)fpointers[i];
+				//printf("/nreaded");
+				bytesleft = (s32)fpointers[i];
 				fpointers[i] = f;
+
 				return i + 1;
+
 			}
 		}
 	}
@@ -118,19 +137,19 @@ void NuFileClose(fileHandle handle)
 	}
 }
 
-fileHandle NuMemFileOpen(void* buffer, u32 size, u32 mode)
+fileHandle NuMemFileOpen(void* start, u32 size, u32 mode)
 {
-	if (size > 0 && mode == ReadBinary)
+	if (size > 0 && mode == NUFILE_READ)
 	{
 		for (s32 i = 0; i < MAX_MEM_FILES; i++) {
-			MemFile* m = &memfiles[i];
-			if (!m->open)
+			struct numemfile_s* m = &memfiles[i];
+			if (!m->used)
 			{
-				m->open = 1;
-				m->end = (void*)((u32)buffer + (size - 1));
-				m->position = buffer;
-				m->unused = 0;
-				m->start = buffer;
+				m->used = 1;
+				m->end = (char*)((s32)start + (size - 1));
+				m->currposition = (char*)start;
+				m->mode = NUFILE_READ;
+				m->start = (char*)start;
 				return i + 0x400;
 			}
 		}
@@ -138,17 +157,17 @@ fileHandle NuMemFileOpen(void* buffer, u32 size, u32 mode)
 	return 0;
 }
 
-s64 NuDatFilePos(fileHandle handle)
+s32 NuDatFilePos(fileHandle handle)
 {
 	return 0;
 }
 
-size_t NuDatFileRead(fileHandle handle, void* dest, size_t size)
+s32 NuDatFileRead(s32 fh, void* data, s32 size)
 {
 	return 0;
 }
 
-s32 NuDatFileSeek(fileHandle handle, s64 off, s32 whence)
+s32 NuDatFileSeek(s32 fh, s32 offset, s32 origin)
 {
 	return 0;
 }
@@ -161,7 +180,7 @@ void NuMemFileClose(fileHandle handle)
 {
 	if (handle < 0x800)
 	{
-		memfiles[handle - 0x400].open = 0;
+		memfiles[handle - 0x400].used = 0;
 	}
 	else
 	{
@@ -169,11 +188,11 @@ void NuMemFileClose(fileHandle handle)
 	}
 }
 
-s64 NuMemFilePos(fileHandle handle)
+s32 NuMemFilePos(fileHandle handle)
 {
 	if (handle < 0x800)
 	{
-		return ((s64)memfiles[handle - 0x400].position - (s64)memfiles[handle - 0x400].start);
+		return ((s32)memfiles[handle - 0x400].currposition - (s32)memfiles[handle - 0x400].start);
 	}
 	else
 	{
@@ -181,60 +200,60 @@ s64 NuMemFilePos(fileHandle handle)
 	}
 }
 
-size_t NuMemFileRead(fileHandle handle, void* dest, size_t size)
+s32 NuMemFileRead(fileHandle handle, void* data, s32 size)
 {
 	if (handle < 0x800)
 	{
 		s32 f = handle - 0x400;
-		s32 left = (s32)memfiles[f].end + (1 - (s32)memfiles[f].position);
+		s32 left = (s32)memfiles[f].end + (1 - (s32)memfiles[f].currposition);
 		if (size > left)
 		{
 			size = left;
 		}
 		if (size != 0)
 		{
-			memcpy(dest, memfiles[f].position, size);
-			memfiles[f].position = (void*)((u32)memfiles[f].position + size);
+			memcpy(data, memfiles[f].currposition, size);
+			memfiles[f].currposition = memfiles[f].currposition + size;
 		}
 		return size;
 	}
 	else
 	{
-		return NuDatFileRead(handle, dest, size);
+		return NuDatFileRead(handle, data, size);
 	}
 }
 
-s32 NuMemFileSeek(fileHandle handle, s64 off, s32 whence)
+s32 NuMemFileSeek(fileHandle handle, s32 offset, s32 origin)
 {
 	if (handle < 0x800)
 	{
 		fileHandle f = handle - 0x400;
-		switch (whence)
+		switch (origin)
 		{
-		case SEEK_SET:
-			memfiles[f].position = (void*)((s32)memfiles[f].start + off);
+		case NUFILE_SEEK_START:
+			memfiles[f].currposition = (void*)((s32)memfiles[f].start + offset);
 			break;
-		case SEEK_CUR:
-			memfiles[f].position = (void*)((s32)memfiles[f].position + off);
+		case NUFILE_SEEK_CURRENT:
+			memfiles[f].currposition = (void*)((s32)memfiles[f].currposition + offset);
 			break;
-		case SEEK_END:
-			memfiles[f].position = (void*)((s32)memfiles[f].end + (1 - off));
+		case NUFILE_SEEK_END:
+			memfiles[f].currposition = (void*)((s32)memfiles[f].end + (1 - offset));
 			break;
 		}
-		return (s32)memfiles[f].position - (s32)memfiles[f].start;
+		return (s32)memfiles[f].currposition - (s32)memfiles[f].start;
 	}
 	else
 	{
-		return NuDatFileSeek(handle, off, whence);
+		return NuDatFileSeek(handle, offset, origin);
 	}
 }
 
 // I completely redid a part of this function, I hope it's right.
-s64 NuFilePos(fileHandle handle)
+s32 NuFilePos(fileHandle handle)
 {
 	if (handle < 0x400)
 	{
-		u32 ret = thisbytesread;
+		s32 ret = thisbytesread;
 		if (fpointers[handle - 1] != NULL)
 		{
 			ret = ftell(fpointers[handle - 1]);
@@ -247,20 +266,21 @@ s64 NuFilePos(fileHandle handle)
 	}
 }
 
-s32 NuFileSeek(fileHandle handle, s64 off, s32 whence)
+s32 NuFileSeek(fileHandle handle, s32 offset, s32 origin)
 {
 	if (handle < 0x400)
 	{
-		if (whence == SEEK_CUR)
+		if (origin == NUFILE_SEEK_CURRENT)
 		{
-			off -= bytesleft;
+		    printf("seek curr...\n");
+			offset -= bytesleft;
 		}
 		bytesleft = 0;
-		return fseek(fpointers[handle - 1], off, whence);
+		return fseek(fpointers[handle - 1], offset, origin);
 	}
 	else
 	{
-		return NuMemFileSeek(handle, off, whence);
+		return NuMemFileSeek(handle, offset, origin);
 	}
 }
 
@@ -269,16 +289,23 @@ s32 NuFileSize(char* fileName)
 	s32 ret = -1;
 	if (fileName != NULL && *fileName != 0)
 	{
-		if (NuFileExists(fileName))
-		{
-			fileHandle handle = NuFileOpen(fileName, ReadBinary);
-			if (handle != NULL)
+	    s32 check = NuFileExists(fileName);
+	    if (check != 0)
+        {
+            printf("file exist...\n");
+            fileHandle handle = NuFileOpen(fileName, NUFILE_READ);
+            if (handle != NULL)
 			{
-				NuFileSeek(handle, 0, SEEK_END);
+				NuFileSeek(handle, 0, NUFILE_SEEK_END);
 				ret = NuFilePos(handle);
 				NuFileClose(handle);
 			}
-		}
+        }
+		else
+        {
+            printf("file non-existent...\n");
+            return 0;
+        }
 	}
 	return ret;
 }
@@ -289,7 +316,7 @@ void* NuFileLoad(char* fileName)
 	s32 size = NuFileSize(fileName);
 	if (size > 0)
 	{
-		fileHandle handle = NuFileOpen(fileName, ReadBinary);
+		fileHandle handle = NuFileOpen(fileName, NUFILE_READ);
 		if (handle != NULL)
 		{
 			dest = NuMemAlloc(size);
@@ -303,33 +330,38 @@ void* NuFileLoad(char* fileName)
 	return dest;
 }
 
-size_t NuFileLoadBuffer(char* fileName, void* dest, s32 maxSize)
+s32 NuFileLoadBuffer(char* fileName, void* dest, s32 maxSize)
 {
-	size_t size = NuFileSize(fileName);
+	s32 size = NuFileSize(fileName);
 	if (size == 0)
 	{
-		error_func e = NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 306);
+		printf("file size: %d\n", size);
+		error_func e = NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 321);
 		e("File %s does not exist!", fileName);
 	}
 	if (size > maxSize)
 	{
-		error_func e = NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 309);
+		printf("file size: %d\n", size);
+		error_func e = NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 327);
 		e("Super Buffer out of space!");
+
 	}
 	else if (size != 0)
 	{
-		fileHandle handle = NuFileOpen(fileName, ReadBinary);
+		fileHandle handle = NuFileOpen(fileName, NUFILE_READ);
 		if (handle != NULL)
 		{
+			printf("filebuffer reading...\n");
 			NuFileRead(handle, &dest, size);
 			NuFileClose(handle);
 			return size;
+
 		}
 	}
 	return 0;
 }
 
-size_t NuFileRead(fileHandle handle, void* dest, size_t size)
+s32 NuFileRead(fileHandle handle, void* data, s32 size)
 {
 	if (handle < 0x400)
 	{
@@ -350,40 +382,40 @@ size_t NuFileRead(fileHandle handle, void* dest, size_t size)
 		datacounter += size;
 		if (size > bytesleft)
 		{
-			memcpy(dest, bpointer, bytesleft);
-			void* tmp = (void*)((u32)dest + bytesleft);
+			//memcpy(data, bpointer, bytesleft);      //causes crash
+			u8* tmp = (u8*)((s32)data + bytesleft);
 			thisbytesread += size;
 			u32 read = size - bytesleft;
 			size = bytesleft;
 			while (read > 0x10000)
 			{
 				read -= 0x10000;
-				size_t dat = fread(filebuffer, 1, 0x10000, fpointers[f]);
+				u32 dat = fread(filebuffer, 1, 0x10000, fpointers[f]);
 				size += dat;
-				memcpy(tmp, filebuffer, 0x10000);
-				tmp = (void*)((u32)tmp + 0x10000);
+				//memcpy(tmp, filebuffer, 0x10000);   //causes crash
+				tmp = (u8*)((u32)tmp + 0x10000);
 			}
 			bytesleft = 0;
 			if (read > 0)
 			{
-				size_t dat = fread(filebuffer, 1, 0x10000, fpointers[f]);
-				memcpy(tmp, filebuffer, read);
+				u32 dat = fread(filebuffer, 1, 0x10000, fpointers[f]);
+				//memcpy(tmp, filebuffer, read);  //causes crash
 				size += dat;
 				bytesleft = dat - read;
-				bpointer = (void*)((u32)filebuffer + read);
+				bpointer = ((u32)filebuffer + read);
 			}
 		}
 		else
 		{
-			memcpy(dest, bpointer, size);
-			bpointer = (void*)((u32)bpointer + size);
+			//memcpy(data, bpointer, size);   //causes crash
+			bpointer = ((u32)bpointer + size);
 			bytesleft -= size;
 			thisbytesread += size;
 		}
 	}
 	else
 	{
-		size = NuMemFileRead(handle, dest, size);
+		size = NuMemFileRead(handle, data, size);
 	}
 	return size;
 }
@@ -395,6 +427,7 @@ void NuStartLoadScreen(s32 screen)
 		loadscreen = screen;
 		datacounter = 0;
 		datafull = screen;
+		return;
 	}
 	else
 	{
@@ -402,12 +435,16 @@ void NuStartLoadScreen(s32 screen)
 		datacounter = 0;
 		datafull = 0;
 	}
+
+	return;
 }
 
 void NuStopLoadScreen()
 {
 	loadscreen = -1;
 	loadscreenfadedir = 0;
+
+	return;
 }
 
 f32 NuFileReadFloat(fileHandle handle)
@@ -438,25 +475,25 @@ char NuFileReadChar(fileHandle handle)
 	return tmp;
 }
 
-u32 NuFileBeginBlkRead(fileHandle handle, u32 magic)
+s32 NuFileBeginBlkRead(fileHandle handle, s32 blkType)
 {
-	u32 currBlock = blkcnt;
+	s32 currBlock = blkcnt;
 	blkcnt++;
-	s64 pos = NuFilePos(handle);
-	if (currBlock < 2 || pos < blkinfo[currBlock - 1].pos + blkinfo[currBlock - 1].size)
+	s32 pos = NuFilePos(handle);
+	if (currBlock < 2 || pos < blkinfo[currBlock - 1].pos + blkinfo[currBlock - 1].hdr.size)
 	{
-		blkinfo[currBlock - 1].pos = pos;
+		blkinfo[currBlock].pos = pos; //old: blkinfo[currBlock - 1].pos = pos;
 		NuFileRead(handle, blkinfo + currBlock, 8);
-		if (blkinfo[currBlock].size < 0)
+		if (blkinfo[currBlock].hdr.size < 0)
 		{
-			blkinfo[currBlock].size = -blkinfo[currBlock].size;
+			blkinfo[currBlock].hdr.size = -blkinfo[currBlock].hdr.size;
 		}
-		if (magic != 0 && magic != blkinfo[currBlock].magic)
+		if (blkType != 0 && blkType != blkinfo[currBlock].hdr.blk)
 		{
-			error_func e = NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 455);
+			error_func e = NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 471);
 			e("NuFileBeginBlkRead : Block header mismatch!");
 		}
-		return blkinfo[currBlock].magic;
+		return blkinfo[currBlock].hdr.blk;
 	}
 	else
 	{
@@ -466,30 +503,33 @@ u32 NuFileBeginBlkRead(fileHandle handle, u32 magic)
 	}
 }
 
-void NuFileEndBlkRead(fileHandle handle)
+s32 NuFileEndBlkRead(fileHandle handle)
 {
 	blkcnt--;
-	s64 pos = NuFilePos(handle);
-	u32 blkEnd = blkinfo[blkcnt].pos + blkinfo[blkcnt].size;
+	s32 pos = NuFilePos(handle);
+	s32 blkEnd = blkinfo[blkcnt].pos + blkinfo[blkcnt].hdr.size;
 	if (pos != blkEnd)
 	{
-		NuFileSeek(handle, blkEnd, SEEK_SET);
+		pos = NuFileSeek(handle, blkEnd, NUFILE_SEEK_START);
 	}
+
+	return pos;
 }
 
-void NuDatClose(DatFile* datFile)
+void NuDatClose(struct nudathdr_s* ndh)
 {
-	NuFileClose(datFile->handle);
-	if (datFile->fileId)
+	NuFileClose(ndh->fh);
+	if (ndh->finfo->foffset) //fileid
 	{
-		datfiles[datFile->fileId - 0x800].open = 0;
+		datfiles[ndh->finfo->foffset - 0x800].used = 0;
 	}
-	if (datFile->managedMem)
+	if (ndh->intalloc) //managedmem
 	{
-		if (datFile->data != NULL)
+		if (ndh->memdatptr != NULL)
 		{
-			NuMemFree(datFile->data);
+			NuMemFree(ndh->memdatptr);
 		}
-		NuMemFree(datFile);
+		NuMemFree(ndh);
 	}
+	return;
 }

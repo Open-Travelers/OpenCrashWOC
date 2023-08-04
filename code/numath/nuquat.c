@@ -1,8 +1,9 @@
 #include "nuquat.h"
 #include "nu_asm.h"
 
-void NuMtxToQuat(Mtx* m, Quat* q)
+void NuMtxToQuat(struct Mtx* m, struct Quat* q)
 {
+    struct Quat tmp;
 	f32 qw2 = m->m11 + m->m22 + m->m33;
 	s32 weight[3];
 	weight[0] = 1;
@@ -19,8 +20,8 @@ void NuMtxToQuat(Mtx* m, Quat* q)
 		s32 p2 = weight[p1];
 		f32 qw2P2 = NuFsqrt((((&m->m11)[mode * 5] - ((&m->m11)[p1 * 5] + (&m->m11)[p2 * 5])) + 1.0));
 		qw2 = qw2P2;
-		Quat tmp;
-		(&tmp.v.x)[mode] = qw2 * 0.5;
+
+		(&tmp.x)[mode] = qw2 * 0.5;
 		if (qw2 != 0.0)
 		{
 			qw2 = 0.5 / qw2;
@@ -28,29 +29,29 @@ void NuMtxToQuat(Mtx* m, Quat* q)
 		f32 f1 = (&m->m11)[p2 * 4 + mode];
 		f32 f2 = (&m->m11)[mode * 4 + p2];
 		tmp.w = ((&m->m11)[p1 * 4 + p2] - (&m->m11)[p2 * 4 + p1]) * qw2;
-		(&tmp.v.x)[p1] = ((&m->m11)[mode * 4 + p1] + (&m->m11)[p1 * 4 + mode]) * qw2;
-		(&tmp.v.x)[p2] = (f2 + f1) * qw2;
-		(q->v).x = tmp.v.x;
+		(&tmp.x)[p1] = ((&m->m11)[mode * 4 + p1] + (&m->m11)[p1 * 4 + mode]) * qw2;
+		(&tmp.x)[p2] = (f2 + f1) * qw2;
+		q->x = tmp.x;
 		q->w = tmp.w;
-		(q->v).y = tmp.v.y;
-		(q->v).z = tmp.v.z;
+		q->y = tmp.y;
+		q->z = tmp.z;
 	}
 	else
 	{
 		f32 qw2P2 = sqrt((qw2 + 1.0));
 		qw2 = 0.5 / qw2P2;
 		q->w = qw2P2 * 0.5;
-		(q->v).x = (m->m23 - m->m32) * qw2;
-		(q->v).y = (m->m31 - m->m13) * qw2;
-		(q->v).z = (m->m12 - m->m21) * qw2;
+		q->x = (m->m23 - m->m32) * qw2;
+		q->y = (m->m31 - m->m13) * qw2;
+		q->z = (m->m12 - m->m21) * qw2;
 	}
 }
 
-void NuQuatToMtx(Quat* q, Mtx* m)
+void NuQuatToMtx(struct Quat* q, struct Mtx* m)
 {
-	f32 x = q->v.x;
-	f32 y = q->v.y;
-	f32 z = q->v.z;
+	f32 x = q->x;
+	f32 y = q->y;
+	f32 z = q->z;
 	f32 w = q->w;
 	m->m44 = 1.0;
 	f32 y2 = y * y;
@@ -79,41 +80,41 @@ void NuQuatToMtx(Quat* q, Mtx* m)
 	m->m32 = yz - xw;
 }
 
-void NuQuatMul(Quat* dest, Quat* a, Quat* b)
+void NuQuatMul(struct Quat* dest, struct Quat* a, struct Quat* b)
 {
-	dest->w = ((a->w * b->w - a->v.x * b->v.x) - a->v.y * b->v.y) - a->v.z * b->v.z;
-	dest->v.x = (a->v.y * b->v.z + a->w * b->v.x + a->v.x * b->w) - a->v.z * b->v.y;
-	dest->v.y = (a->v.z * b->v.x + a->w * b->v.y + a->v.y * b->w) - a->v.x * b->v.z;
-	dest->v.z = (a->v.x * b->v.y + a->w * b->v.z + a->v.z * b->w) - a->v.y * b->v.x;
+	dest->w = ((a->w * b->w - a->x * b->x) - a->y * b->y) - a->z * b->z;
+	dest->x = (a->y * b->z + a->w * b->x + a->x * b->w) - a->z * b->y;
+	dest->y = (a->z * b->x + a->w * b->y + a->y * b->w) - a->x * b->z;
+	dest->z = (a->x * b->y + a->w * b->z + a->z * b->w) - a->y * b->x;
 }
 
-void NuQuatNormalise(Quat* dest, Quat* q)
+void NuQuatNormalise(struct Quat* dest, struct Quat* q)
 {
-	f32 mag = q->v.x * q->v.x + q->v.y * q->v.y + q->v.z * q->v.z + q->w * q->w;
+	f32 mag = q->x * q->x + q->y * q->y + q->z * q->z + q->w * q->w;
 	if (mag <= 0)
 	{
-		dest->v.x = q->v.x;
-		dest->v.y = q->v.y;
-		dest->v.z = q->v.z;
+		dest->x = q->x;
+		dest->y = q->y;
+		dest->z = q->z;
 		dest->w = q->w;
 	}
 	else
 	{
 		mag = NuFsqrt(mag);
 		f32 scale = 1.0 / mag;
-		dest->v.x = q->v.x * scale;
-		dest->v.y = q->v.y * scale;
-		dest->v.z = q->v.z * scale;
+		dest->x = q->x * scale;
+		dest->y = q->y * scale;
+		dest->z = q->z * scale;
 		dest->w = q->w * scale;
 	}
 }
 
-void NuQuatSlerp(f32 alpha, Quat* dest, Quat* a, Quat* b)
+void NuQuatSlerp(f32 alpha, struct Quat* dest, struct Quat* a, struct Quat* b)
 {
-	f32 mag = a->v.x * a->v.x + a->v.y * a->v.y + a->v.z * a->v.z + a->w * a->w;
-	f32 x = b->v.x;
-	f32 y = b->v.y;
-	f32 z = b->v.z;
+	f32 mag = a->x * a->x + a->y * a->y + a->z * a->z + a->w * a->w;
+	f32 x = b->x;
+	f32 y = b->y;
+	f32 z = b->z;
 	f32 w = b->w;
 	if (mag < 0.0)
 	{
@@ -137,8 +138,8 @@ void NuQuatSlerp(f32 alpha, Quat* dest, Quat* a, Quat* b)
 		rot = sin(alpha * ac);
 		alpha = rot / s;
 	}
-	dest->v.x = mag * a->v.x + alpha * x;
-	dest->v.y = mag * a->v.y + alpha * y;
-	dest->v.z = mag * a->v.z + alpha * z;
+	dest->x = mag * a->x + alpha * x;
+	dest->y = mag * a->y + alpha * y;
+	dest->z = mag * a->z + alpha * z;
 	dest->w = mag * a->w + alpha * w;
 }

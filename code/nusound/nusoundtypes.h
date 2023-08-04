@@ -1,5 +1,5 @@
 #ifndef NUSOUNDTYPES_H
-#define NUSOUNDTYPE_H
+#define NUSOUNDTYPES_H
 
 #include "../types.h"
 

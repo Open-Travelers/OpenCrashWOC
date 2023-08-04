@@ -19,13 +19,13 @@
 #define UNIT_CIRCLE_PRECISION 513
 
 #define ANG_SIN(a) NuTrigTable[a]
-#define ANG_COS(a) NuTrigTable[(angle)(a + PIOV2)]
+#define ANG_COS(a) NuTrigTable[(a + PIOV2)]
 
 // Why do expensive trig when we can store it here?
-f32 NuTrigTable[NU_TRIG_TABLE_SIZE];
+extern f32 NuTrigTable[NU_TRIG_TABLE_SIZE];
 
 // Lookup table for converting unit length floats to angles.
-angle ang[UNIT_CIRCLE_PRECISION];
+extern angle ang[UNIT_CIRCLE_PRECISION];
 
 // Setup the sin lookup table.
 void NuTrigInit();

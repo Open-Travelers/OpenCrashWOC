@@ -8,10 +8,10 @@
 fileHandle edfile_handle;
 
 // Open the ed file.
-u32 EdFileOpen(char* filename);
+s32 EdFileOpen(char* filename);
 
 // Close the ed file.
-u32 EdFileClose();
+s32 EdFileClose();
 
 // Read from an ed file.
 void EdFileRead(void* dest, size_t size);
