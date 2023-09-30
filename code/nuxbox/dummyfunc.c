@@ -278,12 +278,99 @@ void NuPs2Init(void)
   return;
 }
 
-/*
-void NuGScnUpdate (float unkparam, struct nugscn_s * gscn)	//TODO
+//PS2
+void NuGScnUpdate(float param_1,struct nugscn_s *gsc)
 {
+    int iVar6;
+    int ani_ix;
+    struct nuinstance_s *inst_;
+    int ninst;
+    float unaff_f20;
+    struct nuanimtime_s atime;
+    struct numtx_s mtx;
+    struct nuinstanim_s* anim;
+    struct nuanimdata_s* instanim;
 
+    ninst = gsc->numinstance;
+    inst_ = &gsc->instances[ninst];
+    while (ninst != 0)
+    {
+        inst_--;
+        ninst--;
+        if ((gscn_dbg != 0) && (gscn_dbg != ninst)) {
+            continue;
+        }
+        
+        anim = inst_->anim;
+        iVar6 = inst_->flags.visitest;
+        if (inst_->flags.visible == 0) {
+            iVar6 = 0;
+        }
+        
+        if (iVar6 == 0) {
+            continue;
+        }
+        
+        if (inst_->anim == NULL) {
+            continue;
+        }
+        
+        if (gsc->instanimdata == NULL) {
+            continue;
+        }
+        
+        if (gsc->instanimdata[inst_->anim->anim_ix] == NULL) {
+            continue;
+        }
+
+        
+        instanim = gsc->instanimdata[inst_->anim->anim_ix];
+        if (anim->playing) {
+            anim->ltime += param_1 * anim->tfactor;
+            if ((anim->waiting) && (anim->tfirst <= anim->ltime)) {
+                anim->waiting = 0; 
+                anim->ltime -=  anim->tfactor - 1.0f;
+            }
+            
+            if (!anim->waiting) {
+                if ((instanim->time + anim->tinterval) <= anim->ltime) {
+                    if (anim->repeating) {
+                        while ((instanim->time + anim->tinterval) <= anim->ltime)
+                        {
+                            if (anim->oscillate) {
+                                anim->backwards = !anim->backwards;
+                            }
+                            anim->ltime = (anim->ltime + 1.0f) - (instanim->time + anim->tinterval);
+                        }
+                        unaff_f20 = anim->ltime;
+                    }
+                    else {
+                        anim->playing = 0;
+                        unaff_f20 = anim->ltime = instanim->time;
+                    }
+                }
+                else if (anim->ltime < unaff_f20) {
+                    unaff_f20 = anim->ltime;
+                }
+                else {
+                    unaff_f20 = instanim->time;
+                }
+                if (anim->backwards) {
+                    unaff_f20 = (instanim->time + 1.0f) - unaff_f20;
+                }
+            }
+        }
+        else {
+            unaff_f20 = anim->ltime;
+        }
+        
+        NuAnimDataCalcTime(instanim, unaff_f20, &atime);
+        NuAnimCurveSetApplyToMatrix(*instanim->chunks[atime.chunk]->animcurvesets, &atime, &mtx);
+        memcpy(&anim->mtx, &mtx, sizeof(struct numtx_s));
+        NuMtxTranslate(&anim->mtx, (struct NuVec *)&inst_->mtx._30);
+    }
+    return;
 }
-*/
 
 s32 frame_counter;
 void NuInitFrameAdvance(void)

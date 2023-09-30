@@ -1,3 +1,32 @@
+s32 MAXVPSIZEX;
+s32 MINVPSIZEX;
+s32 MAXVPSIZEY;
+s32 MINVPSIZEY;
+s32 screendump;
+s32 save_paused;
+s32 editor_active;
+
+//PS2
+void GameVP(void)
+{
+    s32 paused;
+    if (screendump != 0) {
+        paused = save_paused;
+    } else {
+        paused = Paused;
+    }
+    
+    if (editor_active != 0 || ((paused != 0) && (Cursor.menu - 3 >= 6u))) {
+        NuVpSetSize(MAXVPSIZEX * 16, MAXVPSIZEY * 8);
+    }
+    else {
+        NuVpSetSize((MAXVPSIZEX * 0x10 + ((MINVPSIZEX * 0x10 + MAXVPSIZEX * -0x10) * paused) / 0x1e),
+                (MAXVPSIZEY * 8 + ((MINVPSIZEY * 8 + MAXVPSIZEY * -8) * paused) / 0x1e));
+    }
+    return;
+}
+
+
 void DrawPanel(void)
 
 {
