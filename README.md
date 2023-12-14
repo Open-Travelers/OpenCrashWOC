@@ -3,7 +3,7 @@ An open-source rewrite of Crash Bandicoot: Wrath of Cortex using clean room reve
 
 ## Roadmap
 
-* Finish numath library (Almost done!).
+* Finish numath library (Done!).
 
 * Test numath library.
 
@@ -11,15 +11,15 @@ An open-source rewrite of Crash Bandicoot: Wrath of Cortex using clean room reve
 
 * Test nucore library.
 
-* Finish nu3dx library (Almost done!).
+* Finish nu3dx library (Done!).
 
 * Test nu3dx library.
 
 * Make dummy functions for nusound, nuraster, nuxbox, and system libraries.
 
-* Finish gamelib library (WIP).
+* Finish gamelib library (WIP, 150 functions left).
 
-* Finish gamecode.
+* Finish gamecode. (WIP)
 
 * Implement universal API for nusound, nuraster, nuxbox, and system libraries.
 
