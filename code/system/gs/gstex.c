@@ -1,263 +1,228 @@
 #include "gstex.h"
 
-
 static unsigned int GS_TexInitFlag;
 unsigned int GS_TexAllocs;
-static struct _GS_TEXTURE* GS_TexList;
 static unsigned int GS_NumTextures;
 s32 TexStages[4];
-enum GXTexWrapMode GS_TexWrapMode_s;
-enum GXTexWrapMode GS_TexWrapMode_t;
+s32 iss3cmp;
+static struct _GS_TEXTURE* GS_TexList;
+enum _GXTexWrapMode GS_TexWrapMode_t [4];
+enum _GXTexWrapMode GS_TexWrapMode_s [4];
 enum _GXTevStageID ShadowBodge = GX_TEVSTAGE0;
 enum _GXTevStageID maxstage_189 = GX_TEVSTAGE15 | GX_MAX_TEVSTAGE | 0; //GX_TEVSTAGE15 | GX_MAX_TEVSTAGE | FFFFFFE0h
 
-void GS_TexInit(void)
-{
-  int iVar1;
-  int iVar2;
+//NGC MATCH
+void GS_TexInit(void) {
+    s32 i;
+    
+    if (GS_TexInitFlag == 0) {
+        for (i = 0; i < 4; i++) {
+            TexStages[4] = 0;
+            GS_TexWrapMode_s[i] = GS_TexWrapMode_t[i] = 1;
+        }
+        GS_TexList = (struct _GS_TEXTURE *)malloc(0x13000);
+        memset(GS_TexList,0,0x13000);
+        GS_NumTextures = 0;
+        GS_TexInitFlag = 1;
+    }
+    return;
+}
 
-  if (GS_TexInitFlag == 0) {
-    iVar2 = 4;
-    iVar1 = 0;
-    do {
-      //*(undefined4 *)((int)&GS_TexWrapMode_t + iVar1) = 1;
-      //*(undefined4 *)((int)&GS_TexWrapMode_s + iVar1) = 1;
-      //DAT_80214b70 = 0;
-      iVar1 = iVar1 + 4;
-      iVar2 = iVar2 + -1;
-    } while (iVar2 != 0);
-    GS_TexList = (struct _GS_TEXTURE *)malloc(0x13000);
+
+// Re-initialize textures.	//NGC MATCH
+void GS_TexReInit(void) {
+    s32 i;
+    struct _GS_TEXTURE *GSTex;
+    
+    
+    if (GS_TexInitFlag != 0) {
+        GSTex = GS_TexList;
+        for (i = 0; i < 4; i++) {
+           TexStages[4] = 0;
+           GS_TexWrapMode_s[i] = GS_TexWrapMode_t[i] = 1;
+        }
+    
+        for (i = 0; i < 0x400; i++) {
+            if (GSTex->Flags == -1) {
+                free((void *)GSTex->TexBits);
+            }
+            GSTex = GSTex + 1;
+        }
+    }
     memset(GS_TexList,0,0x13000);
     GS_NumTextures = 0;
-    GS_TexInitFlag = 1;
-  }
-  return;
+    GS_TexAllocs = 0;
+    return;
+}
+
+/*
+    int nBlkWidth; //
+    int nBlkHeight; //
+    int nOutByte; //
+    unsigned int* pTxtDWords; //
+    int x; //
+    int y; //
+    int w; //
+    int h; //
+    int nBlockY; //
+    int nBlockY; //
+*/
+//MATCH GCN
+void GS_TexSwizzleRGB5A3(s32 nWidth,s32 nHeight,s32 *TxtBuf,char *Buf) {
+    s32 w;
+    s32 fixedH;
+    s32 h;
+    s32 iVar4;
+    s32 iVar7;
+    u32 uVar8;
+    u32 uVar9;
+    s32 iVar10;
+    s32 iVar11;
+    s32 iVar12;
+
+    s32 fixedW = nWidth;
+    if (fixedW < 0) {
+        fixedW = fixedW + 3;
+    }
+    w = fixedW >> 2;
+
+    fixedH = nHeight;
+    if (fixedH < 0) {
+        fixedH = fixedH + 3;
+    }
+    h = fixedH >> 2;
+
+    iVar4 = 0;
+    for (iVar11 = 0; iVar11 < h; iVar11++) {
+        for(iVar10 = 0; iVar10 < w; iVar10++) {
+            for(iVar7 = 0; iVar7 < 4; iVar7++) {
+                for(iVar12 = 0; iVar12 < 4; iVar12++) {
+                    uVar9 = TxtBuf[(iVar10*4) + (iVar11 * 4 + iVar7) * nWidth + iVar12];
+                    if ((uVar9 >> 29) == 7) {
+                        uVar8 = 0x8000 | ((uVar9 >> 19) & 0x1f) | ((uVar9 >> 6) & 0x3e0) |
+                                ((uVar9 & 0xf8) << 7);
+                    }
+                    else {
+                        uVar8 = (uVar9 >> 20) & 0xF | (uVar9 >> 8) & 0xf0 |
+                                ((uVar9 & 0xf0) << 4) | (uVar9 >> 17) & 0x7000;
+                    }
+                    Buf[iVar4++] = uVar8 >> 8;
+                    Buf[iVar4++] = uVar8;
+                }
+            }
+        }
+    }
+    return;
 }
 
 
-// Re-initialize textures.
-void GS_TexReInit(void)		// TODO!!!
+//NGC MATCH
+void GS_TexCreateNU(enum nutextype_e type,u32 width,u32 height, u8 *bits,u32 MipLevels,u32 rendertargetflag, s32 theirid) {
+    u8 *newbits;
+    s32 i;
+    struct _GS_TEXTURE* pTex;
+    //s32 size;
 
-{
-  int i;
-  struct _GS_TEXTURE *GSTex;
-  int j;
-
-  GSTex = GS_TexList;
-  if (GS_TexInitFlag != 0) {
-    j = 4;
-    i = 0;
-    do {
-      /* *(undefined4 *)((int)&GS_TexWrapMode_t + i) = 1;
-      *(undefined4 *)((int)&GS_TexWrapMode_s + i) = 1;
-      DAT_80214b70 = 0;*/
-      i = i + 4;
-      j = j + -1;
-    } while (j != 0);
-    i = 0x400;
-    do {
-      if (GSTex->Flags == -1) {
-        free((void *)GSTex->TexBits);
-      }
-      //GSTex = GSTex + 1;
-      i = i + -1;
-    } while (i != 0);
-  }
-  memset(GS_TexList,0,0x13000);
-  GS_TexAllocs = 0;
-  GS_NumTextures = 0;
-  return;
-}
-
-
-void GS_TexSwizzleRGB5A3(int width,int height,void *param_3,void *param_4)
-
-{
-  /*int iVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
-  u32 *puVar5;
-  int iVar6;
-  int iVar7;
-  u16 uVar8;
-  u32 uVar9;
-  int iVar10;
-  int iVar11;
-  int iVar12;
-
-  iVar2 = width;
-  if (width < 0) {
-    iVar2 = width + 3;
-  }
-  if (height < 0) {
-    height = height + 3;
-  }
-  iVar4 = 0;
-  iVar6 = 0;
-  if (0 < height >> 2) {
-    do {
-      iVar10 = 0;
-      iVar11 = iVar6 + 1;
-      if (0 < iVar2 >> 2) {
-        do {
-          iVar1 = iVar10 * 4;
-          iVar7 = 0;
-          iVar10 = iVar10 + 1;
-          do {
-            iVar3 = iVar6 * 4 + iVar7;
-            iVar7 = iVar7 + 1;
-            iVar12 = 4;
-            puVar5 = (uint *)((iVar1 + iVar3 * width) * 4 + (int)param_3);
-            do {
-              uVar9 = *puVar5;
-              puVar5 = puVar5 + 1;
-              uVar8 = (ushort)(uVar9 >> 0x10);
-              if (uVar9 >> 0x1d == 7) {
-                uVar8 = uVar8 >> 3 & 0x1f | (ushort)(uVar9 >> 6) & 0x3e0 | 0x8000 |
-                        (ushort)((uVar9 & 0xf8) << 7);
-              }
-              else {
-                uVar8 = uVar8 >> 4 & 0xf | (ushort)(uVar9 >> 8) & 0xf0 |
-                        (ushort)((uVar9 & 0xf0) << 4) | uVar8 >> 1 & 0x7000;
-              }
-              *(char *)((int)param_4 + iVar4) = (char)(uVar8 >> 8);
-              *(char *)((int)param_4 + iVar4 + 1) = (char)uVar8;
-              iVar4 = iVar4 + 2;
-              iVar12 = iVar12 + -1;
-            } while (iVar12 != 0);
-          } while (iVar7 < 4);
-        } while (iVar10 < iVar2 >> 2);
-      }
-      iVar6 = iVar11;
-    } while (iVar11 < height >> 2);
-  }
-  return;*/
-}
-
-
-s32 iss3cmp;
-
-void GS_TexCreateNU(enum nutextype_e type,int width,int height,void *bits,int mmcnt,int rendertargetflag, int tpid)
-{
-  void *mmalloc;
-  struct _GXTexObj *obj;
-  enum _GXTexFmt format;
-  int i;
-  struct _GS_TEXTURE* texlist;
-  size_t size;
-
-  texlist = GS_TexList;
-  if (iss3cmp == 0) {
-    if (type == 0x80) {
-      mmalloc = malloc(mmcnt);
-      GS_TexAllocs = GS_TexAllocs + mmcnt;
-      memcpy(mmalloc,bits,mmcnt);
-      DCFlushRange(mmalloc,mmcnt);
-      for (i = 0; i < 0x400; i = i + 1) {
-        if (texlist->Flags == 0) {
-          texlist->Pad = 0xe;
-          obj = &texlist->Tex;
-          texlist->Format = 0x80;
-          texlist->NUID = tpid;
-          texlist->Width = width;
-          texlist->Height = height;
-          format = GX_CTF_RA8;
-          goto LAB_800cbc0c;
+    pTex = GS_TexList;
+    if (iss3cmp != 0) {
+        newbits = (void *)malloc(iss3cmp);
+        GS_TexAllocs = GS_TexAllocs + iss3cmp;
+        memcpy(newbits,(void *)((s32)bits + 0xc),iss3cmp);
+        DCFlushRange(newbits,iss3cmp);
+        for (i = 0; i < 0x400; i++, pTex++) {
+            if (pTex->Flags != 0) {
+                pTex->Flags = -1;
+                pTex->Pad = 0xe;
+                pTex->Format = type;
+                pTex->NUID = theirid;
+                pTex->Width = width;
+                pTex->Height = height;
+                pTex->TexBits = (u32)newbits;
+                GXInitTexObj(&pTex->Tex,newbits,width,height,0xE,0,0,'\0');
+                break;
+            }
         }
-        texlist = texlist + 1;
-      }
-    }
-    else if (type == 0x81) {
-      size = width * height * 2;
-      mmalloc = malloc(size);
-      GS_TexAllocs = GS_TexAllocs + size;
-      DCFlushRange(bits,size);
-      memcpy(mmalloc,bits,size);
-      DCFlushRange(mmalloc,size);
-      for (i = 0; i < 0x400; i = i + 1) {
-        if (texlist->Flags == 0) {
-          texlist->Pad = 5;
-          obj = &texlist->Tex;
-          texlist->Format = 0x81;
-          texlist->NUID = tpid;
-          texlist->Width = width;
-          texlist->Height = height;
-          format = GX_TF_RGB565;
-          goto LAB_800cbc0c;
+    } else if (type == 0x80) {
+        newbits = (void *)malloc(MipLevels);
+        GS_TexAllocs = GS_TexAllocs + MipLevels;
+        memcpy(newbits,bits,MipLevels);
+        DCFlushRange(newbits,MipLevels);
+        for (i = 0; i < 0x400; i++, pTex++) {
+            if (pTex->Flags == 0) {
+                pTex->Flags = -1;
+                pTex->Pad = 0xe;
+                pTex->Format = type;
+                pTex->NUID = theirid;
+                pTex->Width = width;
+                pTex->Height = height;
+                pTex->TexBits = (u32)newbits;
+                GXInitTexObj(&pTex->Tex,newbits,width,height,0xE,0,0,'\0');
+                break;
+            }
         }
-        texlist = texlist + 1;
-      }
-    }
-    else if (type == 0x82) {
-      size = width * height * 4;
-      mmalloc = malloc(size);
-      GS_TexAllocs = GS_TexAllocs + size;
-      DCFlushRange(bits,size);
-      memcpy(mmalloc,bits,size);
-      DCFlushRange(mmalloc,size);
-      for (i = 0; i < 0x400; i = i + 1) {
-        if (texlist->Flags == 0) {
-          texlist->Pad = 6;
-          obj = &texlist->Tex;
-          texlist->Format = 0x82;
-          texlist->NUID = tpid;
-          texlist->Width = width;
-          texlist->Height = height;
-          format = GX_TF_RGB5A3;
-          goto LAB_800cbc0c;
+    } else if (type == 0x81) {
+        s32 size = width * height * 2;
+        newbits = (void *)malloc(size);
+        GS_TexAllocs = GS_TexAllocs + size;
+        DCFlushRange(bits,size);
+        memcpy(newbits,bits,size);
+        DCFlushRange(newbits,size);
+        for (i = 0; i < 0x400; i++, pTex++) {
+            if (pTex->Flags == 0) {
+                pTex->Flags = -1;
+                pTex->Pad = 5;
+                pTex->Format = type;
+                pTex->NUID = theirid;
+                pTex->Width = width;
+                pTex->Height = height;
+                pTex->TexBits = (u32)newbits;
+                GXInitTexObj(&pTex->Tex,newbits,width,height,5,0,0,'\0');
+                break;
+            }
         }
-        texlist = texlist + 1;
-      }
-    }
-    else {
-      size = width * height * 2;
-      mmalloc = malloc(size);
-      GS_TexAllocs = GS_TexAllocs + size;
-      DCFlushRange(bits,width * height * 4);
-      GS_TexSwizzleRGB5A3(width,height,bits,mmalloc);
-      DCFlushRange(mmalloc,size);
-      for (i = 0; i < 0x400; i = i + 1) {
-        if (texlist->Flags == 0) {
-          texlist->Pad = 5;
-          texlist->Format = type;
-          texlist->NUID = tpid;
-          texlist->Width = width;
-          texlist->Height = height;
-          texlist->TexBits = (u32)mmalloc;
-          texlist->Flags = -1;
-          GXInitTexObj(&texlist->Tex,mmalloc,width & 0xffff,height & 0xffff,GX_TF_RGB565,GX_CLAMP, GX_CLAMP,'\0');
-          break;
+    } else if (type == 0x82) {
+        s32 size = width * height * 4;
+        newbits = (void *)malloc(size);
+        GS_TexAllocs = GS_TexAllocs + size;
+        DCFlushRange(bits,size);
+        memcpy(newbits,bits,size);
+        DCFlushRange(newbits, size);
+        for (i = 0; i < 0x400; i++, pTex++) {
+            if (pTex->Flags == 0) {
+                pTex->Flags = -1;
+                pTex->Pad = 6;
+                pTex->Format = type;
+                pTex->NUID = theirid;
+                pTex->Width = width;
+                pTex->Height = height;
+                pTex->TexBits = (u32)newbits;
+                GXInitTexObj(&pTex->Tex, newbits, width, height, 6, 0, 0, '\0');
+                break;
+            }
         }
-        texlist = texlist + 1;
-      }
+    } else {
+        s32 size = width * height * 2;
+        newbits = (void *)malloc(size);
+        GS_TexAllocs = GS_TexAllocs + size;
+        DCFlushRange(bits,width * height * 4);
+        GS_TexSwizzleRGB5A3(width,height,(void*)bits,newbits);
+        DCFlushRange(newbits,size);
+        for (i = 0; i < 0x400; i++, pTex++) {
+            if (pTex->Flags == 0) {
+                pTex->Flags = -1;
+                pTex->Pad = 5;
+                pTex->Format = type;
+                pTex->Width = width;
+                pTex->NUID = theirid;
+                pTex->Height = height;
+                pTex->TexBits = (u32)newbits;
+                GXInitTexObj(&pTex->Tex,newbits,width,height,5,0, 0,'\0');
+                break;
+            }
+        }
     }
-  }
-  else {
-    mmalloc = malloc(iss3cmp);
-    GS_TexAllocs = GS_TexAllocs + iss3cmp;
-    memcpy(mmalloc,(void *)((int)bits + 0xc),iss3cmp);
-    DCFlushRange(mmalloc,iss3cmp);
-    for (i = 0; i < 0x400; i = i + 1) {
-      if (texlist->Flags == 0) {
-        texlist->Pad = 0xe;
-        obj = &texlist->Tex;
-        texlist->Format = type;
-        texlist->NUID = tpid;
-        texlist->Width = width;
-        texlist->Height = height;
-        format = GX_CTF_RA8;
-LAB_800cbc0c:
-        texlist->TexBits = (u32)mmalloc;
-        texlist->Flags = -1;
-        GXInitTexObj(obj,mmalloc,width & 0xffff,height & 0xffff,format,GX_CLAMP,GX_CLAMP,'\0');
-        break;
-      }
-      texlist = texlist + 1;
-    }
-  }
-  GS_NumTextures = GS_NumTextures + 1;
-  return;
+    GS_NumTextures++;
+    return;
 }
 
 void DCFlushRange (void* arg0, u32 arg1)
@@ -292,8 +257,7 @@ void DCFlushRange(s32 arg0, u32 arg1) {
 
 */
 
-
-UNKTYPE GXInitTexObj(struct _GXTexObj * obj, UNKTYPE *image, u16 width, u32 height, enum _GXTexFmt texFormat, enum GXTexWrapMode wrapModeS, enum GXTexWrapMode wrapModeT, char mipmap) //correct?
+void GXInitTexObj(struct _GXTexObj * obj, void* image_ptr, u16 width, u16 height, enum _GXTexFmt texFormat, enum _GXTexWrapMode wrapModeS, enum _GXTexWrapMode wrapModeT, char mipmap)
 {
    return;
    /*
@@ -398,21 +362,20 @@ void GS_ChangeTextureStates(int id)
   return;
 }
 
+//MATCH NGC
+void GS_TexSetWrapModes(int id,enum _GXTexWrapMode mode) {
 
-void GS_TexSetWrapModes(int id,enum GXTexWrapMode mode)
-{
   if (id < 4) {
-    (&GS_TexWrapMode_s)[id] = mode;
+    GS_TexWrapMode_s[id] = mode;
     GS_ChangeTextureStates(id);
   }
   return;
 }
 
-void GS_TexSetWrapModet(int id,enum GXTexWrapMode mode)
-
-{
+//MATCH NGC
+void GS_TexSetWrapModet(int id,enum _GXTexWrapMode mode) {
   if (id < 4) {
-    (&GS_TexWrapMode_t)[id] = mode;
+    GS_TexWrapMode_t[id]= mode;
     GS_ChangeTextureStates(id);
   }
   return;

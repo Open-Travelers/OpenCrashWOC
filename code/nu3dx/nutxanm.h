@@ -3,6 +3,7 @@
 
 #include "../types.h"
 #include "nu3dxtypes.h"
+#include "nucore/nucoretypes.h"
 
 /*
   800ba124 000064 800ba124  4 NuTexAnimProgSysInit 	Global
@@ -43,11 +44,6 @@
 */
 
 
-struct nutexanimprog_s* sys_progs;
-struct nutexanimlist_s ntalsysbuff[64];
-struct nutexanimlist_s* ntal_first;
-struct nutexanimlist_s* ntal_free;
-static struct nutexanimprog_s* parprog;
 static u32 nta_sig_on;
 static u32 nta_sig_off;
 static u32 nta_sig_old;
@@ -57,30 +53,28 @@ u32 texanimbits;
 static char xdeflabtab[21][256];
 static s32 xdeflabtabcnt;
 static s32 labtabcnt;
-static texanimscripts texanmscripts[24];
-static nufpcomjmp_s nutexanimcomtab[19];
 
 
 // Size: 0x10
-struct
+struct texanimscripts_s
 {
     char* path;
     int pad1;
-    <unknown type 0x8208> levbits; //UNK TYPE
-} texanimscripts;
+    unsigned long long levbits; //UNK TYPE
+};
 
 
 
 // Size: 0x20
 struct nutexanim_s
 {
-    nutexanim_s* succ;
-    nutexanim_s* prev;
+    struct nutexanim_s* succ;
+    struct nutexanim_s* prev;
     short* tids;
     short numtids;
     short dynalloc : 1; // Offset: 0xE, Bit Offset: 0, Bit Size: 1
-    numtl_s* mtl; // Offset: 0x10
-    nutexanimenv_s* env;
+    struct numtl_s* mtl; // Offset: 0x10
+    struct nutexanimenv_s* env;
     char* ntaname;
     char* scriptname;
 };
@@ -88,7 +82,7 @@ struct nutexanim_s
 // Size: 0xEC
 struct nutexanimenv_s
 {
-    nutexanimprog_s* prog;
+    struct nutexanimprog_s* prog;
     int pc;
     int rep_count[16];
     int rep_start[16];
@@ -98,7 +92,7 @@ struct nutexanimenv_s
     int pause;
     int pause_r;
     int pause_cnt;
-    numtl_s* mtl;
+    struct numtl_s* mtl;
     short* tids;
     int tex_ix;
     int dynalloc : 1; // Offset: 0xE8, Bit Offset: 0, Bit Size: 1
@@ -108,8 +102,8 @@ struct nutexanimenv_s
 // Size: 0x1BC
 struct nutexanimprog_s
 {
-    nutexanimprog_s* succ;
-    nutexanimprog_s* prev;
+    struct nutexanimprog_s* succ;
+    struct nutexanimprog_s* prev;
     char name[32];
     int on_sig[32];
     int off_sig[32];
@@ -127,13 +121,13 @@ struct nutexanimprog_s
 // Size: 0x20, nutexanimFile
 struct nutexanimf_s
 {
-    nutexanim_s* succ;
-    nutexanim_s* prev;
+    struct nutexanim_s* succ;
+    struct nutexanim_s* prev;
     int tids;
     short numtids; // Offset: 0xC
     short dynalloc : 1; // Offset: 0xE, DWARF: 0x1DFFB, Bit Offset: 0, Bit Size: 1
     int mtl; // Offset: 0x10
-    nutexanimenv_s* env;
+    struct nutexanimenv_s* env;
     int ntaname;
     int scriptname;
 };
@@ -142,9 +136,17 @@ struct nutexanimf_s
 // Size: 0xC
 struct nutexanimlist_s
 {
-    nutexanim_s* nta;
-    nutexanimlist_s* succ;
-    nutexanimlist_s* prev;
+    struct nutexanim_s* nta;
+    struct nutexanimlist_s* succ;
+    struct nutexanimlist_s* prev;
 };
+
+struct nutexanimprog_s* sys_progs;
+struct nutexanimlist_s ntalsysbuff[64];
+struct nutexanimlist_s* ntal_first;
+struct nutexanimlist_s* ntal_free;
+static struct nutexanimprog_s* parprog;
+static struct texanimscripts_s texanmscripts[24];
+static struct nufpcomjmp_s nutexanimcomtab[19];
 
 #endif // !NUTEXANM_H

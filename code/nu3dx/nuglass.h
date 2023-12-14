@@ -21,15 +21,19 @@
 
 static int spectid;
 
-numtl_s* glass_mtl_blendskin;
+struct numtl_s* glass_mtl;
 
-numtl_s* glass_mtl_blendskin2;
+struct numtl_s* glass_mtl_blendskin;
+
+struct numtl_s* glass_mtl_blendskin2;
 
 static int num_glass_inst;
 
-static nugobj_s* glassGobj[256];
+static struct nugobj_s* glassGobj[256];
 
-static nuinstance_s* glass_inst[256]; 
+static struct nuinstance_s* glass_inst[256];
+
+static struct numtx_s* glassMtx[256];
 
 static int num_glass_inst;
 
@@ -43,7 +47,7 @@ float WATERBOSSGLASSMIX;
 
 float MAXGLASSMIX;
 
-int glass_enabled; 
+int glass_enabled;
 
 float ANGELGLASSMIX;
 
@@ -53,7 +57,7 @@ int glass_col_enabled;
 
 float glass_col_mix_speed;
 
-nucolour3_s glass_col[2];
+struct nucolour3_s glass_col[2];
 
 int GLASSPLAYERFADE;
 

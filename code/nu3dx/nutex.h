@@ -13,10 +13,10 @@ extern struct nusystex_s tinfo[0x400];
 //s32 initialised;
 
 // Current texture ID in tinfo list.
-extern s32 tpid;
+static s32 tpid;
 
 // Number of textures.
-extern s32 ntex;
+static s32 tpid;
 
 /*
   800b97e8 000068 800b97e8  4 NuTexClose 	Global

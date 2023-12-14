@@ -13,7 +13,7 @@
 extern s32 old_line_pos;
 
 // Read a char from a text file.
-char NuGetChar(nufpar_s* fPar);
+char NuGetChar(struct nufpar_s* fPar);
 
 // GetLine.
 
@@ -30,7 +30,7 @@ s32 NuFParPushCom(struct nufpar_s* fPar, struct nufpcomjmp_s* jmp);
 void NuFParClose(struct nufpar_s* fPar);
 
 // Open a text file.
-struct nufpar_s* NuFParOpen(fileHandle handle);
+struct nufpar_s* NuFParOpen(s32 handle);
 
 // Destroy a text file.
 void NuFParDestroy(struct nufpar_s* fPar);

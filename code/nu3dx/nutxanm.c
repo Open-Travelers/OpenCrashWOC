@@ -9,7 +9,12 @@
 #define CONDITION_CODE_NOT_EQUAL 5
 
 s32 nta_labels[64];
-static struct nutexanimprog_s* parprog; 
+static char labtab[21][64];
+static int labtabcnt;
+static char xdeflabtab[21][256];
+static int xdeflabtabcnt;
+static struct nutexanimprog_s* parprog;
+
 
 //PS2
 void NuTexAnimProgSysInit(void)
@@ -17,7 +22,7 @@ void NuTexAnimProgSysInit(void)
   struct nutexanimlist_s **succ;
   struct nutexanimlist_s *nta;
   s32 n;
-  
+
   sys_progs = NULL;
     for(n = 0; n < 63; n++) {
         ntalsysbuff[n].succ = &ntalsysbuff[n + 1].nta;
@@ -36,7 +41,7 @@ void NuTexAnimProgSysInit(void)
 struct nutexanimprog_s * NuTexAnimProgFind(char *name)
 {
   struct nutexanimprog_s *rv;
-  
+
   rv = sys_progs;
   while ((rv != NULL && (strcasecmp(name,rv->name) != 0))) {
     rv = rv->succ;
@@ -46,7 +51,7 @@ struct nutexanimprog_s * NuTexAnimProgFind(char *name)
 
 
 //PS2
-void NuTexAnimProgInit(nutexanimprog_s *rv)
+void NuTexAnimProgInit(struct nutexanimprog_s *rv)
 {
 
 if (rv != 0) {
@@ -70,7 +75,7 @@ if (rv != 0) {
 void NuTexAnimProgAssembleEnd(struct nutexanimprog_s *p)
 {
     s16 ix = 0;
-    
+
     while (ix < p->eop) {
         switch(p->code[ix]) {
             case 1: ix += 4; break;
@@ -81,7 +86,7 @@ void NuTexAnimProgAssembleEnd(struct nutexanimprog_s *p)
                 ix += 4;
                 break;
             case 7:
-            case 8:                
+            case 8:
                 p->code[ix + 1] = nta_labels[p->code[ix + 1]];
                 ix += 2;
                 break;
@@ -101,7 +106,7 @@ void NuTexAnimProgAssembleEnd(struct nutexanimprog_s *p)
 struct nutexanimenv_s * NuTexAnimEnvCreate(union variptr_u *buff,struct numtl_s *mtl,s16 *tids, struct nutexanimprog_s *p)
 {
   struct nutexanimenv_s *rv;
-  
+
   if (buff != NULL) {
     rv = (struct nutexanimenv_s *)(((s32)buff->voidptr + 3) & 0xfffffffc);
     buff->voidptr = rv + 1;
@@ -137,11 +142,11 @@ struct nutexanimprog_s * NuTexAnimProgReadScript(union variptr_u *buff,char *fna
   struct nutexanimprog_s *rv;
   struct nufpar_s *fp;
   union variptr_u *ptr;
-  
+
   if (buff != NULL) {
     ptr = (union variptr_u *)(s32)((buff->intaddr + 3) & ~3);
   } else {
-    ptr = NuMemAllocFn(0x400,"..\\nu2.ps2\\nu3d\\nutexanm.c",0x2f9);
+    ptr = NuMemAlloc(0x400); //NuMemAllocFn(0x400,"..\\nu2.ps2\\nu3d\\nutexanm.c",0x2f9);
   }
   memset(labtab,0,0x540);
   labtabcnt = 0;
@@ -224,7 +229,7 @@ void NuTexAnimAddList(struct nutexanim_s *nta)
 void NuTexAnimRemoveList(struct nutexanim_s *nta)
 {
   struct nutexanimlist_s *rv;
-  
+
   //NuDisableVBlank();
   rv = ntal_first;
   if (ntal_first != NULL) {
@@ -258,7 +263,7 @@ void NuTexAnimRemoveList(struct nutexanim_s *nta)
 void NuTexAnimProcess(void)
 {
   struct nutexanimlist_s *rv;
-  
+
   rv = ntal_first;
   if (ntal_first != NULL) {
     do {
@@ -272,7 +277,7 @@ void NuTexAnimProcess(void)
 
 //PS2
 inline static int EvalVars (int cc, int v0, int v1)
-{   
+{
     switch(cc) {
         case CONDITION_CODE_EQUAL:
             if (v0 == v1) {
@@ -320,19 +325,19 @@ inline static void NuTexAnimXCall (s32 lid, struct nutexanimenv_s * ignore)
     struct nutexanimprog_s *p;
     s32 n;
 
-    
+
     for (rv = ntal_first; rv != NULL; rv = rv->succ) {
         for (nta = rv->nta; nta != NULL; nta = nta->succ) {
             e = nta->env;
             if ((e == NULL) || (e == ignore)) {
                 continue;
             }
-            
+
             p = e->prog;
             if ((p == NULL) || (p->xdef_cnt == 0)) {
                 continue;
             }
-            
+
             for (n = 0; n < p->xdef_cnt; n++) {
                 if (p->xdef_ids[n] == lid) {
                     e->pc = p->xdef_addrs[n];
@@ -360,13 +365,13 @@ DWARF
     s32 n;
     s32 lVar14;
     s16 *cod;
-  
+
     p = e->prog;
     done = 0;
     if (p == NULL) {
         return;
     }
-    
+
     if ((nta_sig_off & p->off_mask) != 0) {
         for (n = 0; n < 0x20; n++) {
             if ((nta_sig_off & 1 << n & p->off_mask) != 0) {
@@ -390,7 +395,7 @@ DWARF
             }
         }
     }
-   
+
     if (e->pause_cnt != 0) {
         e->pause_cnt--;
         return;
@@ -475,7 +480,7 @@ DWARF
                 if (e->rep_ix == 0) {
                     NuErrorProlog("..\\nu2.ps2\\nu3d\\nutexanm.c", 0x3df)("TexAnim Processor Alert: REPEND without REPEAT at (%d)", e->pc);
                 }
-                
+
                 if (e->rep_count[e->rep_ix - 1] == 0) {
                     e->rep_ix--;
                     e->pc++;
@@ -488,7 +493,7 @@ DWARF
                 if (e->rep_ix == 0) {
                     NuErrorProlog("..\\nu2.ps2\\nu3d\\nutexanm.c", 0x3ed)("TexAnim Processor Alert: UNTILTEX without REPEAT at (%d)", e->pc);
                 }
-                
+
                 if (EvalVars(p->code[e->pc + 1], e->tex_ix, p->code[e->pc + 2]) || (e->rep_count[e->rep_ix - 1] == 0)) {
                     e->pc += 3;
                     e->rep_ix--;
@@ -506,7 +511,7 @@ DWARF
                 break;
         }
     }
-    
+
     return;
 }
 
@@ -514,7 +519,7 @@ DWARF
 //PS2
 static s32 ParGetCC(struct nufpar_s *pf)
 {
-  
+
     NuFParGetWord(pf);
     switch (pf->wbuff[0]){
         case '=':
@@ -522,7 +527,7 @@ static s32 ParGetCC(struct nufpar_s *pf)
         case '<':
             switch (pf->wbuff[1]){
                 case '>': return CONDITION_CODE_NOT_EQUAL;
-                case '=': return CONDITION_CODE_LESS_THAN_OR_EQUAL; 
+                case '=': return CONDITION_CODE_LESS_THAN_OR_EQUAL;
             }
             return CONDITION_CODE_LESS_THAN;
         case '>':
@@ -547,17 +552,17 @@ s32 LabTabFind(char* buf) //static inline on ps2
     if (strlen(buf) > 0x14) {
         buf[0x14] = '\0';
     }
-    
+
     for(i = 0; i < labtabcnt; i++) {
         if (strcasecmp(&labtab[i],buf) == 0) {
             return i;
         }
     }
-    
+
     if (labtabcnt >= 0x40) {
         NuErrorProlog("..\\nu2.ps2\\nu3d\\nutexanm.c", 0x206)("Tex Anim Assembler Fatal Error: too many labels");
     }
-    
+
     strcpy(&labtab[labtabcnt++], buf);
     return labtabcnt - 1;
 }
@@ -577,7 +582,7 @@ static s32 XDefLabTabFind(char* buf)
   if (0xff < xdeflabtabcnt) {
     NuErrorProlog("C:/source/crashwoc/code/nu3dx/nutexanm.c",0x21b)("Tex Anim Assembler Fatal Error: too many global labels");
   }
-  NuStrCpy(&xdeflabtab[xdeflabtabcnt++],buf);
+  strcpy(&xdeflabtab[xdeflabtabcnt++],buf); //NuStrCpy
   return xdeflabtabcnt + -1;
 }
 
@@ -586,7 +591,7 @@ static s32 XDefLabTabFind(char* buf)
 void pftaTex(struct nufpar_s *fp)
 {
   s16 tid;
-  
+
   tid = NuFParGetInt(fp);
   parprog->code[parprog->eop++] = 0;
   parprog->code[parprog->eop++] = tid;
@@ -599,7 +604,7 @@ void pftaTexAdj(struct nufpar_s *fpar)
   s32 tid;
   s32 mi;
   s32 ma;
-  
+
   tid = NuFParGetInt(fpar);
   mi = NuFParGetInt(fpar);
   ma = NuFParGetInt(fpar);
@@ -630,7 +635,7 @@ void pftaRate(struct nufpar_s *fpar)
 {
   s32 fcnt;
   s32 rcnt;
-  
+
   fcnt = NuFParGetInt(fpar);
   rcnt = NuFParGetInt(fpar);
   parprog->code[parprog->eop++] = 5;
@@ -643,7 +648,7 @@ void pftaRate(struct nufpar_s *fpar)
 static void pftaOn(struct nufpar_s *fp)
 {
   s32 sig;
-  
+
   sig = NuFParGetInt(fp);
   parprog->on_sig[sig] = (int)parprog->eop;
   parprog->on_mask = parprog->on_mask | 1 << sig;
@@ -654,7 +659,7 @@ static void pftaOn(struct nufpar_s *fp)
 static void pftaOff(struct nufpar_s *fp)
 {
   s32 sig;
-  
+
   sig = NuFParGetInt(fp);
   parprog->off_sig[sig] = (int)parprog->eop;
   parprog->off_mask = parprog->off_mask | 1 << sig;
@@ -671,7 +676,7 @@ static void pftaLabel(struct nufpar_s *fp) {
 static void pftaXDef(struct nufpar_s *fpar)
 {
   s32 lab;
-  
+
   NuFParGetWord(fpar);
   lab = XDefLabTabFind(fpar->wbuff);
   parprog->xdef_ids[parprog->xdef_cnt] = (short)lab;
@@ -684,7 +689,7 @@ static void pftaXDef(struct nufpar_s *fpar)
 static void pftaGoto(struct nufpar_s *fpar)
 {
   s32 lab;
-  
+
   NuFParGetWord(fpar);
   lab = LabTabFind(fpar->wbuff);
   parprog->code[parprog->eop++] = 7;
@@ -696,7 +701,7 @@ static void pftaGoto(struct nufpar_s *fpar)
 void pftaXRef(struct nufpar_s *fpar)
 {
   s32 lab;
-  
+
   NuFParGetWord(fpar);
   lab = XDefLabTabFind(fpar->wbuff);
   parprog->code[parprog->eop++] = 0xf;
@@ -710,7 +715,7 @@ static void pftaBtex(struct nufpar_s *fpar)
   s32 cc;
   s32 tid;
   s32 lab;
-  
+
   cc = ParGetCC(fpar);
   tid = NuFParGetInt(fpar);
   NuFParGetWord(fpar);
@@ -726,7 +731,7 @@ static void pftaBtex(struct nufpar_s *fpar)
 void pftaGosub(struct nufpar_s *fpar)
 {
   s32 lab;
-  
+
   NuFParGetWord(fpar);
   lab = LabTabFind(fpar->wbuff);
   parprog->code[parprog->eop++] = 8;
@@ -746,7 +751,7 @@ void pftaRepeat(struct nufpar_s *fpar)
 {
   s32 randval;
   s32 cnt;
-  
+
   randval = NuFParGetInt(fpar);
   if (randval == 0) {
     randval = 0xffff; //0x7fffffff
@@ -770,7 +775,7 @@ static void pftaUntiltex(struct nufpar_s *fpar)
 {
   s32 cc;
   s32 tid;
-  
+
   cc = ParGetCC(fpar);
   tid = NuFParGetInt(fpar);
   parprog->code[parprog->eop++] = 0xd;

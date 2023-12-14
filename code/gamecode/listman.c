@@ -1,4 +1,17 @@
-//PS2
+#include "../types.h"
+#include "../nu.h"
+#include "gamecode/main.h"
+#include "nu3dx/nu3dxtypes.h"
+
+
+union Lst
+{
+    char* s8; // Offset: 0x0
+    struct nulnkhdr_s* lhdr; // Offset: 0x0
+};
+
+
+//GCN MATCH
 struct nulsthdr_s * NuLstCreate(s32 elcnt,s32 elsize)
 {
     union Lst prev;
@@ -6,37 +19,35 @@ struct nulsthdr_s * NuLstCreate(s32 elcnt,s32 elsize)
     union Lst curr;
     struct nulnkhdr_s* start;
     s32 n;
-    
-    list = (struct nulsthdr_s *)NuMemAllocFn(elcnt * (elsize + 0x10) + 0x10, ".\\listman.c", 0x24);
+
+    list = (struct nulsthdr_s *)NuMemAlloc(elcnt * (elsize + 0x10) + 0x10);
     if (list != NULL) {
-        start = (struct nulnkhdr_s *)list + 1;
-        list->free = start;
         list->head = NULL;
+        // start = (struct nulnkhdr_s *)list + 1;
+        list->free = list + 1;
+        curr.lhdr = (struct nulnkhdr_s *)list + 1;
         list->elcnt = (short)elcnt;
         list->elsize = (short)elsize;
-        curr.lhdr = start;
         start = (s8*)curr.lhdr + elsize + 0x10;
-        
-        for(n = 1;  n < elsize; n++)
+        for(n = 1; n < elcnt; n++)
         {
             (curr.lhdr)->succ = start;
             (curr.lhdr)->id = n - 1;
             (curr.lhdr)->owner = list;
             curr.lhdr = start;
-            start = (s8*)curr.lhdr + (elsize + 0x10);
-        
+            start = (s8*)start + (elsize + 0x10);
+
         }
         prev.s8 = (s8*)curr.lhdr + (elsize + 0x10);
-        start->id = n - 1;
-        start->succ = NULL;
-        start->owner = list;
+
+        curr.lhdr->succ = NULL;
+        curr.lhdr->id = n - 1;
+        curr.lhdr->owner = list;
     }
     return list;
 }
 
-void NuLstDestroy(nulsthdr_s *hdr)
-
-{
+void NuLstDestroy(struct nulsthdr_s *hdr) {
   NuMemFree(hdr);
   return;
 }
@@ -45,7 +56,7 @@ void NuLstDestroy(nulsthdr_s *hdr)
 struct nulnkhdr_s * NuLstAlloc(struct nulsthdr_s *hdr)
 {
   struct nulnkhdr_s *rv;
-  
+
   rv = hdr->free;
   if (rv != NULL) {
     hdr->free = rv->succ;
@@ -58,7 +69,7 @@ struct nulnkhdr_s * NuLstAlloc(struct nulsthdr_s *hdr)
     }
     rv->prev = NULL;
     hdr->head = rv;
-    *(uint *)&rv->id = *(uint *)&rv->id | 0x10000;
+    *(u32 *)&rv->id = *(u32 *)&rv->id | 0x10000;
     return rv + 1;
   }
   return NULL;
@@ -71,7 +82,7 @@ void NuLstFree(struct nulnkhdr_s *lnk)
   struct nulsthdr_s *hdr;
     // struct nulnkhdr_s* prev = lnk - 1;
     lnk -= 1;
-  
+
   hdr = lnk->owner;
   if (lnk->succ != NULL) {
     (lnk->succ)->prev = lnk->prev;

@@ -59,7 +59,7 @@ void* NuMemAlloc(s32 size) //CHECK
 		// Attempt to allocate
         ret = malloc(size);
         if (ret == NULL) {
-            NuError("NuMemAlloc : Failed to alloc %d bytes!", size);
+            NuErrorProlog("NuMemAlloc : Failed to alloc %d bytes!", size);
 			/*error_func e = NuErrorProlog("OpenCrashWOC/code/nucore/numem.c", 57);
 			e("NuMemAlloc : Failed to alloc %d bytes!", size);*/
         }

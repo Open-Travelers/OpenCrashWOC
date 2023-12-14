@@ -4,8 +4,8 @@
 
 struct numtx_s mtx_arrayHGobj[256];
 
-struct NUHGOBJ_s* NuHGobjCreate(void)
-{
+//MATCH GCN
+static struct NUHGOBJ_s* NuHGobjCreate(void) {
     struct NUHGOBJ_s *hgobj = (struct NUHGOBJ_s *)NuMemAlloc(sizeof(struct NUHGOBJ_s));
     memset(hgobj, 0, sizeof(struct NUHGOBJ_s));
     hgobj->tbrdist = 1.0f;
@@ -13,144 +13,108 @@ struct NUHGOBJ_s* NuHGobjCreate(void)
     return hgobj;
 }
 
-struct NUHGOBJ_s* NuHGobjLoad(const char* name)
-{
+//MATCH GCN
+struct NUHGOBJ_s* NuHGobjLoad(char* file) {
     struct NUHGOBJ_s *hgobj = NULL;
-    fileHandle handle = NuFileOpen(name, NUFILE_READ);
+    s32 fh = NuFileOpen(file, NUFILE_READ);
 
-    if (handle != 0)
+    if (fh != 0)
     {
-        NuFileBeginBlkRead(handle, 'FOGH');
-        struct NUHGOBJ_s* hgobj = NuHGobjCreate();
-        ReadNuIFFHGobj(handle, hgobj);
-        NuFileEndBlkRead(handle);
-        NuFileClose(handle);
+        NuFileBeginBlkRead(fh, 'FOGH');
+        hgobj = NuHGobjCreate();
+        ReadNuIFFHGobj(fh, hgobj);
+        NuFileEndBlkRead(fh);
+        NuFileClose(fh);
     }
     else
     {
-        strlwr(name);
+        strlwr(file);
     }
 
     return hgobj;
 }
 
-struct NUHGOBJ_s* NuHGobjRead(union variptr_u* superbuf_ptr, char* name)
-
-{
+//MATCH GCN
+struct NUHGOBJ_s* NuHGobjRead(union variptr_u* opbuff, char* fname) {
     struct NUHGOBJ_s* hgobj;
 
-    if (superbuf_ptr != NULL) {
-        NuMemSetExternal(superbuf_ptr, NULL);
+    if (opbuff != NULL) {
+        NuMemSetExternal(opbuff, NULL);
     }
-    hgobj = NuHGobjLoad(name);
-    if (superbuf_ptr != NULL) {
+    hgobj = NuHGobjLoad(fname);
+    if (opbuff != NULL) {
         NuMemSetExternal(NULL, NULL);
     }
     return hgobj;
 }
 
-void NuHGobjDestroy(struct NUHGOBJ_s* hgobj)
 
-{
+//MATCH GCN
+static void NuHGobjDestroyDynamic(struct NUHGOBJ_s *hgobj) {
+  s32 i;
+  s32 j;
+
+  if (hgobj->texanims != NULL) {
+    NuTexAnimRemoveList(hgobj->texanims);
+  }
+  if ((hgobj->layers != NULL)) {
+    for (i = 0; i < hgobj->num_layers; i++) {
+      if (hgobj->layers[i].gobjs != NULL) {
+        for (j = 0; j < (s32)hgobj->num_joints; j++) {
+          if (hgobj->layers[i].gobjs[j] != NULL) {
+            NuGobjDestroy(hgobj->layers[i].gobjs[j]);
+          }
+        }
+      }
+      if (hgobj->layers[i].blend_gobjs != NULL) {
+        for (j = 0; j < (s32)hgobj->num_joints; j++) {
+          if (hgobj->layers[i].blend_gobjs[j] != NULL) {
+            NuGobjDestroy(hgobj->layers[i].blend_gobjs[j]);
+          }
+        }
+      }
+      if (hgobj->layers[i].skin_gobj != NULL) {
+        NuGobjDestroy(hgobj->layers[i].skin_gobj);
+      }
+      if (hgobj->layers[i].blend_skin_gobj != NULL) {
+        NuGobjDestroy(hgobj->layers[i].blend_skin_gobj);
+      }
+    }
+  }
+  if ((hgobj->mtls != NULL)) {
+    for (i = 0; i < hgobj->nummtl; i++) {
+      NuMtlDestroy(hgobj->mtls[i]);
+    }
+  }
+  if ((hgobj->tids != NULL)) {
+    for (i = 0; i < hgobj->numtid; i++) {
+      NuTexDestroy(hgobj->tids[i]);
+    }
+  }
+  if (hgobj->texanims != NULL) {
+    NuTexAnimRemoveList(hgobj->texanims);
+  }
+  return;
+}
+
+//MATCH GCN
+void NuHGobjDestroy(struct NUHGOBJ_s* hgobj) {
     if (hgobj != NULL) {
         NuHGobjDestroyDynamic(hgobj);
     }
     return;
 }
 
-//need clean
-void NuHGobjDestroyDynamic(struct NUHGOBJ_s *hgobj)
-{
-  struct NULAYERDATA_s *layers;
-  u32 nJoints;
-  struct numtl_s **mtls;
-  s16 *tids;
-  s32 i;
-  s32 j;
-  s32 k;
-  struct nugobj_s **gobjs;
 
-  if (hgobj->texanims != NULL) {
-    //NuTexAnimRemoveList(hgobj->texanims);
-  }
-  layers = hgobj->layers;
-  if ((layers != NULL) && (i = 0, hgobj->num_layers != '\0')) {
-    while( true ) {
-      if (layers[i].gobjs != NULL) {
-        nJoints = (u32)hgobj->num_joints;
-        j = 0;
-        while (j < (s32)nJoints) {
-          k = j + 1;
-          gobjs = layers[i].gobjs + j;
-          j = k;
-          if (*gobjs != NULL) {
-            NuGobjDestroy(*gobjs);
-            layers = hgobj->layers;
-            nJoints = (u32)hgobj->num_joints;
-          }
-        }
-      }
-      if (layers[i].blend_gobjs != NULL) {
-        nJoints = (u32)hgobj->num_joints;
-        j = 0;
-        while (j < (s32)nJoints) {
-          k = j + 1;
-          gobjs = layers[i].blend_gobjs + j;
-          j = k;
-          if (*gobjs != NULL) {
-            NuGobjDestroy(*gobjs);
-            layers = hgobj->layers;
-            nJoints = (u32)hgobj->num_joints;
-          }
-        }
-      }
-      if (layers[i].skin_gobj != NULL) {
-        NuGobjDestroy(layers[i].skin_gobj);
-        layers = hgobj->layers;
-      }
-      if (layers[i].blend_skin_gobj != NULL) {
-        NuGobjDestroy(layers[i].blend_skin_gobj);
-      }
-      i = i + 1;
-      if ((s32)(u32)hgobj->num_layers <= i) break;
-      layers = hgobj->layers;
-    }
-  }
-  mtls = hgobj->mtls;
-  if ((mtls != NULL) && (i = 0, 0 < hgobj->nummtl)) {
-    while( true ) {
-      NuMtlDestroy(mtls[i]);
-      if (hgobj->nummtl <= i + 1) break;
-      mtls = hgobj->mtls;
-      i = i + 1;
-    }
-  }
-  tids = hgobj->tids;
-  if ((tids != NULL) && (i = 0, 0 < hgobj->numtid)) {
-    while( true ) {
-      NuTexDestroy((s32)tids[i]);
-      if (hgobj->numtid <= i + 1) break;
-      tids = hgobj->tids;
-      i = i + 1;
-    }
-  }
-  if (hgobj->texanims != NULL) {
-    //NuTexAnimRemoveList(hgobj->texanims);
-  }
-  return;
-}
-
-//Check
-void NuHGobjPOIMtx(struct NUHGOBJ_s* hgobj, u8 poi_id, struct numtx_s* world_mtx, struct numtx_s* mtx_array, struct numtx_s* mtx)
-
-{
+//MATCH GCN
+void NuHGobjPOIMtx(struct NUHGOBJ_s* hgobj, u8 poi_id, struct numtx_s* world_mtx, struct numtx_s* mtx_array, struct numtx_s* mtx) {
 
      NuMtxMul(mtx,&hgobj->points_of_interest[hgobj->poi_ixs[poi_id]].offset, mtx_array + hgobj->points_of_interest[hgobj->poi_ixs[poi_id]].parent_joint_ix);
      NuMtxMul(mtx,mtx,world_mtx);
      return;
 }
 
-
+//MATCH GCN
 struct NUPOINTOFINTEREST_s* NuHGobjGetPOI(struct NUHGOBJ_s* hgobj, u8 poi_id) {
     u8 cindex;
 
@@ -163,77 +127,74 @@ struct NUPOINTOFINTEREST_s* NuHGobjGetPOI(struct NUHGOBJ_s* hgobj, u8 poi_id) {
     return NULL;
 }
 
-
-void ReadNuIFFHGobj(fileHandle handle, struct NUHGOBJ_s *hgobj)
-{
-    u32 magic;
+//MATCH GCN
+static void ReadNuIFFHGobj(s32 handle, struct NUHGOBJ_s *hgobj) {
+    s32 magic;
+    s32 i;
     struct nuscene_s scene;
     struct nugscn_s gscn;
+
 
     memset(&scene, 0, sizeof(struct nuscene_s));
     memset(&gscn, 0, sizeof(struct nugscn_s));
 
-    scene.mtls = NULL;
     scene.numtids = 0;
     scene.tids = 0;
     scene.nummtls = 0;
+    scene.mtls = NULL;
 
-    while ((magic = NuFileBeginBlkRead(handle, 0)) != 0)
+    while (magic = NuFileBeginBlkRead(handle, 0))
     {
         switch(magic)
         {
-            case '0SAT':
+            case 0x4C42544E: //LBTN
+                hgobj->string_table = ReadNuIFFNameTable(handle);
+                break;
+            case 0x30545354: //0TST
+                ReadNuIFFTextureSet(handle, &scene);
+				hgobj->numtid = scene.numtids;
+				hgobj->tids = (s16 *)NuMemAlloc(scene.numtids << 2);
+				for (i = 0; i < scene.numtids; i++) {
+						hgobj->tids[i] = scene.tids[i];
+				}
+                break;
+            case 0x3030534D: //00SM
+                ReadNuIFFMaterialSet(handle, &scene);
+                hgobj->mtls = scene.mtls;
+                hgobj->nummtl = scene.nummtls;
+                gscn.mtls = scene.mtls;
+                gscn.nummtl = scene.nummtls;
+                break;
+            case 0x304F4748: //0OGH
+                ReadNuIFFHGobjSet(handle, hgobj);
+                break;
+            case 0x30534154: //0SAT
                 gscn.nametable = hgobj->string_table;
-                //ReadNuIFFTexAnimSet(handle, &gscn, scene.tids);
+                ReadNuIFFTexAnimSet(handle, &gscn, scene.tids);
                 hgobj->texanim_tids = gscn.texanim_tids;
                 hgobj->texanims = gscn.texanims;
                 hgobj->numtexanims = gscn.numtexanims;
                 break;
-            case '00SM':
-                //ReadNuIFFMaterialSet(handle, &scene);
-                gscn.mtls = scene.mtls;
-                gscn.nummtl = scene.nummtls;
-                hgobj->mtls = scene.mtls;
-                hgobj->nummtl = scene.nummtls;
-                break;
-            case '0OGH':
-                ReadNuIFFHGobjSet(handle, hgobj);
-                break;
-            case '0TST':
-                //ReadNuIFFTextureSet(handle, &scene);
-				hgobj->numtid = scene.numtids;
-				s16 tids = (s16 *)NuMemAlloc(scene.numtids << 2);
-				hgobj->tids = tids;
-				s32 i = 0;
-				if (scene.numtids > 0)
-				{
-				do {
-						i++;
-						hgobj->tids[i] = scene.tids[i];
-				} while (i < scene.numtids);
-				}
-                break;
-            case 'LBTN':
-                //hgobj->string_table = ReadNuIFFNameTable(handle);
-                break;
             default:
-                //ReadNuIFFUnknown(handle, magic);
+                ReadNuIFFUnknown(handle, magic);
                 break;
         }
-
         NuFileEndBlkRead(handle);
     }
-
-    //NuSceneMtlUpdate(&scene);
+    NuSceneMtlUpdate(&scene);
+    scene.tids = 0;
 	return;
 }
 
-void ReadNuIFFHGobjSet(fileHandle fh, struct NUHGOBJ_s* hgobj) {
+//MATCH GCN
+static void ReadNuIFFHGobjSet(s32 fh, struct NUHGOBJ_s* hgobj) {
     s32 i;
     s32 j;
     s32 str_ix;
     s32 nshadow_data;
-
+    s32 bytes;
+    struct NUSHADOWDATA_s* shadow_data;
+    
     hgobj->num_joints = NuFileReadChar(fh);
     if (hgobj->num_joints != 0) {
         hgobj->joints = NuMemAlloc(hgobj->num_joints * sizeof(struct NUJOINTDATA_s));
@@ -247,7 +208,7 @@ void ReadNuIFFHGobjSet(fileHandle fh, struct NUHGOBJ_s* hgobj) {
             NuFileRead(fh, &hgobj->T[i], sizeof(struct numtx_s));
             NuFileRead(fh, &hgobj->INV_WT[i], sizeof(struct numtx_s));
             NuFileRead(fh, &hgobj->joints[i].orient, sizeof(struct numtx_s));
-            NuFileRead(fh, &hgobj->joints[i].locator_offset, sizeof(struct nuvec_s));
+            NuFileRead(fh, &hgobj->joints[i].locator_offset, sizeof(struct NuVec));
             hgobj->joints[i].parent_ix = NuFileReadChar(fh);
             str_ix = NuFileReadInt(fh);
             if (str_ix != 0) {
@@ -278,24 +239,24 @@ void ReadNuIFFHGobjSet(fileHandle fh, struct NUHGOBJ_s* hgobj) {
                     memset(hgobj->layers[i].gobjs, 0, hgobj->num_joints * 4);
                     for (j = 0; j < hgobj->num_joints; j++) {
                         if (NuFileReadChar(fh) != 0) {
-                            //hgobj->layers[i].gobjs[j] = ReadNuIFFGeom(fh, hgobj->mtls);
+                            hgobj->layers[i].gobjs[j] = ReadNuIFFGeom(fh, hgobj->mtls);
                         }
                     }
                 }
                 if (NuFileReadChar(fh) != 0) {
-                    //hgobj->layers[i].skin_gobj = ReadNuIFFGeom(fh, hgobj->mtls);
+                    hgobj->layers[i].skin_gobj = ReadNuIFFGeom(fh, hgobj->mtls);
                 }
                 if (NuFileReadChar(fh) != 0) {
                     hgobj->layers[i].blend_gobjs = NuMemAlloc(hgobj->num_joints * 4);
                     memset(hgobj->layers[i].blend_gobjs, 0, hgobj->num_joints * 4);
                     for (j = 0; j < hgobj->num_joints; j++) {
                         if (NuFileReadChar(fh) != 0) {
-                            //hgobj->layers[i].blend_gobjs[j] = ReadNuIFFGeom(fh, hgobj->mtls);
+                            hgobj->layers[i].blend_gobjs[j] = ReadNuIFFGeom(fh, hgobj->mtls);
                         }
                     }
                 }
                 if (NuFileReadChar(fh) != 0) {
-                    //hgobj->layers[i].blend_skin_gobj = ReadNuIFFGeom(fh, hgobj->mtls);
+                    hgobj->layers[i].blend_skin_gobj = ReadNuIFFGeom(fh, hgobj->mtls);
                 }
             }
         }
@@ -321,46 +282,48 @@ void ReadNuIFFHGobjSet(fileHandle fh, struct NUHGOBJ_s* hgobj) {
             memset(hgobj->shadow_data, 0, (nshadow_data + 1) * sizeof(struct NUSHADOWDATA_s));
             hgobj->shadow_data[nshadow_data].joint = 0xFF;
             for (i = 0; i < nshadow_data; i++) {
-                hgobj->shadow_data[i].ellipsoids = NULL;
-                hgobj->shadow_data[i].shadow_meshes = (struct NUSHADOWMESH_s* ) NULL;
-                hgobj->shadow_data[i].cylinders = (struct NUCYLINDER_s* ) NULL;
-                hgobj->shadow_data[i].nellipsoids = NuFileReadChar(fh);
-                if (hgobj->shadow_data[i].nellipsoids != 0) {
-                    hgobj->shadow_data[i].ellipsoids = NuMemAlloc(hgobj->shadow_data[i].nellipsoids * sizeof(struct NUELLIPSOID_s));
-                    if (hgobj->shadow_data[i].ellipsoids == NULL) {
-                        NuErrorProlog("C:/source/crashwoc/code/nu3dx/nuhgobj.c", 0x289)("failed to alloc shadow ellipsoids");
+                shadow_data = &hgobj->shadow_data[i];
+                
+                shadow_data->ellipsoids = NULL;
+                shadow_data->shadow_meshes = NULL;
+                shadow_data->cylinders = NULL;
+                shadow_data->nellipsoids = NuFileReadChar(fh);
+                if (shadow_data->nellipsoids != 0) {
+                    bytes = shadow_data->nellipsoids * sizeof(struct NUELLIPSOID_s);
+                    shadow_data->ellipsoids = NuMemAlloc(bytes);
+                    if (shadow_data->ellipsoids == NULL) {
+                        NuErrorProlog("C:/source/crashwoc/code/nu3dx/nuhgobj.c",0x289)("failed to alloc shadow ellipsoids");
                     }
-                    NuFileRead(fh, hgobj->shadow_data[i].ellipsoids, hgobj->shadow_data[i].nellipsoids * sizeof(struct NUELLIPSOID_s));
+                    NuFileRead(fh, shadow_data->ellipsoids, bytes);
                 }
-                hgobj->shadow_data[i].ncylinders = NuFileReadChar(fh);
-                if (hgobj->shadow_data[i].ncylinders != 0) {
-                    hgobj->shadow_data[i].cylinders = NuMemAlloc(hgobj->shadow_data[i].ncylinders << 6);
-                    if (hgobj->shadow_data[i].cylinders == NULL) {
+                shadow_data->ncylinders = NuFileReadChar(fh);
+                if (shadow_data->ncylinders != 0) {
+                    bytes = shadow_data->ncylinders * sizeof(struct NUCYLINDER_s);
+                    shadow_data->cylinders = NuMemAlloc(bytes);
+                    if (shadow_data->cylinders == NULL) {
                         NuErrorProlog("C:/source/crashwoc/code/nu3dx/nuhgobj.c", 0x294)("failed to alloc shadow cylinders");
                     }
-                    NuFileRead(fh, hgobj->shadow_data[i].cylinders, hgobj->shadow_data[i].ncylinders << 6);
+                    NuFileRead(fh, shadow_data->cylinders, bytes);
                 }
-                hgobj->shadow_data[i].nshadow_meshes = NuFileReadChar(fh);
-                if (hgobj->shadow_data[i].nshadow_meshes != 0) {
-                    hgobj->shadow_data[i].shadow_meshes = NuMemAlloc(hgobj->shadow_data[i].nshadow_meshes * 8);
-                    if (hgobj->shadow_data[i].shadow_meshes == NULL) {
+                shadow_data->nshadow_meshes = NuFileReadChar(fh);
+                if (shadow_data->nshadow_meshes != 0) {
+                    bytes = shadow_data->nshadow_meshes * sizeof(struct NUSHADOWMESH_s);
+                    shadow_data->shadow_meshes = NuMemAlloc(bytes);
+                    if (shadow_data->shadow_meshes == NULL) {
                         NuErrorProlog("C:/source/crashwoc/code/nu3dx/nuhgobj.c", 0x29F)("failed to alloc shadow_meshes");
                     }
-                    memset(hgobj->shadow_data[i].shadow_meshes, 0, hgobj->shadow_data[i].nshadow_meshes * 8);
-                    for (j = 0; j < hgobj->shadow_data[i].nshadow_meshes; j++) {
-                        {
-                            s32 bytes = NuFileReadInt(fh) * sizeof(struct Vec4);
-                            hgobj->shadow_data[i].shadow_meshes[j].normals = NuMemAlloc(bytes);
-                            NuFileRead(fh, &hgobj->shadow_data[i].shadow_meshes[j].normals, bytes);
-                        }
-                        {
-                            s32 bytes = NuFileReadInt(fh) * sizeof(struct Vec4);
-                            hgobj->shadow_data[i].shadow_meshes[j].verts = NuMemAlloc(bytes);
-                            NuFileRead(fh, hgobj->shadow_data[i].shadow_meshes[j].verts, bytes);
-                        }
+                    memset(shadow_data->shadow_meshes, 0, bytes);
+                    for (j = 0; j < shadow_data->nshadow_meshes; j++) {
+                        bytes = NuFileReadInt(fh) * sizeof(struct nuvec4_s);
+                        shadow_data->shadow_meshes[j].normals = NuMemAlloc(bytes);
+                        NuFileRead(fh, shadow_data->shadow_meshes[j].normals, bytes);
+                        
+                        bytes = NuFileReadInt(fh) * sizeof(struct nuvec4_s);
+                        shadow_data->shadow_meshes[j].verts = NuMemAlloc(bytes);
+                        NuFileRead(fh, shadow_data->shadow_meshes[j].verts, bytes);
                     }
                 }
-                hgobj->shadow_data[i].joint = NuFileReadChar(fh);
+                shadow_data->joint = NuFileReadChar(fh);
             }
         }
     }
@@ -375,15 +338,14 @@ void ReadNuIFFHGobjSet(fileHandle fh, struct NUHGOBJ_s* hgobj) {
     hgobj->cylinder_yoff = NuFileReadFloat(fh);
     hgobj->cylinder_height = NuFileReadFloat(fh);
     hgobj->cylinder_radius = NuFileReadFloat(fh);
-    if ((hgobj->min.x == 0.0) && (hgobj->min.y == 0.0) && (hgobj->min.z == 0.0)) {
-        hgobj->min.x = -1.0;
-        hgobj->min.z = -1.0;
-        hgobj->min.y = -1.0;
+    if ((hgobj->min.x == 0.0f) && (hgobj->min.y == 0.0f) && (hgobj->min.z == 0.0f)) {
+        hgobj->min.z = -1.0f;
+        hgobj->min.y = -1.0f;
+        hgobj->min.x = -1.0f;
     }
-    if ((hgobj->max.x == 0.0) && (hgobj->max.y == 0.0) && (hgobj->max.z == 0.0)) {
-        hgobj->max.x = 1.0;
-        hgobj->max.z = 1.0;
-        hgobj->max.y = 1.0;
+    if ((hgobj->max.x == 0.0f) && (hgobj->max.y == 0.0f) && (hgobj->max.z == 0.0f)) {
+        hgobj->max.z = 1.0f;
+        hgobj->max.y = 1.0f;
+        hgobj->max.x = 1.0f;
     }
 }
-

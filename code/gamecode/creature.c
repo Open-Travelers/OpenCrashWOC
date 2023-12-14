@@ -577,164 +577,116 @@ float ModelAnimDuration(u32 character,u32 action,float start,float end)
 }
 
 
-int LoadCharacterModel(int character,int level,int *cmodel_index,int clist_entry,int *remap)
+//95% NGC
+s32 LoadCharacterModel(s32 character, s32 level, s32* cmodel_index, s32 clist_entry, s32* remap) {
+    s32 k;
+    s32 iVar2;
+    struct CharacterModel* model;
+    struct AnimList* anim;
+    s32 cnt;
+    char path[64];
+    struct cdata_s* cdata;
+    struct {
+        s32 character;
+        struct AnimList animlist[5];
+    } * space;
 
-{
-  int iVar1;
-  uchar poi_id;
-  int index;
-  int iVar2;
-  NUHGOBJ_s *HGobj;
-  NUPOINTOFINTEREST_s *poi;
-  nuAnimData_s *animdat;
-  Font3DObjTab *Fnt3dTab;
-  space *GCTab;
-  CharacterModel *C_Model;
-  NUPOINTOFINTEREST_s **pLoc;
-  AnimList *CHanim;
-  AnimList *pAVar3;
-  int cnt;
-  int iVar4;
-  char path [64];
-  short act;
-  
-  index = *cmodel_index;
-  iVar2 = index * 0x7ac;
-  C_Model = CModel + index;
-  if (level == 0x28) {
-    GCTab = (space *)SpaceGameCutTab[gamecut * 2];
-  }
-  else {
-    GCTab = (space *)0x0;
-  }
-  if ((character == 0xff) || (0x30 < *remap)) {
+    model = &CModel[*cmodel_index];
+    if (level == 0x28) {
+        space = (struct space_s*)SpaceGameCutTab[0][gamecut * 2];
+    } else {
+        space = NULL;
+    }
+    if ((character != 0xff) && (0x31 > *remap)) {
+
+        memset(model, 0, sizeof(struct CharacterModel));
+        strcpy(path, "chars\\");
+        cdata = &CData[character];
+        strcat(path, cdata->path);
+        strcat(path, "\\");
+        if (model->hobj == NULL) {
+            strcpy(tbuf, path);
+            strcat(tbuf, cdata->file);
+            strcat(tbuf, ".hgo");
+            model->hobj = NuHGobjRead(&superbuffer_ptr, tbuf);
+            if (character == 0 || character == 1) {
+                if (model->hobj == NULL)
+                    goto LAB_800185e0;
+                crash_loaded = 1;
+            }
+            if (model->hobj == NULL)
+                goto LAB_800185e0;
+        }
+        for (cnt = 0; cnt < 16; cnt++) {
+            model->pLOCATOR[cnt] = NuHGobjGetPOI(model->hobj, (u8)cnt);
+        }
+        if ((character == 0x54) || (character == 0x9f)) {
+            strcpy(path, "chars\\");
+            strcat(path, CData[0].path);
+            strcat(path, "\\");
+        }
+        anim = cdata->anim;
+        if (level == 0x28) {
+            anim = space[clist_entry].animlist;
+        } else if (character == 0) {
+            //(0x01002000)
+            // 0x00001000
+            if ((LBIT & 0x0000001001002000) && (level != 0x1e)) {
+                anim = CrashAnim_GLIDER;
+            } else {
+                if ((LBIT & 0x40000) != 0) {
+                    anim = CrashAnim_MOSQUITO;
+                } else if ((LBIT & 0x0000000100210801) != 0) {
+                    anim = CrashAnim_ATLASPHERE;
+                } else if (level == 0x1d) {
+                    anim = CrashAnim_GYRO;
+                } else if (level == 0x1c) {
+                    anim = CrashAnim_MINETUB;
+                } else if (level == 0x2b) {
+                    anim = CrashAnim_CREDITS;
+                }
+            }
+        } else if ((character == 1) && (LBIT & 0x4000000)) {
+            anim = CocoAnim_DROPSHIP;
+        }
+        while ((anim != NULL) && (anim->file != NULL) && (anim->action >= 0) && anim->action < 0x76) {
+            if (anim->levbits & LBIT) {
+                if (((anim->flags & 2) != 0) && (model->anmdata[anim->action]) == 0) {
+                    strcpy(tbuf, path);
+                    strcat(tbuf, anim->file);
+                    strcat(tbuf, ".ani");
+                    model->anmdata[anim->action] = InstAnimDataLoad(tbuf);
+                    if (model->anmdata[anim->action] != 0) {
+                        model->animlist[anim->action] = anim;
+                    }
+                }
+                if (((anim->flags & 4) != 0) && ((model->fanmdata[anim->action]) == 0)) {
+                    strcpy(tbuf, path);
+                    strcat(tbuf, anim->file);
+                    strcat(tbuf, ".bsa");
+                    model->fanmdata[anim->action] = InstAnimDataLoad(tbuf);
+                    if (model->fanmdata[anim->action] != 0) {
+                        model->fanimlist[anim->action] = anim;
+                    }
+                }
+            }
+            anim = anim + 1;
+        }
+        model->character = character;
+        CRemap[character] = cmodel_index[0];
+        *cmodel_index = *cmodel_index + 1;
+        *remap = *remap + 1;
+    LAB_800185e0:	//Problem with this for loop
+        for (k = 0; k < 26; k++) {
+            if (((Font3DObjTab[k].flags & 1)) && (Font3DObjTab[k].i == character)) {
+                CLetter[character] = (char)k + 'a';
+                k = 26;
+            }
+        }
+        return 1;
+    }
     return 0;
-  }
-  memset(C_Model,0,0x7ac);
-  path._0_4_ = 0x63686172;
-  path._4_2_ = s\_repeated;
-  path[6] = '\0';
-  strcat(path,CData[character].path);
-  strcat(path,"\\");
-  if (C_Model->hobj == (NUHGOBJ_s *)0x0) {
-    strcpy(tbuf,path);
-    strcat(tbuf,CData[character].file);
-    strcat(tbuf,".hgo");
-    HGobj = NuHGobjRead(&superbuffer_ptr,tbuf);
-    C_Model->hobj = HGobj;
-    if ((uint)character < 2) {
-      if (HGobj == (NUHGOBJ_s *)0x0) goto LAB_800185e0;
-      crash_loaded = 1;
-    }
-    if (HGobj == (NUHGOBJ_s *)0x0) goto LAB_800185e0;
-  }
-  cnt = 0;
-  pLoc = CModel[index].pLOCATOR;
-  do {
-    poi_id = (uchar)cnt;
-    cnt = cnt + 1;
-    poi = NuHGobjGetPOI(C_Model->hobj,poi_id);
-    *pLoc = poi;
-    pLoc = pLoc + 1;
-  } while (cnt < 0x10);
-  if ((character == 0x54) || (character == 0x9f)) {
-    path._0_4_ = 0x63686172;
-    path._4_2_ = 0x735c;
-    path[6] = '\0';
-    strcat(path,CData[0].path);
-    strcat(path,"\\");
-  }
-  CHanim = CData[character].anim;
-  if (level == 0x28) {
-    CHanim = GCTab[clist_entry].animlist;
-  }
-  else if (character == 0) {
-    if (((LBIT._0_4_ & 0x10 | LBIT._4_4_ & 0x1002000) == 0) || (level == 0x1e)) {
-      if ((LBIT._4_4_ & 0x40000) == 0) {
-        if ((LBIT._0_4_ & 1 | LBIT._4_4_ & 0x210801) == 0) {
-          if (level == 0x1d) {
-            CHanim = CrashAnim_GYRO;
-          }
-          else if (level == 0x1c) {
-            CHanim = CrashAnim_MINETUB;
-          }
-          else if (level == 0x2b) {
-            CHanim = CrashAnim_CREDITS;
-          }
-        }
-        else {
-          CHanim = CrashAnim_ATLASPHERE;
-        }
-      }
-      else {
-        CHanim = CrashAnim_MOSQUITO;
-      }
-    }
-    else {
-      CHanim = CrashAnim_GLIDER;
-    }
-  }
-  else if ((character == 1) && ((LBIT._4_4_ & 0x4000000) != 0)) {
-    CHanim = CocoAnim_DROPSHIP;
-  }
-  if (((CHanim != (AnimList *)0x0) && (CHanim->file != (char *)0x0)) &&
-     (act = CHanim->action, -1 < act)) {
-    while (act < 0x76) {
-      if ((*(uint *)&CHanim->levbits & LBIT._0_4_ |
-          *(uint *)((int)&CHanim->levbits + 4) & LBIT._4_4_) != 0) {
-        if (((CHanim->flags & 2) != 0) &&
-           (iVar4 = iVar2 + -0x7fdac120, *(int *)(iVar4 + act * 4) == 0)) {
-          strcpy(tbuf,path);
-          strcat(tbuf,CHanim->file);
-          strcat(tbuf,".ani");
-          animdat = InstAnimDataLoad(tbuf);
-          *(nuAnimData_s **)(iVar4 + CHanim->action * 4) = animdat;
-          iVar1 = CHanim->action * 4;
-          if (*(int *)(iVar4 + iVar1) != 0) {
-            *(AnimList **)(iVar2 + -0x7fdabf48 + iVar1) = CHanim;
-          }
-        }
-        if (((CHanim->flags & 4) != 0) &&
-           (iVar4 = iVar2 + -0x7fdabd70, *(int *)(iVar4 + CHanim->action * 4) == 0)) {
-          strcpy(tbuf,path);
-          strcat(tbuf,CHanim->file);
-          strcat(tbuf,".bsa");
-          animdat = InstAnimDataLoad(tbuf);
-          *(nuAnimData_s **)(iVar4 + CHanim->action * 4) = animdat;
-          iVar1 = CHanim->action * 4;
-          if (*(int *)(iVar4 + iVar1) != 0) {
-            *(AnimList **)(iVar2 + -0x7fdabb98 + iVar1) = CHanim;
-          }
-        }
-      }
-      pAVar3 = CHanim + 1;
-      if (((pAVar3 == (AnimList *)0x0) || (pAVar3->file == (char *)0x0)) ||
-         (act = CHanim[1].action, CHanim = pAVar3, act < 0)) break;
-    }
-  }
-  CModel[index].character = (short)character;
-  CRemap[character] = *(char *)((int)cmodel_index + 3);
-  *cmodel_index = *cmodel_index + 1;
-  *remap = *remap + 1;
-LAB_800185e0:
-  Fnt3dTab = Font3DObjTab;
-  iVar2 = 0;
-  index = 0;
-  do {
-    if (((Fnt3dTab->flags & 1) != 0) && (*(short *)((int)&Font3DObjTab[0].i + index) == character) )
-    {
-      Fnt3dTab = (Font3DObjTab *)Font3DMtlTab;
-      CLetter[character] = (char)iVar2 + 'a';
-      index = 0x138;
-      iVar2 = 0x1a;
-    }
-    iVar2 = iVar2 + 1;
-    Fnt3dTab = Fnt3dTab + 1;
-    index = index + 0xc;
-  } while (iVar2 < 0x1a);
-  return 1;
 }
-
 
 void PurgeCharacterModels(void)
 
@@ -759,82 +711,74 @@ void PurgeCharacterModels(void)
   return;
 }
 
+//92%
+void LoadCharacterModels(void) {
+    s32 i;
+    s32 j;
+    s32 character;
+    s32 cmodel_index;
+    // struct nudathdr_s* dfanim;
+    struct space_s *space;
+    char charsdat_filename[128];
+    s32 clist_entry;
+    s32 remap;
 
-void LoadCharacterModels(void)
-
-{
-  uint character;
-  int iVar1;
-  space *space;
-  int clist_entry;
-  double dVar2;
-  float fVar3;
-  int cmodel_index;
-  int remap;
-  char local_28 [12];
-  
-  clist_entry = (int)(CModel[0].hobj != (NUHGOBJ_s *)0x0);
-  if (Level == 0x28) {
-    space = (space *)SpaceGameCutTab[gamecut * 2];
-  }
-  else {
-    space = (space *)0x0;
-  }
-  if (LDATA->cList != (uchar *)0x0) {
-    cmodel_index = clist_entry;
-    remap = clist_entry;
-    while( true ) {
-      force_decal = 0;
-      if (space == (space *)0x0) {
-        character = (uint)LDATA->cList[clist_entry];
-      }
-      else {
-        character = space[clist_entry].character;
-      }
-      if ((character == 0x1b) || (character == 0x86)) {
-        force_decal = 1;
-      }
-      iVar1 = LoadCharacterModel(character,Level,&cmodel_index,clist_entry,&remap);
-      if (iVar1 == 0) break;
-      clist_entry = clist_entry + 1;
+    
+    if(CModel[0].hobj != NULL)
+    {
+        clist_entry = 1;
+    } else {
+        clist_entry = 0;
     }
-  }
-  fVar3 = ModelAnimDuration(0,0x30,0.0,0.0);
-  dVar2 = 60.0;
-  local_28._0_8_ = (longlong)(int)(fVar3 * 60.0);
-  CrashMoveInfo.JUMPLANDFRAMES = (short)(int)(fVar3 * 60.0);
-  fVar3 = ModelAnimDuration(0,0x1f,0.0,0.0);
-  local_28._0_8_ = (longlong)(int)((double)fVar3 * dVar2);
-  CrashMoveInfo.SLAMWAITFRAMES = (short)(int)((double)fVar3 * dVar2);
-  fVar3 = ModelAnimDuration(0,0x44,0.0,0.0);
-  local_28._0_8_ = (longlong)(int)((double)fVar3 * dVar2);
-  CrashMoveInfo.SOMERSAULTFRAMES = (short)(int)((double)fVar3 * dVar2);
-  fVar3 = ModelAnimDuration(0,0x43,0.0,0.0);
-  local_28._0_8_ = (longlong)(int)((double)fVar3 * dVar2);
-  CrashMoveInfo.SLIDEFRAMES = (short)(int)((double)fVar3 * dVar2);
-  fVar3 = ModelAnimDuration(0,3,0.0,0.0);
-  local_28._0_8_ = (longlong)(int)((double)fVar3 * dVar2);
-  CrashMoveInfo.CROUCHINGFRAMES = (short)(int)((double)fVar3 * dVar2);
-  fVar3 = ModelAnimDuration(1,0x30,0.0,0.0);
-  local_28._0_8_ = (longlong)(int)((double)fVar3 * dVar2);
-  CocoMoveInfo.JUMPLANDFRAMES = (short)(int)((double)fVar3 * dVar2);
-  fVar3 = ModelAnimDuration(1,0x1f,0.0,0.0);
-  local_28._0_8_ = (longlong)(int)((double)fVar3 * dVar2);
-  CocoMoveInfo.SLAMWAITFRAMES = (short)(int)((double)fVar3 * dVar2);
-  fVar3 = ModelAnimDuration(1,0x44,0.0,0.0);
-  local_28._0_8_ = (longlong)(int)((double)fVar3 * dVar2);
-  CocoMoveInfo.SOMERSAULTFRAMES = (short)(int)((double)fVar3 * dVar2);
-  fVar3 = ModelAnimDuration(1,0x46,0.0,0.0);
-  local_28._0_8_ = (longlong)(int)((double)fVar3 * dVar2);
-  CocoMoveInfo.SPINFRAMES = (short)(int)((double)fVar3 * dVar2);
-  fVar3 = ModelAnimDuration(1,0x43,0.0,0.0);
-  local_28._0_8_ = (longlong)(int)((double)fVar3 * dVar2);
-  CocoMoveInfo.SLIDEFRAMES = (short)(int)((double)fVar3 * dVar2);
-  fVar3 = ModelAnimDuration(0x89,99,0.0,0.0);
-  MineCartMoveInfo.JUMPFRAMES0 = (short)(int)((double)fVar3 * dVar2);
-  return;
+    
+    if (Level == 0x28) {
+        space = (struct space_s *)SpaceGameCutTab[0][gamecut * 2];
+    }
+    else {
+        space = NULL;
+    }
+   if (LDATA->clist != NULL) {
+        i = clist_entry;
+        remap = i;
+        cmodel_index = i;
+        while( 1 ) {
+            force_decal = 0;
+            if (space != NULL) {
+                // fakery
+                // j = i << 5;
+                // j &= 0xFFFFFFF0;
+                // character = ((s32*)space)[j];
+                
+                character = space[i].character;
+            }
+            else {
+                character = LDATA->clist[i];
+            }
+            
+            if ((character == 0x1b) || (character == 0x86)) {
+                force_decal = 1;
+            }
+            if (LoadCharacterModel(character, Level, &cmodel_index, i, &remap) == 0) 
+            {
+                break;
+            }
+            i++;
+        }
+    }
+    
+    CrashMoveInfo.JUMPLANDFRAMES   = ModelAnimDuration(0,   0x30, 0.0f, 0.0f) * 60.0f;
+    CrashMoveInfo.SLAMWAITFRAMES   = ModelAnimDuration(0,   0x1f, 0.0f, 0.0f) * 60.0f;
+    CrashMoveInfo.SOMERSAULTFRAMES = ModelAnimDuration(0,   0x44, 0.0f, 0.0f) * 60.0f;
+    CrashMoveInfo.SLIDEFRAMES      = ModelAnimDuration(0,   0x43, 0.0f, 0.0f) * 60.0f;
+    CrashMoveInfo.CROUCHINGFRAMES  = ModelAnimDuration(0,   3,    0.0f, 0.0f) * 60.0f;
+    CocoMoveInfo.JUMPLANDFRAMES    = ModelAnimDuration(1,   0x30, 0.0f, 0.0f) * 60.0f;
+    CocoMoveInfo.SLAMWAITFRAMES    = ModelAnimDuration(1,   0x1f, 0.0f, 0.0f) * 60.0f;
+    CocoMoveInfo.SOMERSAULTFRAMES  = ModelAnimDuration(1,   0x44, 0.0f, 0.0f) * 60.0f;
+    CocoMoveInfo.SPINFRAMES        = ModelAnimDuration(1,   0x46, 0.0f, 0.0f) * 60.0f;
+    CocoMoveInfo.SLIDEFRAMES       = ModelAnimDuration(1,   0x43, 0.0f, 0.0f) * 60.0f;
+    MineCartMoveInfo.JUMPFRAMES0   = ModelAnimDuration(0x89,  99, 0.0f, 0.0f) * 60.0f;
+    return;
 }
-
 
 void ChangeCharacter(creature_s *c,int character)
 
@@ -1447,153 +1391,85 @@ void ProcessCreatures(void)
   return;
 }
 
+//NGC MATCH
+void EvalModelAnim(struct CharacterModel *model,struct anim_s *anim,struct numtx_s *m,struct numtx_s *tmtx, float ***dwa, struct numtx_s *mLOCATOR) {
+    short layertab [2] = {0, 1};
+    short *layer;
+    s32 nlayers;
+    s32 i;
 
-void EvalModelAnim(CharacterModel *model,anim_s *anim,numtx_s *m,numtx_s *tmtx,float ***dwa,
-                  numtx_s *mLOCATOR)
-
-{
-  float vtxtime;
-  NUPOINTOFINTEREST_s *poi;
-  int nlayers;
-  float **ppfVar1;
-  short *layer;
-  nuAnimData_s *vtxanim;
-  NUPOINTOFINTEREST_s **pLoc;
-  short layertab [2];
-  
-  layer = layertab;
-  layertab = (short  [2])0x1;
-  nlayers = 1;
-  if (model->character == 0) {
-    nlayers = 2;
-  }
-  if (anim->blend == '\0') {
-LAB_8001d488:
-    if (((ushort)anim->action < 0x76) &&
-       (vtxanim = model->fanmdata[anim->action], vtxanim != (nuAnimData_s *)0x0)) {
-      vtxtime = anim->anim_time;
-      goto LAB_8001d4b4;
+    layer = layertab;
+    if (model->character == 0) {
+        nlayers = 2;
+    } else {
+        nlayers = 1;
     }
-LAB_8001d4c0:
-    *dwa = (float **)0x0;
-  }
-  else {
-    if ((((0x75 < (ushort)anim->blend_src_action) ||
-         (model->fanmdata[anim->blend_src_action] == (nuAnimData_s *)0x0)) ||
-        (0x75 < (ushort)anim->blend_dst_action)) ||
-       (model->fanmdata[anim->blend_dst_action] == (nuAnimData_s *)0x0)) {
-      if (anim->blend == '\0') goto LAB_8001d488;
-      goto LAB_8001d4c0;
+    
+    if (anim->blend != 0 &&
+        (anim->blend_src_action <= 0x75U && model->fanmdata[anim->blend_src_action]) &&
+            (anim->blend_dst_action <= 0x75U && model->fanmdata[anim->blend_dst_action])) {
+        *dwa = NuHGobjEvalDwa(1, 0, model->fanmdata[anim->action],anim->anim_time);
     }
-    nlayers = 1;
-    vtxtime = anim->anim_time;
-    layer = (short *)0x0;
-    vtxanim = model->fanmdata[anim->action];
-LAB_8001d4b4:
-    ppfVar1 = NuHGobjEvalDwa(nlayers,layer,vtxanim,vtxtime);
-    *dwa = ppfVar1;
-  }
-  if (anim->blend == '\0') {
-LAB_8001d5a0:
-    if (((ushort)anim->action < 0x76) && (model->anmdata[anim->action] != (nuAnimData_s *)0x0)) {
-      NuHGobjEvalAnim(model->hobj,model->anmdata[anim->action],anim->anim_time,0,
-                      (NUJOINTANIM_s *)0x0,tmtx);
-      temp_time = anim->anim_time;
-      temp_action = (int)anim->action;
-      goto LAB_8001d604;
+    else if (anim->blend == 0 && (anim->action <= 0x75U && model->fanmdata[anim->action])) {
+        *dwa = NuHGobjEvalDwa(nlayers, layer, model->fanmdata[anim->action],anim->anim_time);
+    } else {
+        *dwa = NULL;
     }
-  }
-  else {
-    if ((ushort)anim->blend_src_action < 0x76) {
-      if (((model->anmdata[anim->blend_src_action] != (nuAnimData_s *)0x0) &&
-          ((ushort)anim->blend_dst_action < 0x76)) &&
-         (model->anmdata[anim->blend_dst_action] != (nuAnimData_s *)0x0)) {
-        NuHGobjEvalAnimBlend
-                  (model->hobj,model->anmdata[anim->blend_src_action],anim->blend_src_time,
-                   model->anmdata[anim->blend_dst_action],anim->blend_dst_time,
-                   (float)((double)CONCAT44(0x43300000,(int)anim->blend_frame ^ 0x80000000) -
-                          4503601774854144.0) /
-                   (float)((double)CONCAT44(0x43300000,(int)anim->blend_frames ^ 0x80000000) -
-                          4503601774854144.0),0,(NUJOINTANIM_s *)0x0,tmtx);
+    
+    if (anim->blend != 0 &&
+            (anim->blend_src_action <= 0x75U && model->anmdata[anim->blend_src_action]) &&
+            (anim->blend_dst_action <= 0x75U && model->anmdata[anim->blend_dst_action])) {
+        
+        NuHGobjEvalAnimBlend(model->hobj, model->anmdata[anim->blend_src_action], 
+                anim->blend_src_time, model->anmdata[anim->blend_dst_action], 
+                anim->blend_dst_time, (float)anim->blend_frame / anim->blend_frames, 
+                0, NULL, tmtx);
+        temp_action = anim->blend_dst_action; // needs to get merged
         temp_time = anim->blend_dst_time;
-        temp_action = (int)anim->blend_dst_action;
-        goto LAB_8001d604;
-      }
+        
+    } else if (anim->blend == 0 &&
+            (anim->action <= 0x75U && model->anmdata[anim->action])) {
+        
+        NuHGobjEvalAnim(model->hobj, model->anmdata[anim->action], anim->anim_time, 
+                0, NULL, tmtx);
+        temp_action = anim->action; // needs to get merged
+        temp_time = anim->anim_time;
+        
+    } else {
+        NuHGobjEval(model->hobj, 0, 0, tmtx);
+        temp_action = -1;
     }
-    if (anim->blend == '\0') goto LAB_8001d5a0;
-  }
-  NuHGobjEval(model->hobj,0,(NUJOINTANIM_s *)0x0,tmtx);
-  temp_action = -1;
-LAB_8001d604:
-  if (mLOCATOR != (numtx_s *)0x0) {
-    pLoc = model->pLOCATOR;
-    nlayers = 0;
-    do {
-      poi = *pLoc;
-      pLoc = pLoc + 1;
-      if (poi != (NUPOINTOFINTEREST_s *)0x0) {
-        NuHGobjPOIMtx(model->hobj,(uchar)nlayers,m,tmtx,mLOCATOR);
-      }
-      nlayers = nlayers + 1;
-      mLOCATOR = mLOCATOR + 1;
-    } while (nlayers < 0x10);
-  }
-  return;
+    
+    if (mLOCATOR == NULL) return;
+    for(i = 0; i < 0x10; i++) {
+        if (model->pLOCATOR[i] != NULL) {
+            NuHGobjPOIMtx(model->hobj,(u8)i,m,tmtx,&mLOCATOR[i]);
+        }
+    }
 }
 
 
-void StoreLocatorMatrices(CharacterModel *model,numtx_s *mC,numtx_s *tmtx,numtx_s *mtx,nuvec_s *m om)
-
-{
-  float fVar1;
-  float fVar2;
-  float fVar3;
-  int size;
-  numtx_s *pnVar4;
-  int cnt;
-  numtx_s *ptr;
-  numtx_s *pnVar5;
-  int poiId;
-  numtx_s m;
-  numtx_s *ptr2;
+//NGC MATCH
+void StoreLocatorMatrices(struct CharacterModel *model,struct numtx_s *mC,struct numtx_s *tmtx,struct numtx_s *mtx,struct NuVec *mom) {
+  struct NuVec oldpos;
+  s32 i;
+  struct numtx_s m;
   
-  if (mtx != (numtx_s *)0x0) {
-    poiId = 0;
-    do {
-      cnt = poiId + 1;
-      if (model->pLOCATOR[poiId] != (NUPOINTOFINTEREST_s *)0x0) {
-        ptr = mtx + poiId;
-        fVar1 = ptr->_30;
-        fVar2 = ptr->_31;
-        fVar3 = ptr->_32;
-        NuHGobjPOIMtx(model->hobj,(uchar)poiId,mC,tmtx,&m);
-        size = 0x30;
-        ptr2 = &m;
-        do {
-          pnVar5 = ptr;
-          pnVar4 = ptr2;
-          size = size + -0x18;
-          pnVar5->_00 = pnVar4->_00;
-          pnVar5->_01 = pnVar4->_01;
-          pnVar5->_02 = pnVar4->_02;
-          pnVar5->_03 = pnVar4->_03;
-          pnVar5->_10 = pnVar4->_10;
-          pnVar5->_11 = pnVar4->_11;
-          ptr2 = (numtx_s *)&pnVar4->_12;
-          ptr = (numtx_s *)&pnVar5->_12;
-        } while (size != 0);
-        pnVar5->_12 = pnVar4->_12;
-        pnVar5->_13 = pnVar4->_13;
-        pnVar5->_20 = pnVar4->_20;
-        pnVar5->_21 = pnVar4->_21;
-        if (mom != (nuvec_s *)0x0) {
-          mom[poiId].x = mtx[poiId]._30 - fVar1;
-          mom[poiId].y = mtx[poiId]._31 - fVar2;
-          mom[poiId].z = mtx[poiId]._32 - fVar3;
+  if (mtx != NULL) {
+    for(i = 0; i < 0x10; i++) {
+      if (model->pLOCATOR[i] != NULL) {
+        oldpos.x = mtx[i]._30;
+        oldpos.y = mtx[i]._31;
+        oldpos.z = mtx[i]._32;
+        NuHGobjPOIMtx(model->hobj,i,mC,tmtx,&m);
+          mtx[i] = m;
+        if (mom != NULL) {
+          mom[i].x = mtx[i]._30 - oldpos.x;
+          mom[i].y = mtx[i]._31 - oldpos.y;
+          mom[i].z = mtx[i]._32 - oldpos.z;
         }
       }
-      poiId = cnt;
-    } while (cnt < 0x10);
+    }
   }
   return;
 }

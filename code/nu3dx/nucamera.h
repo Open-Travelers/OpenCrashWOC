@@ -21,7 +21,7 @@
 extern struct nucamera_s global_camera;
 
 // View matrix.
-extern struct numtx_s* vmtx;
+static struct numtx_s vmtx;
 
 // Projection matrix.
 extern struct numtx_s pmtx;
@@ -36,12 +36,23 @@ static struct numtx_s vpcmtx;
 static struct numtx_s ivpcsmtx;
 
 // Camera clipping.
-extern s32 clip_enable;;
+static s32 clip_enable;
+
+struct nucamera_s global_camera;
+struct numtx_s pmtx;
+struct numtx_s vpcsmtx;
+static struct numtx_s vpmtx;
+static struct nuvec4_s frustrumplanes[6];
+static float zx;
+static float zy;
+static enum nucamfxmode_s camfx;
+static struct nureflect_s global_reflect;
+static struct nuvec_s cam_axes;
 
 // Camera axes.
-extern struct Vec cam_axes;
+extern struct nuvec_s cam_axes;
 
-static struct Vec4 frustrumplanes[6];
+static struct nuvec4_s frustrumplanes[6];
 
 static struct numtx_s vpc_vport_mtx;
 
@@ -57,7 +68,7 @@ static struct numtx_s* glassMtx[256];
 
 static struct numtx_s smtx;
 
-static struct Vec4 frustrumplanes[6];
+static struct nuvec4_s frustrumplanes[6];
 
 
 // Create a new camera.
@@ -90,10 +101,10 @@ struct numtx_s* NuCameraGetVPCSMtx();
 // NuCameraClipTestPoints
 
 // Get the squared distance from the camera to the point.
-f32 NuCameraDistSqr(struct Vec* point);
+f32 NuCameraDistSqr(struct nuvec_s* point);
 
 // Fix the axes of a matrix.
-void FixAxes(struct Mtx* m);
+void FixAxes(struct numtx_s* m);
 
 // SetProjectionMatrix
 

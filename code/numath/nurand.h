@@ -7,15 +7,16 @@
 extern u32 fseed;
 
 // Current random number.
-extern u32 global_rand;
+static struct nunrand_s global_rand;
 
 // Get a random number.
-void NuRand(u32* rand);
+long NuRand(struct nunrand_s* rand);
 
 // Set the float seed.
 void NuRandSeed(u32 seed);
 
 // Fetch a random float.
 f32 NuRandFloat();
+
 
 #endif // !NURAND_H

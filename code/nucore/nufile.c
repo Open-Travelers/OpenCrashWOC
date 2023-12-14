@@ -92,8 +92,7 @@ fileHandle NuFileOpen(char* filename, enum nufilemode_e mode)
 		strcat(namebuf, filename);
 		if (mode > NUFILE_APPEND)
 		{
-			error_func e = NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 75);
-			e("assert");
+			NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 75, "assert");
 		}
 
 		for (s32 i = 0; i < MAX_FILES; i++)
@@ -336,14 +335,12 @@ s32 NuFileLoadBuffer(char* fileName, void* dest, s32 maxSize)
 	if (size == 0)
 	{
 		printf("file size: %d\n", size);
-		error_func e = NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 321);
-		e("File %s does not exist!", fileName);
+		NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 321, "File %s does not exist!", fileName);
 	}
 	if (size > maxSize)
 	{
 		printf("file size: %d\n", size);
-		error_func e = NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 327);
-		e("Super Buffer out of space!");
+		NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 327, "Super Buffer out of space!");
 
 	}
 	else if (size != 0)
@@ -490,8 +487,7 @@ s32 NuFileBeginBlkRead(fileHandle handle, s32 blkType)
 		}
 		if (blkType != 0 && blkType != blkinfo[currBlock].hdr.blk)
 		{
-			error_func e = NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 471);
-			e("NuFileBeginBlkRead : Block header mismatch!");
+			NuErrorProlog("OpenCrashWOC/code/nucore/nufile.c", 471, "NuFileBeginBlkRead : Block header mismatch!");
 		}
 		return blkinfo[currBlock].hdr.blk;
 	}

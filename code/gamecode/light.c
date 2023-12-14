@@ -1,89 +1,109 @@
 extern char* LevelFileName;
-extern void* Chase;
-extern s32 POINTCOUNT;
-extern s32 AMBIENTCOUNT;
-extern s32 LIGHTCOUNT;
-extern s32 DIRECTCOUNT;
+extern void* Chase[3]; //struct chase_s
+s32 POINTCOUNT;
+s32 AMBIENTCOUNT;
+s32 LIGHTCOUNT;
+s32 DIRECTCOUNT;
 
-void LoadLights(void) 		//WIP
+struct glowlight_s
 {
-    s32 temp_r3;
-    s32 var_ctr;
-    s32 var_r0;
-    s32 var_r26;
-    s32 var_r27;
-    s32 var_r28;
-    s32 var_r29;
-    s32* var_r30;
-    void* lgt;
-    s32 file;
+    struct nucolour3_s HighColour;
+    struct nucolour3_s LowColour;
+    struct nucolour3_s CurColour;
+    struct nucolour3_s ColDiff;
+    u16 Step;
+    u16 CurAngle;
+};
 
-    var_ctr = 0x100;
-    POINTCOUNT = 0;
-    lgt = &Lights;
-    LIGHTCOUNT = 0;
-    AMBIENTCOUNT = 0;
-    DIRECTCOUNT = 0;
-    do {
-        //*lgt = -1;
-        //lgt += 0x48;
-        var_ctr -= 1;
-    } while (var_ctr != 0);
-    sprintf((char*)tbuf, "%s.lgt", &LevelFileName);
-    file = NuFileLoadBuffer(tbuf - 0x58A4, &Chase, 0x7FFFFFFF);
-    if (NuFileExist(tbuf - 0x58A4) != 0) {
-        temp_r3 = NuMemFileOpen(&Chase, &file, 0);
-        if (temp_r3 != 0) {
-            LIGHTCOUNT = NuFileReadInt(temp_r3);
-            AMBIENTCOUNT = NuFileReadInt(temp_r3);
-            DIRECTCOUNT = NuFileReadInt(temp_r3);
-            var_r0 = LIGHTCOUNT;
-            POINTCOUNT = NuFileReadInt(temp_r3);
-            if (var_r0 > 0x100) {
-                LIGHTCOUNT = 0x100;
-                var_r0 = 0x100;
-            }
-            var_r28 = 0;
-            if (var_r0 > 0) {
-                var_r26 = 0x38;
-                var_r27 = 0;
-                //var_r30 = Lights + 0x20;
-                do {
-                    var_r29 = var_r26;
-                    /*var_r30->unk-20 = NuFileReadInt(temp_r3);
-                    var_r30->unk-1C = NuFileReadFloat(temp_r3);
-                    var_r30->unk-18 = NuFileReadFloat(temp_r3);
-                    var_r30->unk-14 = NuFileReadFloat(temp_r3);
-                    var_r30->unk-10 = NuFileReadFloat(temp_r3);
-                    var_r30->unk-C = NuFileReadFloat(temp_r3);
-                    var_r30->unk-8 = NuFileReadFloat(temp_r3);
-                    var_r30->unk-4 = NuFileReadFloat(temp_r3);
-                    var_r30->unk0 = NuFileReadChar(temp_r3);
-                    var_r30->unk1 = NuFileReadChar(temp_r3);
-                    var_r30->unk2 = NuFileReadChar(temp_r3);
-                    var_r30->unk4 = NuFileReadFloat(temp_r3);
-                    var_r30->unk8 = NuFileReadFloat(temp_r3);
-                    var_r30->unkC = NuFileReadFloat(temp_r3);*/
-                    /*if ((u32) (var_r30->unk-20 - 1) <= 1U) {
-                        var_r30->unk10 = NuFileReadFloat(temp_r3);
-                        var_r30->unk14 = NuFileReadFloat(temp_r3);
-                        var_r30->unk18 = NuFileReadFloat(temp_r3);
-                    } else {
-                        var_r29 = var_r27 + 0x38;
-                    }*/
-                    var_r28 += 1;
-                    var_r26 += 0x48;
-                    var_r27 += 0x48;
-                    //(var_r29 + &Lights)->unk4 = NuFileReadInt(temp_r3);
-                    //var_r30->unk1E = NuFileReadInt(temp_r3);
-                    var_r30 += 0x48;
-                } while (var_r28 < (s32) LIGHTCOUNT);
-            }
-            NuFileClose(temp_r3);
+// Size: 0x48
+struct lights_s
+{
+    s32 type;
+    struct nuvec_s pos;
+    struct nuvec_s radius_pos;
+    f32 radius;
+    u8 r;
+    u8 g;
+    u8 b;
+    u8 glow;
+    struct nucolour3_s colour;
+    struct nuvec_s direction;
+    u8 globalflag;
+    u8 blendtype;
+    u8 brightness;
+    struct glowlight_s* glowlight;
+    u8 pad2;
+};
+
+struct lights_s Lights[320];
+
+//87% NGC
+void LoadLights(void) {
+  s32 fsize;
+  s32 handle;
+  s32 i;
+  float fVar1;
+    
+  POINTCOUNT = 0;
+  LIGHTCOUNT = 0;
+  AMBIENTCOUNT = 0;
+  DIRECTCOUNT = 0;
+  for (fsize = 0; fsize < 0x100; fsize++) {
+    Lights[fsize].type = -1;
+  }
+  sprintf(tbuf,"%s.lgt",LevelFileName);
+  if (NuFileExists(tbuf) != 0) {
+    fsize = NuFileLoadBuffer(tbuf,Chase + 1,0x7fffffff);
+    handle = NuMemFileOpen(Chase + 1,fsize,NUFILE_READ);
+    if (handle != 0) {
+      LIGHTCOUNT = NuFileReadInt(handle);
+      AMBIENTCOUNT = NuFileReadInt(handle);
+      DIRECTCOUNT = NuFileReadInt(handle);
+      POINTCOUNT = NuFileReadInt(handle);
+      if (0x100 < LIGHTCOUNT) {
+        LIGHTCOUNT = 0x100;
+      }
+        for (i = 0; i < LIGHTCOUNT; i++) {
+          Lights[i].type = NuFileReadInt(handle);
+          fVar1 = NuFileReadFloat(handle);
+          (Lights[i].pos.x) = fVar1;
+          fVar1 = NuFileReadFloat(handle);
+          (Lights[i].pos.y) = fVar1;
+          fVar1 = NuFileReadFloat(handle);
+          (Lights[i].pos.z) = fVar1;
+          fVar1 = NuFileReadFloat(handle);
+          Lights[i].radius_pos.x  = fVar1;
+          fVar1 = NuFileReadFloat(handle);
+          Lights[i].radius_pos.y  = fVar1;
+          fVar1 = NuFileReadFloat(handle);
+          Lights[i].radius_pos.z  = fVar1;
+          fVar1 = NuFileReadFloat(handle);
+          Lights[i].radius = fVar1;
+          Lights[i].r = NuFileReadChar(handle);
+          Lights[i].g = NuFileReadChar(handle);
+          Lights[i].b = NuFileReadChar(handle);
+          fVar1 = NuFileReadFloat(handle);
+          Lights[i].colour.r = fVar1;
+          fVar1 = NuFileReadFloat(handle);
+          Lights[i].colour.g = fVar1;
+          fVar1 = NuFileReadFloat(handle);
+          Lights[i].colour.b = fVar1; //
+          if (Lights[i].type - 1U < 2) {
+            fVar1 = NuFileReadFloat(handle);
+            Lights[i].direction.x = fVar1;
+            fVar1 = NuFileReadFloat(handle);
+            Lights[i].direction.y = fVar1;
+            fVar1 = NuFileReadFloat(handle);
+            Lights[i].direction.z = fVar1;
+          }
+          Lights[i].globalflag = (u8)NuFileReadInt(handle);
+          Lights[i].brightness = (u8)NuFileReadInt(handle);
         }
+      NuFileClose(handle);
     }
+  }
+  return;
 }
-
 
 void UpdateGlobals(Nearest_Light_s *nl)
 

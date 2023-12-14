@@ -2,6 +2,7 @@
 #define NUVPORT_H
 
 #include "../types.h"
+#include "nu3dx/nucamera.h"
 #include "nu3dxtypes.h"
 
 /*

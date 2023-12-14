@@ -3,11 +3,10 @@
 
 static s32 spectid;
 
-void InitSpecular(void)
-
-{
+//MATCH NGC
+void InitSpecular() {
   struct nutex_s tex;
-  
+
   spectid = 0;
   NuTexReadBitmapMM("gfx\\spectxtf.bmp",0,&tex);
   spectid = NuTexCreate(&tex);
@@ -20,219 +19,126 @@ void InitSpecular(void)
   return;
 }
 
-
-s32 GetGlassSpecularTexId(void)
-
-{
-  return spectid;
+//MATCH NGC
+s32 GetGlassSpecularTexId(void) {
+    return spectid;
 }
 
+//WIP
+void InitOverrideMtl(void) {
+  int pad;
 
-
-/*
-
-void InitOverrideMtl(void)	//TODO
-{
-  numtlattrib_s attrib;
-  int BBtid;
-  numtl_s *pnVar1;
-  numtl_s *a;
-  numtl_s *bs_mtl;
-  numtl_s *bs_mtl_1;
-  numtl_s *mtl;
-  
+  pad = 0;
   glass_mtl = NuMtlCreate(1);
-  BBtid = NudxFw_GetBackBufferCopyTID();
-  mtl = glass_mtl;
+  glass_mtl->tid = NudxFw_GetBackBufferCopyTID();
   glass_mtl->special_id = '\x01';
-  mtl->tid = BBtid;
-  mtl = glass_mtl;
-  attrib = glass_mtl->attrib;
   glass_mtl->fxid = '\x03';
-  bs_mtl = glass_mtl;
-  (mtl->diffuse).b = 0.9;
-  (mtl->diffuse).r = 0.9;
-  (mtl->diffuse).g = 0.9;
-  mtl->alpha = 1.0;
-  mtl->attrib = (numtlattrib_s)((uint)attrib & 0x3c30c7ff | 0x1408800);
-  mtl->power = 1.0;
-  bs_mtl->fx1 = (nufx_u)0x3f800000;
-  NuMtlUpdate(bs_mtl);
-  glass_mtl->next = (numtl_s *)0x0;
+    glass_mtl->attrib.zmode = 3;
+    glass_mtl->attrib.alpha = 3;
+    glass_mtl->attrib.atst = 1;
+    glass_mtl->attrib.utc = 1;
+    glass_mtl->attrib.colour = 3;
+    glass_mtl->attrib.vtc = 1;
+  //glass_mtl->attrib = (struct numtlattrib_s *)((uint)&glass_mtl->attrib & 0x3c30c7ff | 0x1408800);
+  glass_mtl->diffuse.r = 0.9f;
+  glass_mtl->diffuse.g = 0.9f;
+  glass_mtl->diffuse.b = 0.9f;
+  glass_mtl->fx1.f32 = 1.0f;
+  glass_mtl->power = 1.0f;
+  glass_mtl->alpha = 1.0f;
+
+  NuMtlUpdate(glass_mtl);
+  glass_mtl->next = NULL;
   glass_mtl_blendskin = NuMtlCreate(1);
-  BBtid = 0x48;
-  mtl = glass_mtl;
-  bs_mtl = glass_mtl_blendskin;
-  do {
-    a = bs_mtl;
-    pnVar1 = mtl;
-    BBtid = BBtid + -0x18;
-    a->next = pnVar1->next;
-    a->attrib = pnVar1->attrib;
-    (a->ambient).r = (pnVar1->ambient).r;
-    (a->ambient).g = (pnVar1->ambient).g;
-    (a->ambient).b = (pnVar1->ambient).b;
-    mtl = (numtl_s *)&(pnVar1->diffuse).g;
-    (a->diffuse).r = (pnVar1->diffuse).r;
-    bs_mtl_1 = glass_mtl_blendskin;
-    bs_mtl = (numtl_s *)&(a->diffuse).g;
-  } while (BBtid != 0);
-  *(float *)bs_mtl = *(float *)mtl;
-  (a->diffuse).b = (pnVar1->diffuse).b;
-  a->fx1 = pnVar1->fx1;
-  bs_mtl_1[1].diffuse.r = 2.382207e-44;
-  NuMtlUpdate(bs_mtl_1);
+
+   *glass_mtl_blendskin = *glass_mtl;
+
+
+  ((struct nusysmtl_s *)glass_mtl_blendskin)->hShader = 0x11;
+  NuMtlUpdate(glass_mtl_blendskin);
   glass_mtl_blendskin2 = NuMtlCreate(1);
-  BBtid = 0x48;
-  mtl = glass_mtl;
-  bs_mtl = glass_mtl_blendskin2;
-  do {
-    a = bs_mtl;
-    pnVar1 = mtl;
-    BBtid = BBtid + -0x18;
-    a->next = pnVar1->next;
-    a->attrib = pnVar1->attrib;
-    (a->ambient).r = (pnVar1->ambient).r;
-    (a->ambient).g = (pnVar1->ambient).g;
-    (a->ambient).b = (pnVar1->ambient).b;
-    mtl = (numtl_s *)&(pnVar1->diffuse).g;
-    (a->diffuse).r = (pnVar1->diffuse).r;
-    bs_mtl_1 = glass_mtl_blendskin2;
-    bs_mtl = (numtl_s *)&(a->diffuse).g;
-  } while (BBtid != 0);
-  *(float *)bs_mtl = *(float *)mtl;
-  (a->diffuse).b = (pnVar1->diffuse).b;
-  a->fx1 = pnVar1->fx1;
-  bs_mtl_1[1].diffuse.r = 2.522337e-44;
-  NuMtlUpdate(bs_mtl_1);
+
+    *glass_mtl_blendskin2 = *glass_mtl;
+  pad = 8;
+  ((struct nusysmtl_s *)glass_mtl_blendskin2)->hShader = 0x12;
+  NuMtlUpdate(glass_mtl_blendskin2);
   return;
 }
 
-
-
-*/
-
-
-s32 isGlassInstance(struct nugscn_s *gsc,struct nuinstance_s *inst)
-
-{
+//MATCH NGC
+static s32 isGlassInstance(struct nugscn_s *gsc,struct nuinstance_s *inst) {
   struct nugeom_s *geom;
-  u8 fxid;
-  
-  geom = (&gsc->gobjs->sysnext)[inst->objid]->geom;
-  if (-1 < (int)inst->flags) {
-    return 0;
-  }
-  while( true ) {
-    if (geom == NULL) {
-      return 0;
-    }
-    fxid = geom->mtls->fxid;
-    if (((fxid == '\x01') || (fxid == '\x03')) || (fxid == 'd')) break;
-    geom = geom->next;
-  }
-  return 1;
-}
 
-
-
-void NuGlassProcessScene(nugscn_s *gsc)	//CHECK
-
-{
-  float z;
-  int flag;
-  nugobj_s *gobj;
-  nugeom_s *next;
-  nugobj_s *sysnext;
-  float y;
-  int i;
-  int j;
-  nuinstance_s *inst;
-  uchar fxid;
-  nugeom_s *g;
-  nugeom_s *geom;
-  nugeom_s *prev;
-  
-  i = 0;
-  if (0 < gsc->numinstance) {
-    do {
-      j = i + 1;
-      flag = isGlassInstance(gsc,gsc->instances + i);
-      if (flag != 0) {
-        if (0xff < num_glass_inst) {
-          //e = NuErrorProlog("C:/source/crashwoc/code/nu3dx/nuglass.c",0x9f);
-          //(*e)("assert");
-        }
-        flag = num_glass_inst;
-        glass_inst[num_glass_inst] = gsc->instances + i;
-        inst = gsc->instances + i;
-        glassMtx[flag] = &inst->matrix;
-        gobj = NuGobjCreate();
-        i = num_glass_inst;
-        glassGobj[num_glass_inst] = gobj;
-        gobj->ngobjs = 1;
-        glassGobj[i]->type = NUGOBJ_MESH;
-        glassGobj[i]->geom = (nugeom_s *)0x0;
-        glassGobj[i]->faceon_geom = (NuFaceOnGeom *)0x0;
-        glassGobj[i]->next_gobj = (nugobj_s *)0x0;
-        gobj = glassGobj[i];
-        sysnext = (&gsc->gobjs->sysnext)[inst->objid];
-        z = (sysnext->bounding_box_min).z;
-        y = (sysnext->bounding_box_min).y;
-        (gobj->bounding_box_min).x = (sysnext->bounding_box_min).x;
-        (gobj->bounding_box_min).z = z;
-        (gobj->bounding_box_min).y = y;
-        gobj = glassGobj[i];
-        sysnext = (&gsc->gobjs->sysnext)[inst->objid];
-        z = (sysnext->bounding_box_max).z;
-        y = (sysnext->bounding_box_max).y;
-        (gobj->bounding_box_max).x = (sysnext->bounding_box_max).x;
-        (gobj->bounding_box_max).z = z;
-        (gobj->bounding_box_max).y = y;
-        glassGobj[i]->bounding_radius_from_origin =
-             (&gsc->gobjs->sysnext)[inst->objid]->bounding_radius_from_origin;
-        glassGobj[i]->bounding_rsq_from_origin =
-             (&gsc->gobjs->sysnext)[inst->objid]->bounding_rsq_from_origin;
-        gobj = glassGobj[i];
-        sysnext = (&gsc->gobjs->sysnext)[inst->objid];
-        y = (sysnext->bounding_box_center).y;
-        z = (sysnext->bounding_box_center).z;
-        (gobj->bounding_box_center).x = (sysnext->bounding_box_center).x;
-        (gobj->bounding_box_center).z = z;
-        (gobj->bounding_box_center).y = y;
-        glassGobj[i]->bounding_radius_from_center =
-             (&gsc->gobjs->sysnext)[inst->objid]->bounding_radius_from_center;
-        glassGobj[i]->bounding_rsq_from_center =
-             (&gsc->gobjs->sysnext)[inst->objid]->bounding_rsq_from_center;
-        g = (nugeom_s *)0x0;
-        next = (&gsc->gobjs->sysnext)[inst->objid]->geom;
-        while (geom = next, prev = g, geom != (nugeom_s *)0x0) {
-          next = geom->next;
-          fxid = geom->mtls->fxid;
-          if (((fxid == '\x01') || (fxid == '\x03')) || (g = geom, fxid == 'd')) {
-            geom->next = glassGobj[i]->geom;
-            glassGobj[i]->geom = geom;
-            g = prev;
-            if (prev == (nugeom_s *)0x0) {
-              (&gsc->gobjs->sysnext)[inst->objid]->geom = next;
-            }
-            else {
-              prev->next = next;
-            }
+  geom = gsc->gobjs[inst->objid]->geom;
+        if (inst->flags.visible >= 0) {
+              return 0;
+           }
+          while( geom != NULL  ) {
+            if ((((geom->mtl)->fxid == '\x01') || ((geom->mtl)->fxid == '\x03')) || ((geom->mtl)->fxid == 'd')) return 1;
+            geom = geom->next;
           }
-        }
-        num_glass_inst = num_glass_inst + 1;
-      }
-      i = j;
-    } while (j < gsc->numinstance);
-  }
-  return;
+  return 0;
 }
 
+//MATCH NGC
+static void NuGlassProcessScene(struct nugscn_s* gsc) {
+    s32 i;
+    struct nugeom_s* geom;
+    struct nugeom_s* prev;
+    struct nugeom_s* next;
+    struct nuinstance_s* inst;
 
-void NuGlassLoad(nugscn_s *gsc,variptr_u *buffer,variptr_u *buffend)
+    for (i = 0; i < gsc->numinstance; i++) {
+        if (isGlassInstance(gsc, &gsc->instances[i]) != 0) {
+            if (0xff < num_glass_inst) {
+                NuErrorProlog("C:/source/crashwoc/code/nu3dx/nuglass.c", 0x9f)("assert");
+            }
+            glass_inst[num_glass_inst] = &gsc->instances[i];
+            inst = &gsc->instances[i];
 
-{
+            glassMtx[num_glass_inst] = &inst->mtx;
+
+            // Initiate glass gobj
+            glassGobj[num_glass_inst] = NuGobjCreate();
+            glassGobj[num_glass_inst]->ngobjs = 1;
+            glassGobj[num_glass_inst]->type = NUGOBJ_MESH;
+            glassGobj[num_glass_inst]->geom = NULL;
+            glassGobj[num_glass_inst]->faceon_geom = NULL;
+            glassGobj[num_glass_inst]->next_gobj = NULL;
+            glassGobj[num_glass_inst]->bounding_box_min = gsc->gobjs[inst->objid]->bounding_box_min;
+            glassGobj[num_glass_inst]->bounding_box_max = gsc->gobjs[inst->objid]->bounding_box_max;
+            glassGobj[num_glass_inst]->bounding_radius_from_origin = gsc->gobjs[inst->objid]->bounding_radius_from_origin;
+            glassGobj[num_glass_inst]->bounding_rsq_from_origin = gsc->gobjs[inst->objid]->bounding_rsq_from_origin;
+            glassGobj[num_glass_inst]->bounding_box_center = gsc->gobjs[inst->objid]->bounding_box_center;
+            glassGobj[num_glass_inst]->bounding_radius_from_center = gsc->gobjs[inst->objid]->bounding_radius_from_center;
+            glassGobj[num_glass_inst]->bounding_rsq_from_center = gsc->gobjs[inst->objid]->bounding_rsq_from_center;
+
+            geom = gsc->gobjs[inst->objid]->geom;
+            prev = NULL;
+
+            for (geom = gsc->gobjs[inst->objid]->geom; geom != NULL;) {
+                next = geom->next;
+                if ((geom->mtl->fxid == 1) || (geom->mtl->fxid == 3) || (geom->mtl->fxid == 100)) {
+                    geom->next = glassGobj[num_glass_inst]->geom;
+                    glassGobj[num_glass_inst]->geom = geom;
+                    if (prev != NULL) {
+                        prev->next = next;
+                    } else {
+                        gsc->gobjs[inst->objid]->geom = next;
+                    }
+                } else {
+                    prev = geom;
+                }
+                geom = next;
+            }
+            num_glass_inst++;
+        }
+    }
+    return;
+}
+
+//MATCH NGC
+void NuGlassLoad(struct nugscn_s *gsc,union variptr_u *buffer,union variptr_u *buffend) {
   if (buffer != NULL) {
     NuMemSetExternal(buffer,buffend);
   }
@@ -243,35 +149,27 @@ void NuGlassLoad(nugscn_s *gsc,variptr_u *buffer,variptr_u *buffend)
   return;
 }
 
-void NuGlassInit(void)
-
-{
+//MATCH NGC
+void NuGlassInit() {
   num_glass_inst = 0;
   InitSpecular();
   InitOverrideMtl();
   return;
 }
 
-void NuGlassClose(void)	//CHECK
+//MATCH NGC
+void NuGlassClose(void) {
+  s32 i;
 
-{
-  int i;
-  int j;
-  
-  i = 0;
-  if (0 < num_glass_inst) {
-    j = 0;
-    do {
-      j = i + 1;
-      glass_inst[i] = NULL;
-      glassMtx[i] = NULL;
+    for(i = 0; i < num_glass_inst; i++)
+    {
+      glass_inst[i] = 0;
+      glassMtx[i] = 0;
       if (glassGobj[i] != NULL) {
         NuGobjDestroy(glassGobj[i]);
-        glassGobj[i] = NULL;
+        glassGobj[i] = 0;
       }
-      i = j;
-    } while (i < num_glass_inst);
-  }
+    }
   num_glass_inst = 0;
   if (glass_mtl != NULL) {
     NuMtlDestroy(glass_mtl);
@@ -280,113 +178,94 @@ void NuGlassClose(void)	//CHECK
   return;
 }
 
-void NuGlassRenderStatic(void)	//CHECK
-{
-  int i;
-  int iVar1;
-  
-  ProcessGlass(0);
-  nurndr_forced_mtl = glass_mtl;
-  DrawGlassCreatures(0);
-  nurndr_forced_mtl = NULL;
-  if ((SKELETALCRASH != 0) || (glass_mix != 1.0)) {
-    NuRndrEndScene();
-    NudxFw_MakeBackBufferCopy(1);
-    NuRndrBeginScene(1);
-  }
-  if (num_glass_inst != 0) {
+//MATCH NGC
+void NuGlassRenderStatic(void) {
+    s32 i;
+
     i = 0;
-    if (0 < num_glass_inst) {
-      iVar1 = 0;
-      do {
-      if (((uint)glass_inst[iVar1]->flags & 0x20000000) != 0) 
-	 {
-          NuRndrGobj(glassGobj[iVar1],glassMtx[iVar1],NULL);
-       }
-        i = i + 1;
-        iVar1 = iVar1 + 4;
-      } while (i < num_glass_inst);
+    ProcessGlass(0);
+    nurndr_forced_mtl = glass_mtl;
+    DrawGlassCreatures(0);
+    nurndr_forced_mtl = NULL;
+    if ((SKELETALCRASH != 0) || (glass_mix != 1.0f)) {
+        NuRndrEndScene();
+        NudxFw_MakeBackBufferCopy(1);
+        NuRndrBeginScene(1);
     }
-  }
-  return;
+    if (num_glass_inst != 0) {
+            for (i = 0; i < num_glass_inst; i++) {
+                if (glass_inst[i]->flags.visitest != 0) {
+                    NuRndrGobj(glassGobj[i],glassMtx[i],NULL);
+                }
+            }
+    }
+    return;
 }
 
+//MATCH NGC
+void ProcessGlass(s32 paused) {
+    float mix;
 
-void ProcessGlass(int paused)	//TODO
-{
-  numtlattrib_s *attrib;
-  numtl_s *bs;
-  numtl_s *bs2;
-  numtl_s *gmtl;
-  float min;
-  float mix;
-  
-  bs2 = glass_mtl_blendskin2;
-  bs = glass_mtl_blendskin;
-  gmtl = glass_mtl;
-  if (glass_mtl == (numtl_s *)0x0) {
-    return;
-  }
-  if (paused == 0) {
-    mix = WATERBOSSGLASSMIX;
-    if ((Level != 0x17) &&
-       (((player->used == '\0' || (mix = ANGELGLASSMIX, (player->obj).dead != '\x03')) &&
-        (mix = MAXGLASSMIX, glass_enabled == 0)))) {
-      mix = 0.0;
+    if (glass_mtl == NULL) {
+        return;
     }
-    if (glass_mix <= mix) {
-      if ((mix <= glass_mix) || (glass_mix = glass_mix + glass_mix_speed, glass_mix <= mix))
-      goto LAB_800af49c;
+    if (paused == 0) {
+        if (Level == 23) {
+            mix = WATERBOSSGLASSMIX;
+        } else if (player->used != 0 && (player->obj).dead == 3) {
+            mix = ANGELGLASSMIX;
+        } else if (glass_enabled) {
+            mix = MAXGLASSMIX;
+        } else {
+            mix = 0.0f;
+        }
+        if (glass_mix > mix) {
+            glass_mix -= glass_mix_speed;
+            if (glass_mix < mix) {
+                glass_mix = mix;
+            }
+        } else if (glass_mix < mix) {
+            glass_mix += glass_mix_speed;
+            if (glass_mix > mix) {
+                glass_mix = mix;
+            }
+        }
+    }
+    if (glass_mix != 1.0f) {
+        glass_mtl->alpha = glass_mix;
+        glass_mtl->attrib.alpha = 1;
+        glass_mtl_blendskin->alpha = glass_mix;
+        glass_mtl_blendskin->attrib.alpha = 1;
+        glass_mtl_blendskin2->alpha = glass_mix;
+        glass_mtl_blendskin2->attrib.alpha = 1;
+    } else {
+        glass_mtl->attrib.alpha = 0;
+        glass_mtl_blendskin->attrib.alpha = 0;
+        glass_mtl_blendskin2->attrib.alpha = 0;
+    }
+    //NuShaderSetGlassMix(glass_mix);
+    glass_mtl->diffuse = glass_col[0];
+    NuMtlUpdate(glass_mtl);
+    NuMtlUpdate(glass_mtl_blendskin);
+    NuMtlUpdate(glass_mtl_blendskin2);
+    return;
+}
+
+//MATCH NGC
+void DrawGlassCreatures(s32 solid) {
+    if (Level != 0x17) {
+        if ((GLASSPLAYER != 0) && (plr_invisibility_time < 5.0f)) {
+        glass_phase = 1;
+        glass_draw = solid;
+        //DrawCreatures(Character,1,1,0);
+        force_glass_screencopy_enable = 0;
+    }
+
     }
     else {
-      glass_mix = glass_mix - glass_mix_speed;
-      if (mix <= glass_mix) goto LAB_800af49c;
+        glass_draw = solid;
+        glass_phase = 1;
+        //DrawCreatures(Character + 1,8,1,1);
     }
-    glass_mix = mix;
-  }
-LAB_800af49c:
-  mix = glass_mix;
-  if (glass_mix == 1.0) {
-    glass_mtl->attrib = (numtlattrib_s)((uint)glass_mtl->attrib & 0x3fffffff);
-    bs->attrib = (numtlattrib_s)((uint)bs->attrib & 0x3fffffff);
-    bs2->attrib = (numtlattrib_s)((uint)bs2->attrib & 0x3fffffff);
-  }
-  else {
-    attrib = &glass_mtl->attrib;
-    glass_mtl->alpha = glass_mix;
-    gmtl->attrib = (numtlattrib_s)((uint)*attrib & 0x3fffffff | 0x40000000);
-    bs->alpha = mix;
-    bs->attrib = (numtlattrib_s)((uint)bs->attrib & 0x3fffffff | 0x40000000);
-    bs2->alpha = mix;
-    bs2->attrib = (numtlattrib_s)((uint)bs2->attrib & 0x3fffffff | 0x40000000);
-  }
-  NuShaderSetGlassMix(glass_mix);
-  gmtl = glass_mtl;
-  min = glass_col[0].b;
-  mix = glass_col[0].g;
-  (glass_mtl->diffuse).r = glass_col[0].r;
-  (gmtl->diffuse).b = min;
-  (gmtl->diffuse).g = mix;
-  NuMtlUpdate(gmtl);
-  NuMtlUpdate(glass_mtl_blendskin);
-  NuMtlUpdate(glass_mtl_blendskin2);
-  return;
-}
-
-
-void DrawGlassCreatures(int solid)
-
-{
-  if (Level == 0x17) {
-    glass_phase = 1;
-    glass_draw = solid;
-    DrawCreatures(Character + 1,8,1,1);
-  }
-  else if ((GLASSPLAYER != 0) && (plr_invisibility_time < 5.0)) {
-    glass_phase = 1;
-    glass_draw = solid;
-    DrawCreatures(Character,1,1,0);
-    force_glass_screencopy_enable = 0;
-  }
-  return;
+    return;
 }

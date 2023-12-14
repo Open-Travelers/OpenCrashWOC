@@ -356,41 +356,34 @@ void InitFont3D(nugscn_s *gscn)		//TODO
   return;
 }
 
+static char j_bc[2][11];
+static char j_bd[2][41];
 
+s32 CombinationCharacterBD(char c0,char c1) {
+    char *p;
+    
+    p = (char *)j_bd;
 
-int CombinationCharacterBD(char *c0,char *c1)
-
-{
-  char *p;
-  
-  p = (char *)j_bd;
-  if (j_bd[0][0] != '\0') {
-    do {
-      if ((c0 == (char *)(int)*p) && (c1 == (char *)(int)p[1])) {
-        return 1;
-      }
-      p = p + 2;
-    } while (*p != '\0');
-  }
-  return 0;
+    for (p = (char *)j_bd; *p != '\0'; p+= 2) {
+        if ((c0 == (int)*p) && (c1 == (int)p[1])) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 
-int CombinationCharacterBC(int c0,int c1)
-
-{
-  char *p;
-  
-  p = (char *)j_bc;
-  if (j_bc[0][0] != '\0') {
-    do {
-      if ((c0 == *p) && (c1 == p[1])) {
-        return 1;
-      }
-      p = p + 2;
-    } while (*p != '\0');
-  }
-  return 0;
+s32 CombinationCharacterBC(char c0,char c1) {
+    char *p;
+    
+    p = (char *)j_bc;
+    for (p = (char *)j_bc; *p != '\0'; p+= 2) {
+            if ((c0 == (int)*p) &&
+               (c1 == (int)p[1])) {
+                return 1;
+            }
+    }
+    return 0;
 }
 
 

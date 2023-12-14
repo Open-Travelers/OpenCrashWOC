@@ -28,7 +28,6 @@ void GS_DeleteBuffer(void* ptr);
 int NuVtxStride(enum nuvtxtype_e type);
 void NuAnimUV(void);*/
 void NuGobjCalcDims(struct nugobj_s* gobj);
-void* GS_CreateBuffer(u32 bufsize, s32 bufferType);
 /**********************************************************/
 // Variables
 /**********************************************************/
@@ -39,9 +38,5 @@ extern u32 GS_BufferSize;
 extern u32 BufferTypes[4];
 static struct nugobj_s* sysgobj;
 /**************************************************************/
-typedef struct GS_Buffer {
-    u32 size;
-    u32 type;
-}; // 0x8
 
 #endif // !NUGOBJ_H

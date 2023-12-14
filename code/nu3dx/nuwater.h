@@ -3,6 +3,8 @@
 
 #include "../types.h"
 #include "nu3dxtypes.h"
+#include "gamecode/main.h"
+#include "nu3dx/nurndr.h"
 
 /*
   800bbd60 000058 800bbd60  4 NuDynamicWaterClose 	Global
@@ -27,5 +29,41 @@
   800bd224 000014 800bd224  4 NuWaterSpeed 	Global
   800bd238 000120 800bd238  4 NuWaterRender 	Global
 */
+
+s32 watervisible;
+static s32 nwinst;
+static s32 nwater_mtl;
+static struct nugscn_s* wgsc[256];
+static struct nuinstance_s* winst[256];
+static s32 dynamicWaterInitialised;
+static s32 dynamicWaterEnabled;
+static s32 dynamicWaterForceStepOneTex;
+static s32 dynamicWaterTextureIds[6];
+static struct nuvec4_s dynamicWaterUVOffsets[2][6];
+struct numtl_s* water_copy_mtl;
+s32 DropletTID;
+struct nutex_s DropletTex;
+static s32 dynamicWaterBlurTex;
+static s32 dynamicWaterFlipState;
+static s32 dynamicWaterForceTex;
+static s32 dynamicWaterHeightSourceTex;
+static s32 dynamicWaterHeightTargetTex;
+static s32 dynamicWaterNormalTex;
+static struct D3DSurface* dynamicWaterSurfaces[6];
+static s32 dynamicWaterVelocitySourceTex;
+static s32 dynamicWaterVelocityTargetTex;
+struct D3DTexture* pDropletTex;
+struct numtl_s* dynamicWaterMaterial;
+static float dynamicWaterDropFrequency;
+static float dynamicWaterBlurDist;
+float dynamicWaterBlend;
+float dynamicWaterScale;
+static f32 dynamicWaterDropMaxScale;
+static f32 dynamicWaterDropMinScale;
+static s32 dynamicWaterTurbulenceFrequency;
+static f32 dynamicWaterTurbulenceScale;
+static s32 dynamicWaterTurbulenceStrength;
+static float theta_step;
+struct nuvec4_s waterUVOffset[32];
 
 #endif // !NUWATER_H

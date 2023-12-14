@@ -1,21 +1,23 @@
 #include "nurand.h"
 
 u32 fseed = 0;
-u32 global_rand = 1;
+//global_rand.idum = 1;
 
-void NuRand(u32* rand)
+long NuRand(struct nunrand_s* nrand)
 {
-	if (rand == NULL)
+	if (nrand == NULL)
 	{
-		rand = &global_rand;
+		nrand = &global_rand;
 	}
-	u32 val = (*rand ^ 0x75bd924) * 0x41a7 + ((s32)(*rand ^ 0x75bd924) / 0x31e5) * -0xccbbc77;
-	*rand = val;
+	u32 val = (nrand->idum ^ 0x75bd924) * 0x41a7 + ((s32)(nrand->idum ^ 0x75bd924) / 0x31e5) * -0xccbbc77;
+	nrand->idum = val;
 	if ((s32)val < 0)
 	{
-		*rand = val + 0x7fffffff;
+		nrand->idum = val + 0x7fffffff;
 	}
-	*rand = *rand ^ 0x75bd924;
+	nrand->idum = nrand->idum ^ 0x75bd924;
+
+	return nrand->idum;
 }
 
 void NuRandSeed(u32 seed)

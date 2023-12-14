@@ -2,6 +2,7 @@
 #define NUCORETYPES_H
 
 #include "types.h"
+#include "stddef.h"
 
 enum nufilemode_e
 {
@@ -137,22 +138,18 @@ typedef struct
 	void (*cb)(FPar*);
 } FParCommand;*/
 
-typedef struct nufpar_s nufpar_s, *Pnufpar_s;
-
-typedef struct nufpcomjmp_s nufpcomjmp_s, *Pnufpcomjmp_s;
-
 struct nufpcomjmp_s {
     char * fname;
-    void (*func)(nufpar_s*);
+    void (*func)(struct nufpar_s*);
 };
 
 struct nufpar_s {
-    fileHandle handle; /* fH */
-    u8 buffer[4096]; /* fbuff */
-    char textBuffer[256]; /* lbuff */
-    char wordBuffer[260];
+    s32 handle; /* fH */
+    char fbuff[4096]; /* fbuff */
+    char lbuff[256]; /* lbuff */
+    char wbuff[260];
     s32 line_num;
-    s32 linepos;
+    s32 line_pos;
     s32 cpos;
     s32 buffstart;
     s32 buffend;

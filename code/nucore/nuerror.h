@@ -13,9 +13,9 @@ extern char* nufile;
 extern u32 nuline;
 
 // Print an error to the console.
-void NuErrorFunction(char message[0x60], ...);
+static void NuErrorFunction(char* msg, ...);
 
 // Prepare to run an error.
-error_func NuErrorProlog(char* file, u32 line);
+error_func* NuErrorProlog(char* file, s32 line,...);
 
 #endif // !NUERROR_H

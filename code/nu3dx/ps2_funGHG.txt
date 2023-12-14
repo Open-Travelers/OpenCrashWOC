@@ -1,0 +1,229 @@
+//78%
+void ReadTexAnimSet(s32 fh) {
+    s16* temp_a0_3;
+    s16* temp_s3;
+    s32 temp_a0_2;
+    s32 temp_a1_2;
+    s32 temp_a2_2;
+    struct nutexanimprog_s *temp_a3;
+    s32 j; 
+    s32 var_a2;
+    s32 var_a3;
+    s32* temp_a0_4;
+    struct numtl_WoC* temp_a1;
+    struct nutexanim_s* temp_a1_3;
+    struct nutexanim_s* tex;
+    union variptr_u sp;
+
+
+    NuDebugMsgProlog("..\\nu2.ps2\\nu3d\\nugscn.c", 0xC29)("Reading Animated texture set...");
+    gscene->numtexanims = NuFileReadInt(fh);
+    NuFileReadInt(fh);
+    gscene->texanims = NuMemFileAddr(fh);
+    NuMemFileSeek(fh, (s32) gscene->numtexanims << 5, 1);
+    NuFileReadInt(fh);
+    temp_s3 = NuMemFileAddr(fh); //gscene->texanim_tids
+        for (i_231 = 0;  i_231 < gscene->numtexanims; i_231++) {
+            
+            tex = &gscene->texanims[i_231];
+            tex->succ = 0;
+            tex->prev = 0;
+            tex->tids = &temp_s3[(s32)tex->tids];
+            
+                for(j = 0; j < tex->numtids; j++)
+                    {
+                        tex->tids[j] = temp_s3[tex->tids[j]];
+                    }
+            tex->ntaname = &gscene->nametable[(s32)tex->ntaname];
+            temp_a2_2 = (s32) tex->numtids & 0xFFFEFFFF;
+            temp_a1 = gscene->mtls[(s32)tex->mtl];
+            tex->mtl = temp_a1;
+            tex->numtids = temp_a2_2;
+            temp_a3 = NuTexAnimProgFind(&gscene->nametable[(s32)tex->scriptname]);
+            sp = (union variptr_u)NuGScnBufferAllocAligned(buffer_freeptr, temp_a2_2, 0x4);
+            tex->env = NuTexAnimEnvCreate(&sp, tex->mtl, tex->tids, temp_a3);
+         
+        }
+        for(i_231 = 0; i_231 < (gscene->numtexanims - 1); i_231++)
+            {
+                gscene->texanims[i_231].succ = &gscene->texanims[i_231] + 1;
+                gscene->texanims[i_231 + 1].prev = &gscene->texanims[i_231];        
+            }
+    NuTexAnimAddList(gscene->texanims);
+}
+
+
+//50%
+void ReadSplineSet(s32 fh) {
+    s32 temp_a0;
+    //s32 temp_a0_2;
+    s32 index;
+    s32 temp_s2;
+    s32 temp_v0_2;
+    s32 var_a0;
+    s32* var_a1;
+    s32 var_a1_2;
+    s32 var_a3;
+    s32 var_s1;
+    s32 var_s3;
+    s32 var_v0;
+    s32 var_v1;
+    s32 var_v1_2;
+    s32* temp_s1;
+    s32* var_s0;
+    s8* var_a2;
+    struct nugscn_s* temp_a2;
+    //struct nugspline_s* temp_a0_3;
+    struct nugspline_s* temp_a1;
+    //struct nugspline_s* temp_v0_4;
+    //u32 temp_v0;
+    //u32 temp_v0_3;
+    union variptr_u* var_v0_2;
+    s64 aaaa[3];
+
+
+    gscene->numsplines = NuFileReadInt(fh);
+    index = NuFileReadInt(fh);
+    var_a0 = NuGScnBufferAllocAligned(buffer_freeptr, (gscene->numsplines * 0xC), 0x4);
+ /*   var_a0 = (s32) (buffer_freeptr->voidptr + 3) & ~3;
+    temp_v0 = var_a0 + (gscene->numsplines * 0xC);
+    if (temp_v0 >= (u32) buffer_tmpptr) {
+        NuErrorProlog(&RO_62D250, 0x181)(&RO_62D288);
+        var_a0 = 0;
+    } else {
+        buffer_freeptr->voidptr = (void* ) temp_v0;
+    } */
+    gscene->splines = (struct nugspline_s* ) var_a0;
+    if (buffer_tmpstart.voidptr != NULL) {
+        var_v0 = buffer_tmpptr - index;
+        if ((u32) (buffer_tmpstart.voidptr + index + 4) < (u32) buffer_tmpptr) {
+            goto block_9;
+        }
+        goto block_10;
+    }
+    var_v0 = buffer_tmpptr - index;
+    if ((u32) (buffer_freeptr->voidptr + index + 4) < (u32) buffer_tmpptr) {
+block_9:
+        temp_v0_2 = var_v0 & ~3;
+        var_a1 = temp_v0_2;
+        buffer_tmpptr = (union variptr_u* ) temp_v0_2;
+    } else {
+block_10:
+        NuErrorProlog("..\\nu2.ps2\\nu3d\\nugscn.c", 0x16C)("Temp buffer underrun");
+        var_a1 = 0;
+    }
+    var_s1 = var_a1;
+    NuFileRead(fh, var_a1, index);
+    temp_a2 = gscene;
+    var_s3 = 0;
+    if (temp_a2->numsplines > 0) {
+        var_a1_2 = 0 * 0xC;
+loop_13:
+        var_s0 = nugscn_cfg;
+        temp_s1 = var_s1 + 4;
+       // *(var_a1_2 + temp_a2->splines) = *var_s1;
+        temp_a0 = *temp_s1;
+        var_s1 = (s32) (temp_s1 + 4);
+      //  (var_a1_2 + temp_a2->splines)->unk4 = &temp_a2->nametable[temp_a0];
+      //  temp_s2 = (var_a1_2 + temp_a2->splines)->unk4;
+        if (var_s0 != NULL) {
+            var_v1 = 0xC;
+            if (*var_s0 != 0) {
+loop_15:
+                if (strstr(temp_s2, var_s0/*->unk0*/) != 0) {
+                //    var_v1 = var_s0->unk4;
+                } else {
+                    var_s0 += 8;
+                    if (*var_s0 == 0) {
+                        goto block_19;
+                    }
+                    goto loop_15;
+                }
+            }
+        } else {
+block_19:
+            var_v1 = 0xC;
+        }
+        gscene->splines[var_s3].ptsize = (s16) var_v1;
+        temp_a1 = &gscene->splines[var_s3];
+        var_v1_2 = NuGScnBufferAllocAligned(buffer_freeptr, (temp_a1->ptsize * temp_a1->len), 0x4);
+        
+        /*temp_a0_2 = (s32) (buffer_freeptr->voidptr + 3) & ~3;
+        temp_v0_3 = temp_a0_2 + (temp_a1->ptsize * temp_a1->len);
+        var_v1_2 = temp_a0_2;
+        if (temp_v0_3 < (u32) buffer_tmpptr) {
+            buffer_freeptr->voidptr = (void* ) temp_v0_3;
+        } else {
+            NuErrorProlog(&RO_62D250, 0x181)(&RO_62D288);
+            var_v1_2 = 0;
+        }*/
+        var_a3 = 0;
+        gscene->splines[var_s3].pts = (s8* ) var_v1_2;
+        //temp_a0_3 = &gscene->splines[var_s3];
+        var_a2 = temp_a1->pts;
+        if (temp_a1->len > 0) {
+            do {
+                var_a3 += 1;
+             //   var_a2->unk8 = (s32) var_s1->unk8;
+                var_s1 += 0xC;
+                //temp_v0_4 = &gscene->splines[var_s3];
+                var_a2 = &var_a2[temp_a1->ptsize];
+            } while (var_a3 < temp_a1->len);
+        }
+        var_s3 += 1;
+        if (var_s3 < gscene->numsplines) {
+            var_a1_2 = var_s3 * 0xC;
+            goto loop_13;
+        }
+    }
+    var_v0_2 = buffer_tmpend;
+    if (buffer_tmpstart.voidptr == NULL) {
+        var_v0_2 = buffer_endptr;
+    }
+    buffer_tmpptr = var_v0_2;
+}
+
+/* GHIDRA gscn_cfg
+
+                             nugscn_cfg                                      XREF[3]:     ReadSplineSet:00149be4 (R) , 
+                                                                                          NuGScnSetCfg:0014b834 (W) , 
+                                                                                          FindSplinePtSize:0014c4a4 (R)   
+        00645b58 00  00  00  00    undefine   00000000h
+        00645b5c 00              ??         00h
+        00645b5d 00              ??         00h
+        00645b5e 00              ??         00h
+        00645b5f 00              ??         00h
+        00645b60 54  45  58       ds         "TEXSET2"
+                 53  45  54 
+                 32  00
+        00645b68 54  45  58       ds         "TEXSET"
+                 53  45  54 
+                 00  00
+        00645b70 4d  54  4c       ds         "MTLSET2"
+                 53  45  54 
+                 32  00
+        00645b78 4d  54  4c       ds         "MTLSET"
+                 53  45  54 
+                 00  00
+        00645b80 4f  42  4a       ds         "OBJSET"
+                 53  45  54  00
+        00645b87 00              ??         00h
+        00645b88 49  4e  53       ds         "INSTSET"
+                 54  53  45 
+                 54  00
+        00645b90 41  4e  49       ds         "ANIMLIB"
+                 4d  4c  49 
+                 42  00
+        00645b98 49  4e  53       ds         "INSTIDS"
+                 54  49  44 
+                 53  00
+                             s_unknown_00645ba0                              XREF[1]:     DbgBlkType:00149f68 (*)   
+        00645ba0 75  6e  6b       ds         "unknown"
+                 6e  6f  77 
+                 6e  00
+
+
+struct nugscfg_s { // 0x8
+	/* 0x0 */// char *name;
+	/* 0x4 */// int datasize;
+//};

@@ -12,6 +12,6 @@ f32 NuFsqrt(f32 f);
 f32 NuFdiv(f32 f);
 
 // Multiply a vector by a scalar, and place it into the destination.
-void NuVec4MtxTransformVU0(struct Vec4* dest, struct Vec4* a, struct Mtx* b);
+void NuVec4MtxTransformVU0(struct nuvec4_s* dest, struct nuvec4_s* a, struct Mtx* b);
 
 #endif // !NU_ASM_H

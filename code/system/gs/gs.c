@@ -378,39 +378,17 @@ void GS_SetBlendSrc2(int enable,int src,int dest)
   return;
 }
 
-void GS_SetProjectionMatrix(struct _GSMATRIX *pMatrix)
+void GS_SetProjectionMatrix(struct _GSMATRIX *pMatrix) {
+    float pMtx[4][4]; // 0x8(r1)
+    float mMtx[4][3]; // 0x48(r1)
 
-{
-  struct _GSMATRIX *pfVar2;
-  struct _GSMATRIX *p_Var1;
-  struct _GSMATRIX *pfVar3;
-  int iVar4;
-  struct _GSMATRIX f;
-
-  iVar4 = 0x30;
-  p_Var1 = &GS_MatProjection;
-   do {
-    pfVar3 = pMatrix;
-    pfVar2 = p_Var1;
-    iVar4 = iVar4 + -0x18;
-    pfVar2->_00 = pfVar3->_00;
-    pfVar2->_01 = pfVar3->_01;
-    pfVar2->_02 = pfVar3->_02;
-    pfVar2->_03 = pfVar3->_03;
-    pfVar2->_10 = pfVar3->_10;
-    pfVar2->_11 = pfVar3->_11;
-    p_Var1 = (struct _GSMATRIX *)&pfVar2->_12;
-    pMatrix = (struct _GSMATRIX *)&pfVar3->_12;
-  } while (iVar4 != 0);
-  pfVar2->_12 = pfVar3->_12;
-  pfVar2->_13 = pfVar3->_13;
-  pfVar2->_20 = pfVar3->_20;
-  pfVar2->_21 = pfVar3->_21;
-  //C_MTXPerspective(&f,40.0,1.428571,0.3,1000.0);
-  //GXSetProjection(&f,GX_PERSPECTIVE);
-  return;
+    GS_MatProjection = *pMatrix;
+    //C_MTXPerspective((float **)pMtx,40.0f,1.428571f,0.3f,1000.0f);
+    //GXSetProjection((const float **)pMtx,GX_PERSPECTIVE);
+    return;
 }
 
+/*
 void GS_SetLightingMatrix(struct _GSMATRIX *mtx)
 
 {
@@ -462,7 +440,7 @@ void GS_SetLightingMatrix(struct _GSMATRIX *mtx)
   /*PSMTXInverse((_GSMATRIX *)local_b0,(_GSMATRIX *)(local_b0 + 0x30));
   PSMTXTranspose((float *(*) [4])(_GSMATRIX *)(local_b0 + 0x30),(float *(*) [4])local_b0);
   GXLoadNrmMtxImm(local_b0,0);*/
-  return;
+ /* return;
 }
 
 void GS_SetLightingMatrix2(struct _GSMATRIX *m)
@@ -557,18 +535,18 @@ void GS_SetViewMatrix(struct _GSMATRIX *a)
   //MatReorder(&GS_ViewIdentity);
   return;
 }
-
+*/
 void GS_LoadWorldMatrixIdentity(void)
 
 {
   if (GS_WorldMatIsIdentity == 0) {
     GS_WorldMatIsIdentity = 1;
-    GS_LoadMatrix(&GS_ViewIdentity);
+    //GS_LoadMatrix(&GS_ViewIdentity);
   }
   return;
 }
 
-
+/*
 void GS_SetWorldMatrix(struct _GSMATRIX *pMatrix)
 
 {
@@ -624,7 +602,7 @@ void GS_SetWorldMatrix(struct _GSMATRIX *pMatrix)
   GS_LoadMatrix(&local_48);
   GS_WorldMatIsIdentity = iVar3;
 }
-
+*/
 
 void GS_CopyTextureFromFB(void)
 

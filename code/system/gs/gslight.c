@@ -96,11 +96,9 @@ s32 GS_SetLight(s32 Index,struct _D3DLIGHT8 *pLight)
 }
 
 
-int GS_LightEnable(int Index,int Enable)
-
-{
-  GS_LightList[Index].EnableLight = Enable;
-  return 0;
+s32 GS_LightEnable(s32 Index, s32 Enable) {
+    GS_LightList[Index].EnableLight = Enable;
+    return 0;
 }
 
 
@@ -187,132 +185,98 @@ void GS_EnableSpecular(int flag)
   return;
 }
 
+/*
+void GS_SetLightingMatrix(struct _GSMATRIX * mtx);                         
+//void GS_SetLightingMatrix2 (struct _GSMATRIX * m);                    
+void GS_SetLightingNone ();                             
+void GS_XFormLightVec(struct _GS_VECTOR3 * XFlight_pos, struct _GS_VECTOR4 * light_pos, struct _GSMATRIX * curmat);                    
+void GXInitLightColor(struct _GXLightObj* lt_obj, struct _GXColor* color);                   
+void GXInitLightPos(struct _GXLightObj* lt_obj, float x, float y, float z);               
+void GXLoadLightObjImm(struct _GXLightObj* lt_obj, enum _GXLightID light);                  
+void GXSetChanAmbColor(enum _GXChannelID chan, struct _GXColor* amb_color);               
+void GXSetChanCtrl(enum _GXChannelID chan, unsigned char enable, enum _GXColorSrc amb_src, 
+                        enum _GXColorSrc mat_src, unsigned long light_mask, 
+                                            enum _GXDiffuseFn diff_fn, enum _GXAttnFn attn_fn);               
+void GXSetChanMatColor(enum _GXChannelID chan, struct _GXColor* mat_color);                      
+void GXSetNumChans(unsigned char nChans);                                
+s32 IsTitleScreen();                               
+//void MatReorder(struct _GSMATRIX* MatrixA);                               
+extern struct _GXLightObj GSLights[3];
+extern struct _GSMATRIX GS_CurMat;
+extern struct _D3DMATERIAL8 GS_CurrentMaterial;
+extern s32 GS_EnableLightingFlag;
+extern struct _GSMATRIX GS_LightMat;
+extern struct _GSMATRIX GS_LightViewMat;
+extern struct _GS_VECTOR3 XFLightPos;
+*/
 
-void GS_Set3Lights(_GS_VECTOR4 *LIGHT1_POS,_GS_VECTOR4 *LIGHT2_POS,_GS_VECTOR4 *LIGHT3_POS,
-                  _GS_VECTOR4 *LIGHT1_COLOR,_GS_VECTOR4 *LIGHT2_COLOR,_GS_VECTOR4 *LIGHT3_COLOR,
-                  _GS_VECTOR4 *AMB_COLOR)
 
+//55%
+void GS_Set3Lights(struct _GS_VECTOR4 *LIGHT1_POS,struct _GS_VECTOR4 *LIGHT2_POS,struct _GS_VECTOR4 *LIGHT3_POS,
+                  struct _GS_VECTOR4 *LIGHT1_COLOR,struct _GS_VECTOR4 *LIGHT2_COLOR,
+                    struct _GS_VECTOR4 *LIGHT3_COLOR, struct _GS_VECTOR4 *AMB_COLOR) 
 {
-  float *pfVar1;
-  float *pfVar2;
-  int iVar3;
-  float *pfVar4;
-  float *pfVar5;
-  double dVar6;
-  _GXColor col;
-  
-  if (GS_EnableLightingFlag == 0) {
-    GS_SetLightingNone();
-  }
-  else {
-    col = (_GXColor)((uint)AMB_COLOR & 0xff | 0x33333300);
-    GXSetChanAmbColor(GX_COLOR0A0,&col);
-    col = (_GXColor)
-          (((int)(GS_CurrentMaterial.Diffuse.b * 255.0) & 0xffU) << 8 |
-          ((int)(GS_CurrentMaterial.Diffuse.g * 255.0) & 0xffU) << 0x10 |
-          (int)(GS_CurrentMaterial.Diffuse.r * 255.0) << 0x18 |
-          (int)(GS_CurrentMaterial.Diffuse.a * 255.0) & 0xffU);
-    GXSetChanMatColor(GX_COLOR0A0,&col);
-    iVar3 = IsTitleScreen();
-    if (iVar3 == 0) {
-      iVar3 = 0x30;
-      pfVar1 = (float *)&GS_CurMat;
-      pfVar2 = (float *)&GS_LightMat;
-      do {
-        pfVar5 = pfVar2;
-        pfVar4 = pfVar1;
-        iVar3 = iVar3 + -0x18;
-        *pfVar4 = *pfVar5;
-        pfVar4[1] = pfVar5[1];
-        pfVar4[2] = pfVar5[2];
-        pfVar4[3] = pfVar5[3];
-        (*(float (*) [4])(pfVar4 + 4))[0] = (*(float (*) [4])(pfVar5 + 4))[0];
-        pfVar4[5] = pfVar5[5];
-        pfVar1 = pfVar4 + 6;
-        pfVar2 = pfVar5 + 6;
-      } while (iVar3 != 0);
-      pfVar4[6] = pfVar5[6];
-      pfVar4[7] = pfVar5[7];
-      pfVar4[8] = pfVar5[8];
-      pfVar4[9] = pfVar5[9];
-      GS_SetLightingMatrix(&GS_CurMat);
-      iVar3 = 0x30;
-      pfVar1 = (float *)&GS_LightViewMat;
-      pfVar2 = (float *)&GS_CurMat;
-      do {
-        pfVar5 = pfVar2;
-        pfVar4 = pfVar1;
-        iVar3 = iVar3 + -0x18;
-        *pfVar5 = *pfVar4;
-        pfVar5[1] = pfVar4[1];
-        pfVar5[2] = pfVar4[2];
-        pfVar5[3] = pfVar4[3];
-        (*(float (*) [4])(pfVar5 + 4))[0] = (*(float (*) [4])(pfVar4 + 4))[0];
-        pfVar5[5] = pfVar4[5];
-        pfVar1 = pfVar4 + 6;
-        pfVar2 = pfVar5 + 6;
-      } while (iVar3 != 0);
-      pfVar5[6] = pfVar4[6];
-      pfVar5[7] = pfVar4[7];
-      pfVar5[8] = pfVar4[8];
-      pfVar5[9] = pfVar4[9];
+    struct _GSMATRIX *p_Var1;
+    struct _GSMATRIX *p_Var2;
+    int iVar3;
+    struct _GSMATRIX *p_Var4;
+    struct _GSMATRIX *p_Var5;
+    struct _GXColor col;
+    
+    if (GS_EnableLightingFlag == 0) {
+        GS_SetLightingNone();
     }
     else {
-      iVar3 = 0x30;
-      pfVar1 = (float *)&GS_CurMat;
-      pfVar2 = (float *)&GS_LightMat;
-      do {
-        pfVar5 = pfVar2;
-        pfVar4 = pfVar1;
-        iVar3 = iVar3 + -0x18;
-        *pfVar4 = *pfVar5;
-        pfVar4[1] = pfVar5[1];
-        pfVar4[2] = pfVar5[2];
-        pfVar4[3] = pfVar5[3];
-        (*(float (*) [4])(pfVar4 + 4))[0] = (*(float (*) [4])(pfVar5 + 4))[0];
-        pfVar4[5] = pfVar5[5];
-        pfVar1 = pfVar4 + 6;
-        pfVar2 = pfVar5 + 6;
-      } while (iVar3 != 0);
-      pfVar4[6] = pfVar5[6];
-      pfVar4[7] = pfVar5[7];
-      pfVar4[8] = pfVar5[8];
-      pfVar4[9] = pfVar5[9];
-      MatReorder(&GS_CurMat);
-      GS_SetLightingMatrix2(&GS_CurMat);
+        //col = (struct _GXColor)((uint)AMB_COLOR & 0xff | 0x33333300);
+        GXSetChanAmbColor(GX_COLOR0A0,&col);
+    /*    col = (struct _GXColor)
+              (((int)(GS_CurrentMaterial.Diffuse.b * 255.0f) & 0xffU) << 8 |
+              ((int)(GS_CurrentMaterial.Diffuse.g * 255.0f) & 0xffU) << 0x10 |
+              (int)(GS_CurrentMaterial.Diffuse.r * 255.0f) << 0x18 |
+              (int)(GS_CurrentMaterial.Diffuse.a * 255.0f) & 0xffU);    */
+        GXSetChanMatColor(GX_COLOR0A0,&col);
+        iVar3 = IsTitleScreen();
+        if (iVar3 != 0) {
+            GS_CurMat = GS_LightMat;
+            MatReorder(&GS_CurMat);
+            GS_SetLightingMatrix2(&GS_CurMat);
+        }
+        else {
+            GS_LightMat = GS_CurMat;
+            GS_SetLightingMatrix(&GS_CurMat);
+            GS_CurMat = GS_LightViewMat;
+        }
+        GS_XFormLightVec(&XFLightPos,LIGHT1_POS,&GS_CurMat);
+        GXInitLightPos(&GSLights[1],XFLightPos.x,XFLightPos.y,XFLightPos.z);
+        //dVar6 = 255.0;
+        //col = (struct _GXColor)
+         //     (((int)(LIGHT1_COLOR->z * 255.0f) & 0xffU) << 8 |
+        //      ((int)(LIGHT1_COLOR->y * 255.0f) & 0xffU) << 0x10 |
+          //    (int)(LIGHT1_COLOR->x * 255.0f) << 0x18 | (int)(LIGHT1_COLOR->w * 255.0f) & 0xffU);
+        GXInitLightColor(GSLights,&col);
+        GXLoadLightObjImm(GSLights,GX_LIGHT0);
+        GS_XFormLightVec(&XFLightPos,LIGHT2_POS,&GS_CurMat);
+        GXInitLightPos((GSLights + 1),XFLightPos.x,XFLightPos.y,XFLightPos.z);
+        //col = (struct _GXColor)
+         //     (((int)((double)LIGHT2_COLOR->z * 255.0f) & 0xffU) << 8 |
+         //     ((int)((double)LIGHT2_COLOR->y * 255.0f) & 0xffU) << 0x10 |
+         //     (int)((double)LIGHT2_COLOR->x * 255.0f) << 0x18 |
+          //    (int)((double)LIGHT2_COLOR->w * 255.0f) & 0xffU);
+        GXInitLightColor(GSLights + 1,&col);
+        GXLoadLightObjImm(GSLights + 1,GX_LIGHT1);
+        GS_XFormLightVec(&XFLightPos,LIGHT3_POS,&GS_CurMat);
+        GXInitLightPos((GSLights + 2),XFLightPos.x,XFLightPos.y,XFLightPos.z);
+        //col = (struct _GXColor)
+         //     (((int)((double)LIGHT3_COLOR->z * 255.0f) & 0xffU) << 8 |
+          //    ((int)((double)LIGHT3_COLOR->y * 255.0f) & 0xffU) << 0x10 |
+          //    (int)((double)LIGHT3_COLOR->x * 255.0f) << 0x18 |
+           //   (int)((double)LIGHT3_COLOR->w * 255.0f) & 0xffU);
+        GXInitLightColor(GSLights + 2,&col);
+        GXLoadLightObjImm(GSLights + 2,GX_LIGHT2);
+        GXSetChanCtrl(GX_COLOR0,'\x01',GX_SRC_REG,GX_SRC_REG,7,GX_DF_CLAMP,GX_AF_NONE);
+        GXSetChanCtrl(GX_ALPHA0,'\0',GX_SRC_REG,GX_SRC_VTX,0,GX_DF_CLAMP,GX_AF_NONE);
+        GXSetNumChans('\x01');
     }
-    GS_XFormLightVec(&XFLightPos,LIGHT1_POS,&GS_CurMat);
-    GXInitLightPos((GXLightObj *)GSLights,XFLightPos.x,XFLightPos.y,XFLightPos.z);
-    dVar6 = 255.0;
-    col = (_GXColor)
-          (((int)(LIGHT1_COLOR->z * 255.0) & 0xffU) << 8 |
-          ((int)(LIGHT1_COLOR->y * 255.0) & 0xffU) << 0x10 |
-          (int)(LIGHT1_COLOR->x * 255.0) << 0x18 | (int)(LIGHT1_COLOR->w * 255.0) & 0xffU);
-    GXInitLightColor((GXLightObj *)GSLights,(GXColorOLD *)&col);
-    GXLoadLightObjImm(GSLights);
-    GS_XFormLightVec(&XFLightPos,LIGHT2_POS,&GS_CurMat);
-    GXInitLightPos((GXLightObj *)(GSLights + 1),XFLightPos.x,XFLightPos.y,XFLightPos.z);
-    col = (_GXColor)
-          (((int)((double)LIGHT2_COLOR->z * dVar6) & 0xffU) << 8 |
-          ((int)((double)LIGHT2_COLOR->y * dVar6) & 0xffU) << 0x10 |
-          (int)((double)LIGHT2_COLOR->x * dVar6) << 0x18 |
-          (int)((double)LIGHT2_COLOR->w * dVar6) & 0xffU);
-    GXInitLightColor((GXLightObj *)(GSLights + 1),(GXColorOLD *)&col);
-    GXLoadLightObjImm(GSLights + 1);
-    GS_XFormLightVec(&XFLightPos,LIGHT3_POS,&GS_CurMat);
-    GXInitLightPos((GXLightObj *)(GSLights + 2),XFLightPos.x,XFLightPos.y,XFLightPos.z);
-    col = (_GXColor)
-          (((int)((double)LIGHT3_COLOR->z * dVar6) & 0xffU) << 8 |
-          ((int)((double)LIGHT3_COLOR->y * dVar6) & 0xffU) << 0x10 |
-          (int)((double)LIGHT3_COLOR->x * dVar6) << 0x18 |
-          (int)((double)LIGHT3_COLOR->w * dVar6) & 0xffU);
-    GXInitLightColor((GXLightObj *)(GSLights + 2),(GXColorOLD *)&col);
-    GXLoadLightObjImm(GSLights + 2);
-    GXSetChanCtrl(GX_COLOR0,'\x01',GX_SRC_REG,GX_SRC_REG,7,GX_DF_CLAMP,GX_AF_NONE);
-    GXSetChanCtrl(GX_ALPHA0,'\0',GX_SRC_REG,GX_SRC_VTX,0,GX_DF_CLAMP,GX_AF_NONE);
-    GXSetNumChans(1);
-  }
-  return;
+    return;
 }
-
 

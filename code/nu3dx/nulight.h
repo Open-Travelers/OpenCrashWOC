@@ -2,7 +2,8 @@
 #define NULIGHT_H
 
 #include "../types.h"
-#include "nu3dxtypes.h"
+#include "nu3dx/nu3dxtypes.h"
+#include "system/gs/gs.h"
 #include "nu3dx/numtl.h"
 
 /*
@@ -64,7 +65,7 @@ struct nulights_s
 };
 
 // Size: 0x40
-struct LgtArcLaserData
+struct lgtarclaserdata_s
 {
     struct nuvec_s start;
     struct nuvec_s target;
@@ -97,71 +98,15 @@ float NuLgtArcV1;
 s32 NuLgtArcLaserFrame;
 s32 NuLgtArcLaserOldCnt;
 s32 NuLgtArcLaserCnt;
-struct LgtArcLaserData NuLgtArcLaserData[16];
+struct lgtarclaserdata_s NuLgtArcLaserData[16];
 
 
 
-extern s32 HazeValue;
-extern f32 NuRndrFogNear;
-extern f32 NuRndrFogFar;
-extern u32 NuRndrFogBlur;
-extern u32 NuRndrFogCol;
-
-/**********************************************************/
-// D3D and GS var
-/**********************************************************/
-
-// Size: 0x4
-enum _D3DLIGHTTYPE
-{
-    D3DLIGHT_FORCE_DWORD = 2147483647,
-    D3DLIGHT_DIRECTIONAL = 3,
-    D3DLIGHT_SPOT = 2,
-    D3DLIGHT_POINT = 1
-};
-
-
-struct _D3DVECTOR
-{
-    f32 x;
-    f32 y;
-    f32 z;
-};
-
-
-// Size: 0x68
-struct _D3DLIGHT8
-{
-    enum _D3DLIGHTTYPE Type;
-    struct _D3DCOLORVALUE Diffuse;
-    struct _D3DCOLORVALUE Specular;
-    struct _D3DCOLORVALUE Ambient;
-    struct _D3DVECTOR Position;
-    struct _D3DVECTOR Direction;
-    f32 range;
-    f32 falloff;
-    f32 attenuation0;
-    f32 attenuation1;
-    f32 attenuation2;
-    f32 Theta;
-    f32 Phi;
-};
-
-
-// Size: 0x6C
-struct _LIGHTLIST
-{
-    int EnableLight;
-    struct _D3DLIGHT8 Light;
-};
-
-struct _LIGHTLIST GS_LightList[3];
-
-
-
-/**********************************************************/
-// END D3D\GS Var
-/**********************************************************/
+s32 HazeValue;
+static u32 NuRndrFogBlur;
+static u32 NuRndrFogCol;
+static float NuRndrFogFar;
+static float NuRndrFogNear;
 
 
 // NuLightInit

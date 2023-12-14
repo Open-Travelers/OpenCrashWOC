@@ -1,11 +1,11 @@
 #include "nuplane.h"
 
-u32 NuPlnLine(struct Vec4* p1, struct Vec* p2, struct Vec* p3, struct Vec* p4)
+u32 NuPlnLine(struct nuvec4_s* p1, struct nuvec_s* p2, struct nuvec_s* p3, struct nuvec_s* p4)
 {
-  struct Vec tmp;
-  f32 t1 = NuVecDot(p2,(struct Vec *)p1);
+  struct nuvec_s tmp;
+  f32 t1 = NuVecDot(p2,(struct nuvec_s *)p1);
   f32 t2 = (t1 + p1->w);
-  t1 = NuVecDot(p3,(struct Vec *)p1);
+  t1 = NuVecDot(p3,(struct nuvec_s *)p1);
   f32 t3 = (t1 + p1->w);
   t1 = NuFsign(t2);
   f32 t4 = NuFsign(t3);

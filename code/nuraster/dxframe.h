@@ -35,6 +35,8 @@ extern s32 backbuffer_tid;
 
 static int g_dwCurrentRT;
 
+char DebugText[256];
+
 // Reset the globals.
 void ResetFwGlobals(); // TODO: IMPLEMENT THIS!!!
 

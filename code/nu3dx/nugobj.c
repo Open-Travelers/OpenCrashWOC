@@ -1,13 +1,13 @@
 #include <nu3dx/nugobj.h>
 
-error_func e;
-u32 GS_BufferSize;
+#define FLT_MAX 3.402823e+38
+#define FLT_MIN -3.402823e+38
+
 static s32 sysinit;
 s32 Paused;
 s32 _timer;
-u32 BufferTypes[4];
 
-
+//MATCH GCN
 void NuGobjInit(void) {
 
     if ((s32) sysinit != 0) {
@@ -15,13 +15,12 @@ void NuGobjInit(void) {
     }
     sysgobj = NULL;
     sysinit = 1; //sysinit is a bool
-
-
-    //NuLightFog(1.0, 1.0, 0, 0, 0);
+    NuLightFog(1.0f, 1.0f, 0, 0, 0);
 
     return;
 }
 
+//MATCH GCN
 void NuGobjClose(void) {
 
     struct nugobj_s* nextobj;
@@ -37,7 +36,7 @@ void NuGobjClose(void) {
     return;
 }
 
-
+//MATCH GCN
 struct nugobj_s* NuGobjCreate(void)
 {
     struct nugobj_s* gobj = (struct nugobj_s*)NuMemAlloc(sizeof(struct nugobj_s)); //0x64;
@@ -54,20 +53,19 @@ struct nugobj_s* NuGobjCreate(void)
     return gobj;
 }
 
+//MATCH GCN
+void NuGobjDestroy(struct nugobj_s* obj) {
 
-void NuGobjDestroy(struct nugobj_s* obj)
-
-{
     struct nugobj_s* next_gobj;
     struct nugeom_s* next;
-    struct nugeom_s* prev;
+    struct nugeom_s* geom;
 
     next_gobj = obj->next_gobj;
-    prev = obj->geom;
-    while (prev != NULL) {
-        next = prev->next;
-        NuGeomDestroy(prev);
-        prev = next;
+    geom = obj->geom;
+    while (geom != NULL) {
+        next = geom->next;
+        NuGeomDestroy(geom);
+        geom = next;
     }
     if (obj->syslast != NULL) {
         obj->syslast->sysnext = obj->sysnext;
@@ -81,54 +79,28 @@ void NuGobjDestroy(struct nugobj_s* obj)
     return;
 }
 
-
+//MATCH GCN
 void NuGobjAddGeom(struct nugobj_s* gobj, struct nugeom_s* geom)
 {
-  if (gobj->geom == NULL) {
-    gobj->geom = geom;
-    return;
-  }
+    struct nugeom_s* last;
+    struct nugeom_s* next;
 
-  struct nugeom_s* last = gobj->geom;
-  while (last->next != NULL) {
-    last = last->next;
-  }
-  last->next = geom;
-  return;
-}
-
-/*void NuGobjAddGeom(struct nugobj_s* gobj, struct nugeom_s* geom) {
-    struct nugeom_s* g = gobj->geoms;
-    struct nugeom_s* last = NULL;
-
-    if (g != NULL) {
-        do {
-            last = g;
-            g = last->next;
-        } while (g != NULL);
+    last = gobj->geom;
+    next = NULL;
+    while (last != NULL) {
+        next = last;
+        last = last->next;
     }
-    if (last != NULL) {
-        last->next = geom;
+    if (next != NULL) {
+        next->next = geom;
         return;
     }
-    gobj->geoms = geom;
-}
-}*/
 
-/*void NuGobjAddFaceOnGeom(struct nugobj_s* gobj, struct nufaceongeom_s* geom) {
-  if (gobj->faceon_geom == NULL) {
-    gobj->faceon_geom = geom;
+    gobj->geom = geom;
     return;
-  }
+}
 
-  struct nufaceongeom_s* last = gobj->faceon_geom;
-  while (last->next != NULL) {
-    last = last->next;
-  }
-  last->next = geom;
-  return;
-}*/
-
+//MATCH GCN
 void NuGobjAddFaceOnGeom(struct nugobj_s* gobj, struct nufaceongeom_s* Fgeom) {
     struct nufaceongeom_s* face = gobj->faceon_geom;
     struct nufaceongeom_s* last = NULL;
@@ -142,214 +114,192 @@ void NuGobjAddFaceOnGeom(struct nugobj_s* gobj, struct nufaceongeom_s* Fgeom) {
         return;
     }
     gobj->faceon_geom = Fgeom;
+    return;
 }
 
-void NuGobjCalcFaceOnDims(struct nugobj_s* gobj) {
-  float fVar1;
-  float fVar2;
-  float fVar3;
-  float fVar4;
-  struct nuvec_s *pnt;
-  //struct nufaceon_s *faceon;
-  s32 iVar5;
-  s32 iVar6;
-  struct nufaceongeom_s *face1;
-  double dVar7;
-  float fVar8;
-  float fVar9;
+//MATCH GCN
+void NuGobjCalcFaceOnDims(struct nugobj_s *gobj)
+{
+  int i;
+  float r2;
+  float fonWidth;
   struct nuvec_s v;
-  float fvar10;
-  struct nufaceongeom_s* fgeom;
-  float pointX;
+  struct nufaceongeom_s *fgeom;
+  struct nuvec_s *pnt;
 
-  gobj->bounding_box_min.z = __FLT_MAX__;
-  gobj->bounding_box_max.z = __FLT_MIN__;
-  gobj->bounding_rsq_from_origin = 0.0;
-  gobj->bounding_box_min.x = __FLT_MAX__;
-  gobj->bounding_box_min.y = __FLT_MAX__;
-  gobj->bounding_box_max.x = __FLT_MIN__;
-  gobj->bounding_box_max.y = __FLT_MIN__;
+  struct nufaceon_s* faceon;
+  float fonHeight;
+     char pad[6];
+
+  gobj->bounding_box_min.x = FLT_MAX;
+  gobj->bounding_box_min.y = FLT_MAX;
+  gobj->bounding_box_min.z = FLT_MAX;
+  gobj->bounding_box_max.x = FLT_MIN;
+  gobj->bounding_box_max.y = FLT_MIN;
+  gobj->bounding_box_max.z = FLT_MIN;
+  gobj->bounding_rsq_from_origin = 0.0f;
   for (fgeom = gobj->faceon_geom; fgeom != NULL; fgeom = fgeom->next) {
-    int count = 0;
-    if (fgeom->nfaceons > 0) {
-      // Seems to be used as an index for an array? Increments by 24 each iteration.
-      int size = 0;
-      do {
-        struct nufaceon_s* faceon = fgeom->faceons;
-        float fonHeight = *(float *)((int)&faceon->height + size);
-        float fonWidth = *(float *)((int)&faceon->width + size);
-	// Clamp width to height.
-        if (fonWidth < fonHeight) {
+      for( i = 0; i < fgeom->nfaceons; i++) {
+
+        faceon = &fgeom->faceons[i];
+        pnt = &faceon->point;
+        fonHeight = faceon->height;
+        fonWidth = faceon->width;
+	    // Clamp width to height.
+        if (faceon->height > fonWidth) {
           fonWidth = fonHeight;
         }
-        fonHeight = *(float *)((int)&faceon->point.x + size) - fonWidth;
+       fonHeight = (pnt->x) - fonWidth;
         if (fonHeight < gobj->bounding_box_min.x) {
           gobj->bounding_box_min.x = fonHeight;
         }
-        fonHeight = *(float *)((int)&faceon->point.y + size) - fonWidth;
+        fonHeight = (pnt->y ) - fonWidth;
         if (fonHeight < gobj->bounding_box_min.y) {
           gobj->bounding_box_min.y = fonHeight;
         }
-        fonHeight = *(float *)((int)&faceon->point.z + size) - fonWidth;
+        fonHeight = (pnt->z ) - fonWidth;
         if (fonHeight < gobj->bounding_box_min.z) {
           gobj->bounding_box_min.z = fonHeight;
         }
-        fonHeight = *(float *)((int)&faceon->point.x + size) + fonWidth;
-        if (gobj->bounding_box_max.x < fonHeight) {
+        fonHeight = (pnt->x ) + fonWidth;
+        if (fonHeight > gobj->bounding_box_max.x) {
           gobj->bounding_box_max.x = fonHeight;
         }
-        fonHeight = *(float *)((int)&faceon->point.y + size) + fonWidth;
-        if (gobj->bounding_box_max.y < fonHeight) {
+        fonHeight = (pnt->y) + fonWidth;
+        if (fonHeight > gobj->bounding_box_max.y) {
           gobj->bounding_box_max.y = fonHeight;
         }
-        fonWidth = *(float *)((int)&faceon->point.z + size) + fonWidth;
-        if (gobj->bounding_box_max.z < fonWidth) {
-          gobj->bounding_box_max.z = fonWidth;
+        fonHeight = (pnt->z) + fonWidth;
+        if (fonHeight > gobj->bounding_box_max.z) {
+          gobj->bounding_box_max.z = fonHeight;
         }
-        fonHeight = *(float *)((int)&faceon->point.y + size);
-        pointX = *(float *)((int)&faceon->point.x + size);
-        fonWidth = *(float *)((int)&faceon->point.z + size);
 	// z^2 + x^2 + y^2
-        fonHeight = fonWidth * fonWidth + pointX * pointX + fonHeight * fonHeight;
-	// Set the radius squared(?) from the origin point, if it has changed.
-        if (gobj->bounding_rsq_from_origin < fonHeight) {
+        fonHeight = pnt->x * pnt->x + pnt->y * pnt->y + pnt->z * pnt->z;
+	// Set the radius squared(?) from the origin point, to
+        if (fonHeight > gobj->bounding_rsq_from_origin) {
           gobj->bounding_rsq_from_origin = fonHeight;
         }
-        count = count + 1;
-        size = size + 24;
-      } while (count < fgeom->nfaceons);
-    }
+      }
   }
-  fVar8 = sqrt(gobj->bounding_rsq_from_origin);
-  fVar9 = (gobj->bounding_box_max).x;
-  fvar10 = (gobj->bounding_box_min).x;
-  fVar4 = (gobj->bounding_box_max).y;
-  fVar1 = (gobj->bounding_box_min).y;
-  fVar2 = (gobj->bounding_box_min).z;
-  fVar3 = (gobj->bounding_box_max).z;
-  face1 = gobj->faceon_geom;
-  gobj->bounding_radius_from_origin = fVar8;
-  (gobj->bounding_box_center).x = (fvar10 + fVar9) * 0.5;
-  (gobj->bounding_box_center).y = (fVar1 + fVar4) * 0.5;
-  (gobj->bounding_box_center).z = (fVar2 + fVar3) * 0.5;
-  gobj->bounding_rsq_from_center = (float)0;
-  for (; face1 != NULL; face1 = face1->next) {
-    iVar6 = 0;
-    if (0 < face1->nfaceons) {
-      iVar5 = 0;
-      do {
-        pnt = (struct nuvec_s *)((int)&(face1->faceons->point).x + iVar5);
-        dVar7 = (double)pnt[1].x;
-        if ((double)pnt[1].x < (double)pnt[1].y) {
-          dVar7 = (double)pnt[1].y;
+  r2 = sqrt(gobj->bounding_rsq_from_origin);
+  gobj->bounding_radius_from_origin = r2;
+  (gobj->bounding_box_center).x = ((gobj->bounding_box_min).x + (gobj->bounding_box_max).x) * 0.5f;
+  (gobj->bounding_box_center).y = ((gobj->bounding_box_min).y + (gobj->bounding_box_max).y) * 0.5f;
+  (gobj->bounding_box_center).z = ((gobj->bounding_box_min).z + (gobj->bounding_box_max).z) * 0.5f;
+  gobj->bounding_rsq_from_center = 0.0f;
+  for (fgeom = gobj->faceon_geom; fgeom != NULL; fgeom = fgeom->next) {
+      for (i = 0; i < fgeom->nfaceons; i++) {
+
+        pnt = &fgeom->faceons[i].point;
+        fonWidth = pnt[1].x;
+        if (pnt[1].y > pnt[1].x) {
+          fonWidth = pnt[1].y;
         }
         NuVecSub(&v,pnt,&gobj->bounding_box_center);
-        if (v.x < (float)0) {
+        if (v.x < 0.0f) {
           v.x = -v.x;
         }
-        if (v.y < (float)0) {
+        if (v.y < 0.0f) {
           v.y = -v.y;
         }
-        if (v.z < (float)0) {
+        if (v.z < 0.0f) {
           v.z = -v.z;
         }
-        fVar9 = (float)((double)v.z + dVar7) * (float)((double)v.z + dVar7) +
-                (float)((double)v.x + dVar7) * (float)((double)v.x + dVar7) +
-                (float)((double)v.y + dVar7) * (float)((double)v.y + dVar7);
-        if (gobj->bounding_rsq_from_center < fVar9) {
-          gobj->bounding_rsq_from_center = fVar9;
+        fonHeight =  (v.x + fonWidth) * (v.x + fonWidth) + (v.y + fonWidth) * (v.y + fonWidth) + (v.z + fonWidth) * (v.z + fonWidth);
+        if (fonHeight > gobj->bounding_rsq_from_center) {
+          gobj->bounding_rsq_from_center = fonHeight;
         }
-        iVar6 = iVar6 + 1;
-        iVar5 = iVar5 + 0x18;
-      } while (iVar6 < face1->nfaceons);
-    }
+      }
   }
-  fVar9 = sqrt(gobj->bounding_rsq_from_center);
-  gobj->bounding_radius_from_center = fVar9;
+  r2 = sqrt(gobj->bounding_rsq_from_center);
+  gobj->bounding_radius_from_center = r2;
   return;
 }
 
+//MATCH GCN
+void NuGobjCalcDims(struct nugobj_s *gobj) {
 
-void NuGobjCalcDims(struct nugobj_s* gobj)
-{
-  if (gobj->culltype == 1) {
-    NuGobjCalcFaceOnDims(gobj);
+    struct nugeom_s *geom;
+    struct nuvec_s v;
+    struct nuvtx_tc1_s *ptr;
+    char *end;
+    s32 stride;
+    float r2;
+    float rsq;
+
+    geom = gobj->geom;
+    if (gobj->type == NUGOBJ_FACEON) {
+        NuGobjCalcFaceOnDims(gobj);
+    }
+    else {
+        gobj->bounding_box_min.x = FLT_MAX;
+        gobj->bounding_box_min.y = FLT_MAX;
+        gobj->bounding_box_min.z = FLT_MAX;
+        gobj->bounding_box_max.x = FLT_MIN;
+        gobj->bounding_box_max.y = FLT_MIN;
+        gobj->bounding_box_max.z = FLT_MIN;
+        gobj->bounding_rsq_from_origin = 0.0f;
+        for (; geom != NULL; geom = geom->next) {
+            stride = NuVtxStride(geom->vtxtype);
+            ptr = (struct nuvtx_tc1_s *)geom->hVB;
+            if (ptr == NULL) {
+                NuErrorProlog("C:/source/crashwoc/code/nu3dx/nugobj.c",0x13b,"NuGobjCalcDims : Lock VB failed!");
+            }
+            end = (char*)ptr + stride * geom->vtxcnt;
+            for (; (char*)ptr < end; ptr = (struct nuvtx_tc1_s *)((int)ptr + stride)) {
+                if ((ptr->pnt).x < (gobj->bounding_box_min).x) {
+                    (gobj->bounding_box_min).x = (ptr->pnt).x;
+                }
+                if ((ptr->pnt).y < (gobj->bounding_box_min).y) {
+                    (gobj->bounding_box_min).y = (ptr->pnt).y;
+                }
+                if ((ptr->pnt).z < (gobj->bounding_box_min).z) {
+                    (gobj->bounding_box_min).z = (ptr->pnt).z;
+                }
+                if ((ptr->pnt).x > (gobj->bounding_box_max).x) {
+                    (gobj->bounding_box_max).x = (ptr->pnt).x;
+                }
+                if ((ptr->pnt).y > (gobj->bounding_box_max).y) {
+                    (gobj->bounding_box_max).y = (ptr->pnt).y;
+                }
+                if ((ptr->pnt).z > (gobj->bounding_box_max).z) {
+                    (gobj->bounding_box_max).z = (ptr->pnt).z;
+                }
+                rsq =  (ptr->pnt).x * (ptr->pnt).x + (ptr->pnt).y * (ptr->pnt).y
+                       + ((ptr->pnt).z * (ptr->pnt).z);
+                if (rsq > gobj->bounding_rsq_from_origin) {
+                    gobj->bounding_rsq_from_origin = rsq;
+                }
+            }
+        }
+        r2 = sqrt(gobj->bounding_rsq_from_origin);
+        geom = gobj->geom;
+        gobj->bounding_radius_from_origin = r2;
+        (gobj->bounding_box_center).x = ((gobj->bounding_box_min).x + (gobj->bounding_box_max).x) * 0.5f;
+        (gobj->bounding_box_center).y = ((gobj->bounding_box_min).y + (gobj->bounding_box_max).y) * 0.5f;
+        (gobj->bounding_box_center).z = ((gobj->bounding_box_min).z + (gobj->bounding_box_max).z) * 0.5f;
+        gobj->bounding_rsq_from_center = 0.0f;
+        for (; geom != NULL; geom = geom->next) {
+            stride = NuVtxStride(geom->vtxtype);
+            ptr = (struct nuvtx_tc1_s *)geom->hVB;
+            if (ptr == NULL) {
+                NuErrorProlog("C:/source/crashwoc/code/nu3dx/nugobj.c",0x157,"NuGobjCalcDims : Lock VB failed!");
+            }
+            end = (char*)ptr + stride * geom->vtxcnt;
+            for (; (char*)ptr < end; ptr = (struct nuvtx_tc1_s *)((int)ptr + stride)) {
+                NuVecSub(&v,&ptr->pnt,&gobj->bounding_box_center);
+                rsq = v.x * v.x + v.y * v.y + v.z * v.z;
+                if (rsq > gobj->bounding_rsq_from_center) {
+                    gobj->bounding_rsq_from_center = rsq;
+                }
+            }
+        }
+        gobj->bounding_radius_from_center = sqrt(gobj->bounding_rsq_from_center);
+    }
     return;
-  }
-  gobj->bounding_box_min.x = __FLT_MAX__;
-  gobj->bounding_box_min.y = __FLT_MAX__;
-  gobj->bounding_box_min.z = __FLT_MAX__;
-  gobj->bounding_box_max.x = __FLT_MIN__;
-  gobj->bounding_box_max.y = __FLT_MIN__;
-  gobj->bounding_box_max.z = __FLT_MIN__;
-  gobj->bounding_rsq_from_origin = 0.0;
-  for (struct nugeom_s* geom = gobj->geom; geom != NULL; geom = geom->next) {
-    s32 stride = NuVtxStride(geom->vtxtype);
-    s8* vertex_raw = geom->hVB;
-    if (vertex_raw == NULL) {
-	    //error_func e = NuErrorProlog("C:/source/crashwoc/code/nu3dx/nugobj.c",0x13b);
-		//e("NuGobjCalcDims : Lock VB failed!");
-    }
-    s8* end = vertex_raw + stride * geom->vtxcnt;
-    for (; vertex_raw < end; vertex_raw += stride) {
-      struct nuvec_s* vertex = (struct nuvec_s*)vertex_raw;
-      if (vertex->x < gobj->bounding_box_min.x) {
-        gobj->bounding_box_min.x = vertex->x;
-      }
-      if (vertex->y < gobj->bounding_box_min.y) {
-        gobj->bounding_box_min.y = vertex->y;
-      }
-      if (vertex->z < gobj->bounding_box_min.z) {
-        gobj->bounding_box_min.z = vertex->z;
-      }
-      if (gobj->bounding_box_max.x < vertex->x) {
-        gobj->bounding_box_max.x = vertex->x;
-      }
-      if (gobj->bounding_box_max.y < vertex->y) {
-        gobj->bounding_box_max.y = vertex->y;
-      }
-      if (gobj->bounding_box_max.z < vertex->z) {
-        gobj->bounding_box_max.z = vertex->z;
-      }
-      f32 rsq = vertex->z * vertex->z + vertex->x * vertex->x + vertex->y * vertex->y;
-      if (gobj->bounding_rsq_from_origin < rsq) {
-        gobj->bounding_rsq_from_origin = rsq;
-      }
-    }
-  }
-  gobj->bounding_radius_from_origin = (f32)sqrt((double)gobj->bounding_rsq_from_origin);
-
-  gobj->bounding_box_center.x = (gobj->bounding_box_min.x + gobj->bounding_box_max.x) * 0.5;
-  gobj->bounding_box_center.y = (gobj->bounding_box_min.y + gobj->bounding_box_max.y) * 0.5;
-  gobj->bounding_box_center.z = (gobj->bounding_box_min.z + gobj->bounding_box_max.z) * 0.5;
-
-  gobj->bounding_rsq_from_center = 0.0;
-  for (struct nugeom_s* geom = gobj->geom; geom != NULL; geom = geom->next) {
-    s32 stride = NuVtxStride(geom->vtxtype);
-    s8* vertex_raw = geom->hVB;
-    if (vertex_raw == NULL) {
-	  //error_func e = NuErrorProlog("C:/source/crashwoc/code/nu3dx/nugobj.c",0x157);
-		//e("NuGobjCalcDims : Lock VB failed!");
-    }
-    s8* end = vertex_raw + stride * geom->vtxcnt;
-    for (; vertex_raw < end; vertex_raw += stride) {
-      struct nuvec_s* vertex = (struct nuvec_s*)vertex_raw;
-      struct nuvec_s diff;
-      NuVecSub(&diff, vertex, gobj->bounding_box_center);
-      f32 rsq = diff.z * diff.z + diff.x * diff.x + diff.y * diff.y;
-      if (gobj->bounding_rsq_from_center < rsq) {
-        gobj->bounding_rsq_from_center = rsq;
-      }
-    }
-  }
-  gobj->bounding_radius_from_center = (f32)sqrt((double)gobj->bounding_rsq_from_center);
-  return;
 }
 
-
-
-/**********************************************NUGEOM STUFF*************************************/
-
+//MATCH GCN
 struct nugeom_s* NuGeomCreate(void)
 {
     struct nugeom_s* geom;
@@ -359,6 +309,7 @@ struct nugeom_s* NuGeomCreate(void)
     return geom;
 }
 
+//MATCH GCN
 struct nufaceongeom_s* NuFaceOnGeomCreate(void)
 {
   struct nufaceongeom_s* ret = (struct nufaceongeom_s*)NuMemAlloc(sizeof(struct nufaceongeom_s)); //0x30
@@ -366,219 +317,186 @@ struct nufaceongeom_s* NuFaceOnGeomCreate(void)
   return ret;
 }
 
+//MATCH GCN
+void NuGeomDestroy(struct nugeom_s *geom) {
+    struct nuprim_s* prim;
+    struct nuprim_s* next;
 
-
-void NuGeomDestroy(struct nugeom_s *geom)
-{
+  prim = geom->prim;
   NuGeomDestroyVB(geom);
-  for (struct nuprim_s* prim = geom->prim; prim != NULL; prim = prim->next) {
-    NuPrimDestroy(prim);
+  while (prim != NULL) {
+        next = prim->next;
+        NuPrimDestroy(prim);
+        prim = next;
   }
-
-
   if (geom->blendgeom != NULL) {
-    int buffer;
-    if (buffer = geom->blendgeom->hVB, buffer != 0) {
-      GS_DeleteBuffer(buffer);
+    if (geom->blendgeom->hVB != 0) {
+      GS_DeleteBuffer((struct GS_Buffer*)geom->blendgeom->hVB);
     }
   }
-
   return;
 }
 
 
+//MATCH GCN
 // Create geometry vertex buffer
-void NuGeomCreateVB(struct nugeom_s* geom, u32 vtxCount, enum nuvtxtype_e vtxType, s32 dynamic)
+void NuGeomCreateVB(struct nugeom_s* geom, s32 vtxCount, enum nuvtxtype_e vtxType, s32 dynamic)
 {
         // Boolean argument is unused
     #pragma unused(dynamic);
 
-    u32 vtxSize;
-    struct GS_Buffer* vtxBuffer;
+    u32 nuvbdesc_FVF;
+    s32 vtxBuffer;
 
     switch(vtxType) {
-
 			//determining the vertex buffer size (vertex count * sizeof(buffer_type_element)
-    case NUVT_PS:
-        vtxSize = vtxCount * 0x10;
-        break;
     case NUVT_TC1:
-        vtxSize = vtxCount * 0x24;
+        nuvbdesc_FVF = vtxCount * 0x24;
         break;
     case NUVT_LC1:
-        vtxSize = vtxCount * 0x18;
-        break;
-    case NUVT_TLTC1:
-        vtxSize = vtxCount * 0x1C;
+        nuvbdesc_FVF = vtxCount * 0x18;
         break;
     case NUVT_SK3TC1:
-        vtxSize = vtxCount * 0x38;
+        nuvbdesc_FVF = vtxCount * 0x38;
+        break;
+    case NUVT_TLTC1:
+        nuvbdesc_FVF = vtxCount * 0x1C;
+        break;
+    case NUVT_PS:
+        nuvbdesc_FVF = vtxCount * 0x10;
         break;
     default:
         //"NuGeomCreateVB : Unknown vertex type!"
-        e = NuErrorProlog("OpenCrashWOC/code/nu3dx/nugobj.c", 441);
-        e("assert");
+        NuErrorProlog("OpenCrashWOC/code/nu3dx/nugobj.c", 441, "assert");
     }
 
     if (geom->hVB != 0)
     {
         //NuAssert(geom->vertex_buffer == NULL, "NuGeomCreateVB : geom already has VB");
-        e = NuErrorProlog("OpenCrashWOC/code/nu3dx/nugobj.c", 448);
-        e("assert");
+        NuErrorProlog("OpenCrashWOC/code/nu3dx/nugobj.c", 448, "assert");
     }
 
 
     // Second argument is some vertex type
-    vtxBuffer = GS_CreateBuffer(vtxSize, 1);
+    vtxBuffer = GS_CreateBuffer(nuvbdesc_FVF, 1);
 
 
-    geom->vtxmax = vtxCount;
+    geom->vtxcnt = vtxCount;
     geom->hVB = (int)vtxBuffer;
     geom->vtxtype = vtxType;
-    geom->vtxcnt = vtxCount;
+    geom->vtxmax = vtxCount;
     return;
 }
 
-void NuGeomDestroyVB(struct nugeom_s *geom)
-
-{
+//MATCH GCN
+void NuGeomDestroyVB(struct nugeom_s *geom) {
 	if(geom->hVB != NULL){
-		GS_DeleteBuffer(geom->hVB);
+		GS_DeleteBuffer((struct GS_Buffer*)geom->hVB);
         geom->hVB = 0;
 		}
 	return;
 }
 
+//MATCH GCN
 // Append prim to geom
 void NuGeomAddPrim(struct nugeom_s* geom, struct nuprim_s* prim)
 {
-    struct nuprim_s *head;
-    struct nuprim_s *tail;
-    struct nuprim_s *iter;
+    struct nuprim_s *last;
+    struct nuprim_s *next;
 
-    head = geom->prim;
-    tail = NULL;
+    last = NULL;
 
-    // When iter is NULL, tail will be the last non-NULL prim (list tail)
-    for (iter = head; iter != NULL; iter = iter->next)
+    // When next is NULL, last will be the last non-NULL prim (list last)
+    for (next = geom->prim; next != NULL; next = next->next)
     {
-        tail = iter;
+        last = next;
     }
 
-    // I thought prims was the list head???
-    // Not sure what's going on here
-    if (tail == NULL) {
-        geom->prim = prim;
+
+    if (last != NULL) {
+        last->next = prim;
         return;
     }
 
-    // Append prim (NULL tail = empty list)
-    tail->next = prim;
+    geom->prim = prim;
     return;
 }
 
-
+//MATCH GCN
 // Append skin to geom
 void NuGeomAddSkin(struct nugeom_s* geom, struct nuskin_s* skin)
 {
-    struct nuskin_s *head;
-    struct nuskin_s *tail;
-    struct nuskin_s *iter;
+    struct nuskin_s *last;
+    struct nuskin_s *next;
 
-    head = geom->skin;
-    tail = NULL;
+    last = NULL;
 
-    // When iter is NULL, tail will be the last non-NULL skin (list tail)
-    for (iter = head; iter != NULL; iter = iter->next)
+    // When next is NULL, last will be the last non-NULL skin (list last)
+    for (next = geom->skin; next != NULL; next = next->next)
     {
-        tail = iter;
+        last = next;
     }
 
-
-     // I thought skins was the list head???
-    // Not sure what's going on here
-    if (tail == NULL)
+    if (last != NULL)
     {
-        geom->skin = skin;
+        last->next = skin;
         return;
 
     }
 
-    // Append skin (NULL tail = empty list)
-     tail->next = skin;
+     geom->skin = skin;
      return;
 }
 
 
-/**********************************************NUPRIM STUFF*************************************/
-
-struct nuprim_s* NuPrimCreate(int amount, enum nuprimtype_e type) {
-    u16* data;
+//MATCH GCN
+struct nuprim_s* NuPrimCreate(int cnt, enum nuprimtype_e type) {
     struct nuprim_s *prim;
 
     prim = NuMemAlloc(0x3C);
     memset(prim,0,0x3C);
     prim->type = type;
-    prim->vertexCount = (u16)amount;
-    prim->max = (u16)amount;
+    prim->cnt = (u16)cnt;
+    prim->max = (u16)cnt;
     if (type > NUPT_TRI) {
-        data = (u16*)(amount * 2);
-        prim->vid = NuMemAlloc((s32)data);
-        prim->idxbuff = (int)GS_CreateBuffer((u32)data, 2);
+        prim->vid = NuMemAlloc(cnt * 2);
+        prim->idxbuff = GS_CreateBuffer(cnt * 2, 2);
     }
     return prim;
 }
 
-
+//MATCH GCN
 void NuPrimDestroy(struct nuprim_s* prim) {
-    if ((prim != NULL) && ((s32)prim->idxbuff != 0)) {
+    if ((prim != NULL) && (prim->idxbuff != 0)) {
         GS_DeleteBuffer((void*)prim->idxbuff);
         prim->idxbuff = 0;
     }
 	return;
 }
 
-//BufferTypes is int[4], GS_BufferSize is uint
-void* GS_CreateBuffer (u32 bufsize, s32 bufferType){
-    struct GS_Buffer *bufptr;
-
-    bufptr = (struct GS_Buffer*)malloc(bufsize + 8);
-	GS_BufferSize = GS_BufferSize + bufsize;
-	BufferTypes[bufferType] = BufferTypes[bufferType] + bufsize;
-    bufptr->size = bufsize;
-    bufptr->type = bufferType;
-	return bufptr + 1;
-}
-
-void GS_DeleteBuffer(void* ptr)
-{
-    struct GS_Buffer* bufptr = (struct GS_Buffer*)((int)ptr - 2);
-    GS_BufferSize -= bufptr->size;
-    BufferTypes[bufptr->type] -= bufptr->size;
-    free(bufptr);
-}
-
-
+//MATCH GCN
 // Vertex stride = size of 1 vertex element
 int NuVtxStride(enum nuvtxtype_e type)
 {
     switch (type)
     {
-    case NUVT_PS:
-        return 0x10;
-    case NUVT_LC1:
-        return 0x18;
-    case NUVT_TLTC1:
-        return 0x1C;
-    case NUVT_SK3TC1:
-        return 0x38;
     case NUVT_TC1:
         return 0x24;
+    case NUVT_SK3TC1:
+        return 0x38;
+    case NUVT_TLTC1:
+        return 0x1C;
+    case NUVT_LC1:
+        return 0x18;
+    case NUVT_PS:
+        return 0x10;
+    default:
+        NuErrorProlog("NuVtxStride: Unknown vertex type", 0x708)("NuVtxStride: Unknown vertex type!");
+        return 0;
     }
-
-    NuErrorProlog("NuVtxStride: Unknown vertex type", 441);
 }
 
+//MATCH GCN
 // UV animation for all gobjs
 void NuAnimUV(void)
 {
@@ -600,4 +518,3 @@ void NuAnimUV(void)
     }
     return;
 }
-

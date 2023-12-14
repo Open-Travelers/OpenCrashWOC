@@ -33,7 +33,7 @@
 */
 
 
-struct NuAnimData* NuAnimDataRead(fileHandle handle);
+struct nuanimdata_s* NuAnimDataRead(s32 fh);
 
 
 // Size: 0x10
@@ -58,17 +58,14 @@ struct nuanimcurve_s
 
 
 // Size: 0x4
-union Curve2data
-{
-    f32 constant;
-    struct nuanimcurvedata_s* curvedata;
-};
-
-
-// Size: 0x4
 struct nuanimcurve2_s
 {
-    union Curve2data* data;
+    // Size: 0x4
+    union
+    {
+        float constant; // Offset: 0x0, DWARF: 0x1D80C
+        struct nuanimcurvedata_s* curvedata; // Offset: 0x0, DWARF: 0x1D837
+    } data;
 };
 
 // Size: 0x10
@@ -123,7 +120,7 @@ struct NUANIMDATAHDR_s
 {
     s32 version;
     s32 address_offset;
-    nuanimdata_s* animdata;
+    struct nuanimdata_s* animdata;
 };
 
 // Size: 0x14, DWARF: 0x1D4D6
@@ -184,20 +181,20 @@ struct nuanimdata2_s
 // Size: 0x10
 struct nuanimdata_s
 {
-    f32 time;
-    char* node_name;
-    s32 nchunks;
-    struct nuanimdatachunk_s** chunks;
+	float time;
+	char* node_name;
+	int nchunks;
+	struct nuanimdatachunk_s** chunks;
 };
 
 // Size: 0x14
 struct nuanimdatachunk_s
 {
-    s32 numnodes;
-    s32 num_valid_animcurvesets;
-    struct nuanimcurveset_s** animcurvesets;
-    struct nuanimkey_s* keys;
-    struct nuanimcurve_s* curves;
+	int numnodes;
+	int num_valid_animcurvesets;
+	struct nuanimcurveset_s** animcurvesets;
+	struct nuanimkey_s* keys;
+	struct nuanimcurve_s* curves;
 };
 
 // Size: 0x14

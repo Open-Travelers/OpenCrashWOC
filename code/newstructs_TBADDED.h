@@ -1695,7 +1695,7 @@ struct NUVTXSKININFO_s {
 };
 
 struct nuinstanim_s {
-    struct numtx_s Mtx;
+    struct numtx_s numtx_s;
     float tfactor;
     float tfirst;
     float tinterval;

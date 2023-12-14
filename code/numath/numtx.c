@@ -39,7 +39,7 @@ void NuMtxSetIdentity(struct Mtx* m)
 	m->m44 = mident.m44;
 }
 
-void NuMtxSetTranslation(struct Mtx* m, struct Vec* v)
+void NuMtxSetTranslation(struct Mtx* m, struct nuvec_s* v)
 {
 	m->m11 = 1.0;
 	m->m12 = 0.0;
@@ -59,7 +59,7 @@ void NuMtxSetTranslation(struct Mtx* m, struct Vec* v)
 	m->m44 = 1.0;
 }
 
-void NuMtxSetScale(struct Mtx* m, struct Vec* v)
+void NuMtxSetScale(struct Mtx* m, struct nuvec_s* v)
 {
 	m->m11 = v->x;
 	m->m12 = 0.0;
@@ -145,21 +145,21 @@ void NuMtxSetRotationZ(struct Mtx* m, s32 a)
 	m->m44 = 1.0;
 }
 
-void NuMtxTranslate(struct Mtx* m, struct Vec* v)
+void NuMtxTranslate(struct Mtx* m, struct nuvec_s* v)
 {
 	m->m41 = m->m41 + v->x;
 	m->m42 = m->m42 + v->y;
 	m->m43 = m->m43 + v->z;
 }
 
-void NuMtxPreTranslate(struct Mtx* m, struct Vec* v)
+void NuMtxPreTranslate(struct Mtx* m, struct nuvec_s* v)
 {
 	m->m41 = v->x * m->m11 + v->y * m->m21 + m->m41 + v->z * m->m31;
 	m->m42 = v->x * m->m12 + v->y * m->m22 + m->m42 + v->z * m->m32;
 	m->m43 = v->x * m->m13 + v->y * m->m23 + m->m43 + v->z * m->m33;
 }
 
-void NuMtxScale(struct Mtx* m, struct Vec* v)
+void NuMtxScale(struct Mtx* m, struct nuvec_s* v)
 {
 	m->m11 = m->m11 * v->x;
 	m->m12 = m->m12 * v->y;
@@ -175,14 +175,14 @@ void NuMtxScale(struct Mtx* m, struct Vec* v)
 	m->m43 = m->m43 * v->z;
 }
 
-void NuMtxGetScale(struct Vec* dest, struct Mtx* m)
+void NuMtxGetScale(struct nuvec_s* dest, struct Mtx* m)
 {
 	dest->x = NuFsqrt(m->m11 * m->m11 + m->m12 * m->m12 + m->m13 * m->m13);
 	dest->y = NuFsqrt(m->m21 * m->m21 + m->m22 * m->m22 + m->m23 * m->m23);
 	dest->z = NuFsqrt(m->m31 * m->m31 + m->m32 * m->m32 + m->m33 * m->m33);
 }
 
-void NuMtxPreScale(struct Mtx* m, struct Vec* v)
+void NuMtxPreScale(struct Mtx* m, struct nuvec_s* v)
 {
 	m->m11 = m->m11 * v->x;
 	m->m12 = m->m12 * v->x;
@@ -618,9 +618,9 @@ void NuMtxAlignZ(struct Mtx* dest, struct Mtx* m)
 	}
 }
 
-void NuMtxLookAtZ(struct Mtx* dest, struct Vec* v)
+void NuMtxLookAtZ(struct Mtx* dest, struct nuvec_s* v)
 {
-	struct Vec tmp;
+	struct nuvec_s tmp;
 	tmp.x = v->x - dest->m41;
 	tmp.y = v->y - dest->m42;
 	tmp.z = v->z - dest->m43;
@@ -654,7 +654,7 @@ void NuMtxAddR(struct Mtx* dest, struct Mtx* a, struct Mtx* b)
 	dest->m44 = 1.0;
 }
 
-void NuMtxSkewSymmetric(struct Mtx* m, struct Vec* v)
+void NuMtxSkewSymmetric(struct Mtx* m, struct nuvec_s* v)
 {
 	m->m11 = 0.0;
 	m->m12 = -v->z;
@@ -705,7 +705,7 @@ void NuMtxOrth(struct Mtx* m)
 	m->m21 = t3 * m13 - t4 * m12;
 }
 
-void NuMtxCalcCheapFaceOn(struct Mtx* dest, struct Vec* v)
+void NuMtxCalcCheapFaceOn(struct Mtx* dest, struct nuvec_s* v)
 {
 	struct Mtx* view = NuCameraGetViewMtx();
 	dest->m11 = -view->m11;
@@ -747,10 +747,105 @@ void NuMtxCalcDebrisFaceOn(struct Mtx* m)
 }
 
 
-/*
-void NuMtxInvH(void) //TODO
-{
+//80%
+void NuMtxInvH(struct numtx_s *mi,struct numtx_s *m0) {
+    int cnt;
+    int iVar4;
+    int iVar5;
+    int iVar9;
 
+    double a [4] [4];
+    int i;
+    int j;
+    int p [4];
+    double dVar10;
+    double uVar12;
+    double uVar13;
+    double dVar12;
+    double dVar13;
+    double dVar14;
+    char bVar1;
+    
+    a[0][0] = (double)m0->_00;
+    a[0][1] = (double)m0->_01;
+    a[0][2] = (double)m0->_02;
+    a[0][3] = (double)m0->_03;
+    a[1][0] = (double)m0->_10;
+    a[1][1] = (double)m0->_11;
+    a[1][2] = (double)m0->_12;
+    a[1][3] = (double)m0->_13;
+    a[2][0] = (double)m0->_20;
+    a[2][1] = (double)m0->_21;
+    a[2][2] = (double)m0->_22;
+    a[2][3] = (double)m0->_23;
+    a[3][0] = (double)m0->_30;
+    a[3][1] = (double)m0->_31;
+    a[3][2] = (double)m0->_32;
+    a[3][3] = (double)m0->_33;
+    
+    for(iVar4 = 0; iVar4 < 4; iVar4++ ) {
+        p[iVar4] = 0;
+        dVar12 = 0.0;
+        for (iVar5 = iVar4; iVar5 < 4; iVar5++) {
+            dVar13 = 0.0;
+            for (i = 0; i < 4; i++) {
+                dVar10 = NuFabs((float)a[iVar5][i]);
+                dVar13 += dVar10;
+            } 
+            dVar10 = (double)NuFabs((double)(float)a[iVar5][iVar4]);
+            if (dVar12 < dVar10 / dVar13) {
+                p[iVar4] = iVar5;
+                dVar12 = dVar10 / dVar13;
+            }
+        }
+        if (dVar12 == 0.0) break;
+        if (p[iVar4] != iVar4) {
+            for (j = 0; j < 4; j++) {
+                uVar12 = a[iVar4][j];
+                a[iVar4][j] = a[p[iVar4]][j];
+                a[p[iVar4]][j] = uVar12;
+            }
+        }
+        dVar14 = a[iVar4][iVar4];
+        for (i = 0; i < 4; i++) {
+            if (i != iVar4) {
+                a[iVar4][i] = -a[iVar4][i] / dVar14;
+                for (iVar9 = 0; iVar9 < 4; iVar9++) {
+                    if (iVar9 != iVar4) {
+                        a[iVar9][i] += a[iVar9][iVar4] * a[iVar4][i];
+                    }
+                }
+            }
+        } 
+        for (cnt = 0; cnt < 4; cnt++) {
+            a[cnt][iVar4] = a[cnt][iVar4] / dVar14;
+        }
+        a[iVar4][iVar4] = 1.0 / dVar14;
+    }
+    
+    for (iVar4 = 4; iVar4 >= 0; iVar4--) {
+        if (p[iVar4] != iVar4) {
+            for (j = 0; j < 4; j++) {
+                uVar13 = a[j][iVar4];
+                a[j][iVar4] = a[j][p[iVar4]];
+                a[j][p[iVar4]] = uVar13;
+            } 
+        }
+    } 
+    mi->_00 = (float)a[0][0];
+    mi->_01 = (float)a[0][1];
+    mi->_02 = (float)a[0][2];
+    mi->_03 = (float)a[0][3];
+    mi->_10 = (float)a[1][0];
+    mi->_11 = (float)a[1][1];
+    mi->_12 = (float)a[1][2];
+    mi->_13 = (float)a[1][3];
+    mi->_20 = (float)a[2][0];
+    mi->_21 = (float)a[2][1];
+    mi->_22 = (float)a[2][2];
+    mi->_23 = (float)a[2][3];
+    mi->_30 = (float)a[3][0];
+    mi->_31 = (float)a[3][1];
+    mi->_32 = (float)a[3][2];
+    mi->_33 = (float)a[3][3];
 }
-
-*/

@@ -1,4 +1,5 @@
 #pragma once
+#include "system/gs.h"
 
 /*
   800ca60c 00020c 800ca60c  4 GS_DrawTriStrip 	Global

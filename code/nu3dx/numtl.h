@@ -3,6 +3,7 @@
 
 #include "../types.h"
 #include "nu3dxtypes.h"
+#include "nu3dx/nurndr.h"
 
 /*
   800b2aac 000074 800b2aac  4 NuMtlCreateDefault 	Global
@@ -45,25 +46,6 @@
 struct numtl_s* NuMtlCreate(s32 mode);
 void NuMtlUVAnimation(struct nugobj_s* gobj);
 /**********************************************************/
-
-// Size: 0x10
-struct _D3DCOLORVALUE
-{
-    f32 r;
-    f32 g;
-    f32 b;
-    f32 a;
-};
-
-// Size: 0x44
-struct _D3DMATERIAL8
-{
-    struct _D3DCOLORVALUE Diffuse;
-    struct _D3DCOLORVALUE Ambient;
-    struct _D3DCOLORVALUE Specular;
-    struct _D3DCOLORVALUE Emissive;
-    float Power;
-};
 
 // Size: 0x10
 struct nuotitem_s

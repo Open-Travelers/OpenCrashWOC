@@ -25,13 +25,13 @@ char NuGetChar(struct nufpar_s* fPar)
             {
                 size = 0x1000;
             }
-            size = NuFileRead(fPar->handle, fPar->buffer, size);
+            size = NuFileRead(fPar->handle, fPar->fbuff, size);
             bufferEndPos = fPar->buffend;
             fPar->buffend = bufferEndPos + size;
             fPar->buffstart = bufferEndPos + 1;
             if (size != 0)
             {
-                ret = fPar->buffer[fPar->cpos - fPar->buffstart];
+                ret = fPar->fbuff[fPar->cpos - fPar->buffstart];
                 fPar->cpos++;
                 return ret;
             }
@@ -40,7 +40,7 @@ char NuGetChar(struct nufpar_s* fPar)
     }
     else
     {
-        ret = fPar->buffer[fPar->cpos - fPar->buffstart];
+        ret = fPar->fbuff[fPar->cpos - fPar->buffstart];
         fPar->cpos++;
     }
     return ret;
@@ -48,12 +48,12 @@ char NuGetChar(struct nufpar_s* fPar)
 
 s32 NuFParGetWord(struct nufpar_s* fPar)
 {
-    u32 currLinePos = old_line_pos = fPar->linepos;
+    u32 currLinePos = old_line_pos = fPar->line_pos;
     u32 len = 0;
     u32 inQuotation = 0;
-    while (fPar->textBuffer[currLinePos & 0xFF] != 0)
+    while (fPar->lbuff[currLinePos & 0xFF] != 0)
     {
-        char currChar = fPar->textBuffer[fPar->linepos];	//currChar = fPar->textBuffer[old_line_pos & 0xFF];
+        char currChar = fPar->lbuff[fPar->line_pos];	//currChar = fPar->lbuff[old_line_pos & 0xFF];
         switch (currChar)
         {
         case ' ':
@@ -61,12 +61,12 @@ s32 NuFParGetWord(struct nufpar_s* fPar)
         case '\t':
             if (inQuotation)
             {
-                (fPar->wordBuffer + 1)[len & 0xff] = currChar;
+                (fPar->wbuff + 1)[len & 0xff] = currChar;
                 len++;
             }
             else if (len != 0)
             {
-                (fPar->wordBuffer + 1)[len & 0xFF] = 0;
+                (fPar->wbuff + 1)[len & 0xFF] = 0;
                 return len;
             }
             break;
@@ -74,14 +74,14 @@ s32 NuFParGetWord(struct nufpar_s* fPar)
             inQuotation = 1 - inQuotation;
             break;
         default:
-            (fPar->wordBuffer + 1)[len & 0xff] = currChar;
+            (fPar->wbuff + 1)[len & 0xff] = currChar;
             len++;
             break;
         }
-        currLinePos = fPar->linepos + 1;
-        fPar->linepos = currLinePos;
+        currLinePos = fPar->line_pos + 1;
+        fPar->line_pos = currLinePos;
     }
-    fPar->textBuffer[(len & 0xFF) + 1] = 0;
+    fPar->wbuff[(len & 0xFF) + 1] = 0;
     return len;
 }
 
@@ -90,9 +90,9 @@ s32 NuFParGetInt(struct nufpar_s* fPar)
 {
     NuFParGetWord(fPar);
     s32 ret = 0;
-    if (fPar->wordBuffer[1] != 0)
+    if (fPar->wbuff[1] != 0)
     {
-        ret = atoi((char*)(fPar->wordBuffer + 1));
+        ret = atoi((char*)(fPar->wbuff + 1));
     }
     return ret;
 }
@@ -114,7 +114,7 @@ void NuFParClose(struct nufpar_s* fPar)
     NuMemFree(fPar);
 }
 
-struct nufpar_s* NuFParOpen(fileHandle handle)
+struct nufpar_s* NuFParOpen(s32 handle)
 {
     struct nufpar_s* fPar = NuMemAlloc(sizeof(struct nufpar_s));	//size: 0x1244
     if (fPar != NULL)
@@ -142,10 +142,10 @@ void NuFParDestroy(struct nufpar_s* fPar)
 
 struct nufpar_s* NuFParCreate(char* filename)
 {
-    fileHandle handle = NuFileOpen(filename, 0); //0= NUFILE_READ
+    s32 handle = NuFileOpen(filename, 0); //0= NUFILE_READ
     if (handle != NULL)
     {
-        nufpar_s* fPar = NuFParOpen(handle);
+        struct nufpar_s* fPar = NuFParOpen(handle);
         if (fPar != NULL)
         {
             return fPar;
@@ -161,7 +161,7 @@ s32 NuFParGetLine(struct nufpar_s* fPar) {
     char* textBuffer_ptr;
 
     i = 0;
-    fPar->linepos = 0;
+    fPar->line_pos = 0;
 
     char inc_f2_flag = 1;
     while ((ch = NuGetChar(fPar)) != 0) {
@@ -192,16 +192,16 @@ s32 NuFParGetLine(struct nufpar_s* fPar) {
                         ch = NuGetChar(fPar);
                     }
                     i = 0;
-                    fPar->linepos = 0;
+                    fPar->line_pos = 0;
                     inc_f2_flag = 1;
                     continue;
                 }
             }
-            fPar->textBuffer[i] = ch;
+            fPar->lbuff[i] = ch;
             i += 1;
         }
     }
-    fPar->textBuffer[i] = 0;
+    fPar->lbuff[i] = 0;
     return i;
 }
 
@@ -210,7 +210,7 @@ s32 NuFParInterpretWord(struct nufpar_s* fPar) {
     s32 i = 0;
     if (fPar->comstack[0]->fname != NULL) {
         do {
-            if (strcasecmp(fPar->comstack[i]->fname, fPar->wordBuffer + 1) != 0) {
+            if (strcasecmp(fPar->comstack[i]->fname, fPar->wbuff + 1) != 0) {
                 fPar->comstack[i]->func(fPar);
                 return 1;
             }

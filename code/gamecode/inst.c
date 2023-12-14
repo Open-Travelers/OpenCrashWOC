@@ -1,20 +1,22 @@
-//static struct nulsthdr_s* sceneinst_pool;
-//static struct nulsthdr_s* animdatainst_pool;
+#include "gamecode/inst.h"
+
+static struct nulsthdr_s* sceneinst_pool;
+static struct nulsthdr_s* animdatainst_pool;
 
 //PS2
 struct nuscene_s * InstSceneLoad(char *name)
 {
   struct sceneinst_s *sc;
-  
+
     sc = (struct sceneinst_s *)NuLstGetNext(sceneinst_pool,NULL);
     while(sc != NULL) {
         if (strcasecmp(name, sc->name) == 0) {
-            sc->inst_cnt++; 
+            sc->inst_cnt++;
             return sc->scene;
         }
         sc = (struct sceneinst_s *)NuLstGetNext(sceneinst_pool,(struct nulnkhdr_s *)sc);
     }
-    
+
     sc = (struct sceneinst_s *)NuLstAlloc(sceneinst_pool);
     if (sc != NULL) {
         sc->scene = NuSceneLoad(name);
@@ -26,7 +28,7 @@ struct nuscene_s * InstSceneLoad(char *name)
             NuLstFree((struct nulnkhdr_s *)sc);
         }
     }
-    
+
     return NULL;
 }
 
@@ -42,12 +44,12 @@ struct nuanimdata_s * InstAnimDataLoad(char *name)
     sc = (struct animdatainst_s *)NuLstGetNext(animdatainst_pool, NULL);
     while(sc != 0) {
         if (strcasecmp(name, sc->name) == 0) {
-            sc->inst_cnt++; 
+            sc->inst_cnt++;
             return sc->ad;
         }
         sc = (struct animdatainst_s *)NuLstGetNext(animdatainst_pool, (struct nulnkhdr_s *)sc);
     }
-    
+
     lst = (struct animdatainst_s *)NuLstAlloc(animdatainst_pool);
     if (lst != NULL) {
         adat = NuAnimDataLoadBuff(name, &superbuffer_ptr, &superbuffer_end);
@@ -60,7 +62,7 @@ struct nuanimdata_s * InstAnimDataLoad(char *name)
             NuLstFree((struct nulnkhdr_s *)lst);
         }
     }
-    
+
     return NULL;
 }
 
@@ -79,7 +81,7 @@ void InstClose(void)
   //struct shadinst_s *sdi;
   struct animdatainst_s *adi;
   struct sceneinst_s *si;
-  
+
   /*  if (shaddatainst_pool != NULL) {
     sdi = (struct shadinst_s *)NuLstGetNext(shaddatainst_pool,NULL);
     while (sdi != NULL) {
@@ -98,7 +100,7 @@ void InstClose(void)
     NuLstDestroy(animdatainst_pool);
     animdatainst_pool = NULL;
   }
-  
+
   if (sceneinst_pool != NULL) {
     si = (struct sceneinst_s *)NuLstGetNext(sceneinst_pool,NULL);
     while (si != NULL) {

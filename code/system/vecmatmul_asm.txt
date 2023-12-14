@@ -1,0 +1,167 @@
+.global VecMatMulAndWeight1
+VecMatMulAndWeight1:
+/* 800C5E18 000C2E18  E0 04 00 00 */	psq_l f0, 0(r4), 0, qr0
+/* 800C5E1C 000C2E1C  E0 45 00 00 */	psq_l f2, 0(r5), 0, qr0
+/* 800C5E20 000C2E20  E0 24 80 08 */	psq_l f1, 8(r4), 1, qr0
+/* 800C5E24 000C2E24  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C5E28 000C2E28  E0 65 00 08 */	psq_l f3, 8(r5), 0, qr0
+/* 800C5E2C 000C2E2C  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C5E30 000C2E30  E1 05 00 10 */	psq_l f8, 16(r5), 0, qr0
+/* 800C5E34 000C2E34  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C5E38 000C2E38  E1 25 00 18 */	psq_l f9, 24(r5), 0, qr0
+/* 800C5E3C 000C2E3C  11 48 00 32 */	ps_mul f10, f8, f0
+/* 800C5E40 000C2E40  F0 C3 80 00 */	psq_st f6, 0(r3), 1, qr0
+/* 800C5E44 000C2E44  11 69 50 7A */	ps_madd f11, f9, f1, f10
+/* 800C5E48 000C2E48  E0 45 00 20 */	psq_l f2, 32(r5), 0, qr0
+/* 800C5E4C 000C2E4C  11 8B 5B 14 */	ps_sum0 f12, f11, f12, f11
+/* 800C5E50 000C2E50  E0 65 00 28 */	psq_l f3, 40(r5), 0, qr0
+/* 800C5E54 000C2E54  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C5E58 000C2E58  F1 83 80 04 */	psq_st f12, 4(r3), 1, qr0
+/* 800C5E5C 000C2E5C  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C5E60 000C2E60  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C5E64 000C2E64  F0 C3 80 08 */	psq_st f6, 8(r3), 1, qr0
+/* 800C5E68 000C2E68  4E 80 00 20 */	blr 
+/* 800C5E6C 000C2E6C  E1 A6 80 00 */	psq_l f13, 0(r6), 1, qr0
+/* 800C5E70 000C2E70  E0 04 00 00 */	psq_l f0, 0(r4), 0, qr0
+/* 800C5E74 000C2E74  E0 45 00 00 */	psq_l f2, 0(r5), 0, qr0
+/* 800C5E78 000C2E78  E0 24 80 08 */	psq_l f1, 8(r4), 1, qr0
+/* 800C5E7C 000C2E7C  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C5E80 000C2E80  E0 65 00 08 */	psq_l f3, 8(r5), 0, qr0
+/* 800C5E84 000C2E84  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C5E88 000C2E88  E1 05 00 10 */	psq_l f8, 16(r5), 0, qr0
+/* 800C5E8C 000C2E8C  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C5E90 000C2E90  E1 25 00 18 */	psq_l f9, 24(r5), 0, qr0
+/* 800C5E94 000C2E94  11 48 00 32 */	ps_mul f10, f8, f0
+/* 800C5E98 000C2E98  E1 C3 80 00 */	psq_l f14, 0(r3), 1, qr0
+/* 800C5E9C 000C2E9C  10 C6 73 7A */	ps_madd f6, f6, f13, f14
+/* 800C5EA0 000C2EA0  F0 C3 80 00 */	psq_st f6, 0(r3), 1, qr0
+/* 800C5EA4 000C2EA4  11 69 50 7A */	ps_madd f11, f9, f1, f10
+/* 800C5EA8 000C2EA8  E0 45 00 20 */	psq_l f2, 32(r5), 0, qr0
+/* 800C5EAC 000C2EAC  11 8B 5B 14 */	ps_sum0 f12, f11, f12, f11
+/* 800C5EB0 000C2EB0  E0 65 00 28 */	psq_l f3, 40(r5), 0, qr0
+/* 800C5EB4 000C2EB4  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C5EB8 000C2EB8  E1 C3 80 04 */	psq_l f14, 4(r3), 1, qr0
+/* 800C5EBC 000C2EBC  11 8C 73 7A */	ps_madd f12, f12, f13, f14
+/* 800C5EC0 000C2EC0  F1 83 80 04 */	psq_st f12, 4(r3), 1, qr0
+/* 800C5EC4 000C2EC4  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C5EC8 000C2EC8  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C5ECC 000C2ECC  E1 C3 80 08 */	psq_l f14, 8(r3), 1, qr0
+/* 800C5ED0 000C2ED0  10 C6 73 7A */	ps_madd f6, f6, f13, f14
+/* 800C5ED4 000C2ED4  F0 C3 80 08 */	psq_st f6, 8(r3), 1, qr0
+/* 800C5ED8 000C2ED8  4E 80 00 20 */	blr 
+
+.global VecMatMulAndWeight3
+VecMatMulAndWeight3:
+/* 800C5EDC 000C2EDC  E1 A8 80 00 */	psq_l f13, 0(r8), 1, qr0
+/* 800C5EE0 000C2EE0  C2 89 00 00 */	lfs f20, 0(r9)
+/* 800C5EE4 000C2EE4  E0 04 00 00 */	psq_l f0, 0(r4), 0, qr0
+/* 800C5EE8 000C2EE8  C2 A8 00 00 */	lfs f21, 0(r8)
+/* 800C5EEC 000C2EEC  E0 45 00 00 */	psq_l f2, 0(r5), 0, qr0
+/* 800C5EF0 000C2EF0  E0 24 80 08 */	psq_l f1, 8(r4), 1, qr0
+/* 800C5EF4 000C2EF4  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C5EF8 000C2EF8  E0 65 00 08 */	psq_l f3, 8(r5), 0, qr0
+/* 800C5EFC 000C2EFC  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C5F00 000C2F00  E1 05 00 10 */	psq_l f8, 16(r5), 0, qr0
+/* 800C5F04 000C2F04  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C5F08 000C2F08  E1 25 00 18 */	psq_l f9, 24(r5), 0, qr0
+/* 800C5F0C 000C2F0C  11 48 00 32 */	ps_mul f10, f8, f0
+/* 800C5F10 000C2F10  11 C6 03 72 */	ps_mul f14, f6, f13
+/* 800C5F14 000C2F14  11 69 50 7A */	ps_madd f11, f9, f1, f10
+/* 800C5F18 000C2F18  E0 45 00 20 */	psq_l f2, 32(r5), 0, qr0
+/* 800C5F1C 000C2F1C  11 8B 5B 14 */	ps_sum0 f12, f11, f12, f11
+/* 800C5F20 000C2F20  E0 65 00 28 */	psq_l f3, 40(r5), 0, qr0
+/* 800C5F24 000C2F24  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C5F28 000C2F28  11 EC 03 72 */	ps_mul f15, f12, f13
+/* 800C5F2C 000C2F2C  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C5F30 000C2F30  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C5F34 000C2F34  12 06 03 72 */	ps_mul f16, f6, f13
+/* 800C5F38 000C2F38  E1 A8 80 04 */	psq_l f13, 4(r8), 1, qr0
+/* 800C5F3C 000C2F3C  C2 C8 00 04 */	lfs f22, 4(r8)
+/* 800C5F40 000C2F40  E0 46 00 00 */	psq_l f2, 0(r6), 0, qr0
+/* 800C5F44 000C2F44  EE B5 B0 2A */	fadds f21, f21, f22
+/* 800C5F48 000C2F48  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C5F4C 000C2F4C  E0 66 00 08 */	psq_l f3, 8(r6), 0, qr0
+/* 800C5F50 000C2F50  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C5F54 000C2F54  E1 06 00 10 */	psq_l f8, 16(r6), 0, qr0
+/* 800C5F58 000C2F58  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C5F5C 000C2F5C  E1 26 00 18 */	psq_l f9, 24(r6), 0, qr0
+/* 800C5F60 000C2F60  11 48 00 32 */	ps_mul f10, f8, f0
+/* 800C5F64 000C2F64  11 C6 73 7A */	ps_madd f14, f6, f13, f14
+/* 800C5F68 000C2F68  11 69 50 7A */	ps_madd f11, f9, f1, f10
+/* 800C5F6C 000C2F6C  E0 46 00 20 */	psq_l f2, 32(r6), 0, qr0
+/* 800C5F70 000C2F70  11 8B 5B 14 */	ps_sum0 f12, f11, f12, f11
+/* 800C5F74 000C2F74  E0 66 00 28 */	psq_l f3, 40(r6), 0, qr0
+/* 800C5F78 000C2F78  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C5F7C 000C2F7C  11 EC 7B 7A */	ps_madd f15, f12, f13, f15
+/* 800C5F80 000C2F80  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C5F84 000C2F84  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C5F88 000C2F88  12 06 83 7A */	ps_madd f16, f6, f13, f16
+/* 800C5F8C 000C2F8C  ED B4 A8 28 */	fsubs f13, f20, f21
+/* 800C5F90 000C2F90  E0 47 00 00 */	psq_l f2, 0(r7), 0, qr0
+/* 800C5F94 000C2F94  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C5F98 000C2F98  E0 67 00 08 */	psq_l f3, 8(r7), 0, qr0
+/* 800C5F9C 000C2F9C  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C5FA0 000C2FA0  E1 07 00 10 */	psq_l f8, 16(r7), 0, qr0
+/* 800C5FA4 000C2FA4  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C5FA8 000C2FA8  E1 27 00 18 */	psq_l f9, 24(r7), 0, qr0
+/* 800C5FAC 000C2FAC  11 48 00 32 */	ps_mul f10, f8, f0
+/* 800C5FB0 000C2FB0  11 C6 73 7A */	ps_madd f14, f6, f13, f14
+/* 800C5FB4 000C2FB4  F1 C3 80 00 */	psq_st f14, 0(r3), 1, qr0
+/* 800C5FB8 000C2FB8  11 69 50 7A */	ps_madd f11, f9, f1, f10
+/* 800C5FBC 000C2FBC  E0 47 00 20 */	psq_l f2, 32(r7), 0, qr0
+/* 800C5FC0 000C2FC0  11 8B 5B 14 */	ps_sum0 f12, f11, f12, f11
+/* 800C5FC4 000C2FC4  E0 67 00 28 */	psq_l f3, 40(r7), 0, qr0
+/* 800C5FC8 000C2FC8  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C5FCC 000C2FCC  11 EC 7B 7A */	ps_madd f15, f12, f13, f15
+/* 800C5FD0 000C2FD0  F1 E3 80 04 */	psq_st f15, 4(r3), 1, qr0
+/* 800C5FD4 000C2FD4  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C5FD8 000C2FD8  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C5FDC 000C2FDC  12 06 83 7A */	ps_madd f16, f6, f13, f16
+/* 800C5FE0 000C2FE0  F2 03 80 08 */	psq_st f16, 8(r3), 1, qr0
+/* 800C5FE4 000C2FE4  4E 80 00 20 */	blr 
+/* 800C5FE8 000C2FE8  E1 A7 80 00 */	psq_l f13, 0(r7), 1, qr0
+/* 800C5FEC 000C2FEC  C2 88 00 00 */	lfs f20, 0(r8)
+/* 800C5FF0 000C2FF0  C2 A7 00 00 */	lfs f21, 0(r7)
+/* 800C5FF4 000C2FF4  E0 04 00 00 */	psq_l f0, 0(r4), 0, qr0
+/* 800C5FF8 000C2FF8  E0 45 00 00 */	psq_l f2, 0(r5), 0, qr0
+/* 800C5FFC 000C2FFC  E0 24 80 08 */	psq_l f1, 8(r4), 1, qr0
+/* 800C6000 000C3000  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C6004 000C3004  E0 65 00 08 */	psq_l f3, 8(r5), 0, qr0
+/* 800C6008 000C3008  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C600C 000C300C  E1 05 00 10 */	psq_l f8, 16(r5), 0, qr0
+/* 800C6010 000C3010  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C6014 000C3014  E1 25 00 18 */	psq_l f9, 24(r5), 0, qr0
+/* 800C6018 000C3018  11 48 00 32 */	ps_mul f10, f8, f0
+/* 800C601C 000C301C  11 C6 03 72 */	ps_mul f14, f6, f13
+/* 800C6020 000C3020  11 69 50 7A */	ps_madd f11, f9, f1, f10
+/* 800C6024 000C3024  E0 45 00 20 */	psq_l f2, 32(r5), 0, qr0
+/* 800C6028 000C3028  11 8B 5B 14 */	ps_sum0 f12, f11, f12, f11
+/* 800C602C 000C302C  E0 65 00 28 */	psq_l f3, 40(r5), 0, qr0
+/* 800C6030 000C3030  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C6034 000C3034  11 EC 03 72 */	ps_mul f15, f12, f13
+/* 800C6038 000C3038  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C603C 000C303C  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C6040 000C3040  12 06 03 72 */	ps_mul f16, f6, f13
+/* 800C6044 000C3044  ED B4 A8 28 */	fsubs f13, f20, f21
+/* 800C6048 000C3048  E0 46 00 00 */	psq_l f2, 0(r6), 0, qr0
+/* 800C604C 000C304C  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C6050 000C3050  E0 66 00 08 */	psq_l f3, 8(r6), 0, qr0
+/* 800C6054 000C3054  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C6058 000C3058  E1 06 00 10 */	psq_l f8, 16(r6), 0, qr0
+/* 800C605C 000C305C  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C6060 000C3060  E1 26 00 18 */	psq_l f9, 24(r6), 0, qr0
+/* 800C6064 000C3064  11 48 00 32 */	ps_mul f10, f8, f0
+/* 800C6068 000C3068  11 C6 73 7A */	ps_madd f14, f6, f13, f14
+/* 800C606C 000C306C  F1 C3 80 00 */	psq_st f14, 0(r3), 1, qr0
+/* 800C6070 000C3070  11 69 50 7A */	ps_madd f11, f9, f1, f10
+/* 800C6074 000C3074  E0 46 00 20 */	psq_l f2, 32(r6), 0, qr0
+/* 800C6078 000C3078  11 8B 5B 14 */	ps_sum0 f12, f11, f12, f11
+/* 800C607C 000C307C  E0 66 00 28 */	psq_l f3, 40(r6), 0, qr0
+/* 800C6080 000C3080  10 82 00 32 */	ps_mul f4, f2, f0
+/* 800C6084 000C3084  11 EC 7B 7A */	ps_madd f15, f12, f13, f15
+/* 800C6088 000C3088  F1 E3 80 04 */	psq_st f15, 4(r3), 1, qr0
+/* 800C608C 000C308C  10 A3 20 7A */	ps_madd f5, f3, f1, f4
+/* 800C6090 000C3090  10 C5 29 94 */	ps_sum0 f6, f5, f6, f5
+/* 800C6094 000C3094  12 06 83 7A */	ps_madd f16, f6, f13, f16
+/* 800C6098 000C3098  F2 03 80 08 */	psq_st f16, 8(r3), 1, qr0
+/* 800C609C 000C309C  4E 80 00 20 */	blr 

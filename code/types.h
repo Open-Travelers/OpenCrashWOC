@@ -4,7 +4,6 @@
 #include "elf_systypes.h"
 #include<stdbool.h>
 
-#define NULL 0
 #define NuError(msg) \
     error_func e = NuErrorProlog(__FILE__, __LINE__); \
     e(msg);
@@ -49,14 +48,31 @@ typedef unsigned short angle;
 typedef signed int fxi;
 
 // Error function.
-typedef void(*error_func)(char[0x60], ...);
+typedef void error_func(char *msg,...);
 
 // File handle.
 typedef s32 fileHandle;
 
+unsigned long long LBIT;
+
 union variptr_u superbuffer_ptr;
 union variptr_u superbuffer_base;
 union variptr_u superbuffer_end;
+
+
+// Size: 0x4
+struct nunrand_s
+{
+    long idum; // Offset: 0x0
+};
+
+// Size: 0xC
+struct nucolour3_s
+{
+	f32 r;
+	f32 g;
+	f32 b;
+};
 
 // Size: 0x18
 struct _XINPUT_STATE
@@ -85,14 +101,14 @@ struct nupad_s
     struct _XINPUT_STATE xinputs; // Offset: 0x4
     struct _XINPUT_STATE old_xinputs; // Offset: 0x1C
     struct _XINPUT_FEEDBACK feedback; // Offset: 0x34
-    int port; // Offset: 0x7C
-    int slot; // Offset: 0x80
-    int stage; // Offset: 0x84
-    int id; // Offset: 0x88
-    int ldx; // Offset: 0x8C
-    int ldy; // Offset: 0x90
-    int rdx; // Offset: 0x94
-    int rdy; // Offset: 0x98
+    s32 port; // Offset: 0x7C
+    s32 slot; // Offset: 0x80
+    s32 stage; // Offset: 0x84
+    s32 id; // Offset: 0x88
+    s32 ldx; // Offset: 0x8C
+    s32 ldy; // Offset: 0x90
+    s32 rdx; // Offset: 0x94
+    s32 rdy; // Offset: 0x98
     float l_nx; // Offset: 0x9C
     float l_ny; // Offset: 0xA0
     float l_rx; // Offset: 0xA4

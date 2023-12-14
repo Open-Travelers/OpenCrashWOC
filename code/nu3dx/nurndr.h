@@ -2,8 +2,10 @@
 #define NURNDR_H
 
 #include "../types.h"
-#include "nu3dxtypes.h"
+#include "nu3dx/nu3dxtypes.h"
 #include "nu3dx/nucvtskin.h"
+#include "nu3dx/nuanim.h"
+#include "nu3dx/nuhgobj.h"
 
 /*
   800b4484 00002c 800b4484  4 NuRndrInit 	Global
@@ -46,6 +48,7 @@
   800b7c84 0000c0 800b7c84  4 NuRndrAddShadow 	Global
   800b7d44 0001bc 800b7d44  4 NuRndrShadPolys 	Global
 */
+s32 fog_enabled;
 
 // Size: 0x34
 struct FootData

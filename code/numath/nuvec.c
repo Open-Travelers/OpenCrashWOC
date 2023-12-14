@@ -2,14 +2,14 @@
 #include "nu_asm.h"
 #include "nutrig.h"
 
-void NuVecMtxTransform(struct Vec* dest, struct Vec* a, struct Mtx* b)
+void NuVecMtxTransform(struct nuvec_s* dest, struct nuvec_s* a, struct Mtx* b)
 {
 	dest->x = a->x * b->m11 + a->y * b->m21 + a->z * b->m31 + b->m41;
 	dest->y = a->x * b->m12 + a->y * b->m22 + a->z * b->m32 + b->m42;
 	dest->z = a->x * b->m13 + a->y * b->m23 + a->z * b->m33 + b->m43;
 }
 
-void NuVecMtxTransformH(struct Vec* dest, struct Vec* a, struct Mtx* b)
+void NuVecMtxTransformH(struct nuvec_s* dest, struct nuvec_s* a, struct Mtx* b)
 {
 	f32 scale = 0.0;
 	f32 tmp = a->z * b->m34 + a->x * b->m14 + a->y * b->m24 + b->m44;
@@ -21,14 +21,14 @@ void NuVecMtxTransformH(struct Vec* dest, struct Vec* a, struct Mtx* b)
 	dest->z = (a->x * b->m13 + a->y * b->m23 + a->z * b->m33 + b->m43) * scale;
 }
 
-void NuVecMtxRotate(struct Vec* dest, struct Vec* a, struct Mtx* b)
+void NuVecMtxRotate(struct nuvec_s* dest, struct nuvec_s* a, struct Mtx* b)
 {
 	dest->x = a->x * b->m11 + a->y * b->m21 + a->z * b->m31;
 	dest->y = a->x * b->m12 + a->y * b->m22 + a->z * b->m32;
 	dest->z = a->x * b->m13 + a->y * b->m23 + a->z * b->m33;
 }
 
-void NuVecInvMtxTransform(struct Vec* dest, struct Vec* a, struct Mtx* b)
+void NuVecInvMtxTransform(struct nuvec_s* dest, struct nuvec_s* a, struct Mtx* b)
 {
 	f32 dy = a->y - b->m42;
 	f32 dx = a->x - b->m41;
@@ -38,14 +38,14 @@ void NuVecInvMtxTransform(struct Vec* dest, struct Vec* a, struct Mtx* b)
 	dest->z = b->m33 * dz + b->m31 * dx + b->m32 * dy;
 }
 
-void NuVecInvMtxRotate(struct Vec* dest, struct Vec* a, struct Mtx* b)
+void NuVecInvMtxRotate(struct nuvec_s* dest, struct nuvec_s* a, struct Mtx* b)
 {
 	dest->x = a->x * b->m11 + a->y * b->m12 + a->z * b->m13;
 	dest->y = a->x * b->m21 + a->y * b->m22 + a->z * b->m23;
 	dest->z = a->x * b->m31 + a->y * b->m32 + a->z * b->m33;
 }
 
-void NuVecRotateX(struct Vec* dest, struct Vec* v, s32 angle)
+void NuVecRotateX(struct nuvec_s* dest, struct nuvec_s* v, s32 angle)
 {
 	f32 s = ANG_SIN(angle);
 	f32 c = ANG_COS(angle);
@@ -54,7 +54,7 @@ void NuVecRotateX(struct Vec* dest, struct Vec* v, s32 angle)
 	dest->z = v->y * s + v->z * c;
 }
 
-void NuVecRotateY(struct Vec* dest, struct Vec* v, s32 angle)
+void NuVecRotateY(struct nuvec_s* dest, struct nuvec_s* v, s32 angle)
 {
 	f32 s = ANG_SIN(angle);
 	f32 c = ANG_COS(angle);
@@ -63,7 +63,7 @@ void NuVecRotateY(struct Vec* dest, struct Vec* v, s32 angle)
 	dest->z = v->z * c - v->x * s;
 }
 
-void NuVecRotateZ(struct Vec* dest, struct Vec* v, s32 angle)
+void NuVecRotateZ(struct nuvec_s* dest, struct nuvec_s* v, s32 angle)
 {
 	f32 s = ANG_SIN(angle);
 	f32 c = ANG_COS(angle);
@@ -72,57 +72,57 @@ void NuVecRotateZ(struct Vec* dest, struct Vec* v, s32 angle)
 	dest->z = v->z;
 }
 
-void NuVecAdd(struct Vec* dest, struct Vec* a, struct Vec* b)
+void NuVecAdd(struct nuvec_s* dest, struct nuvec_s* a, struct nuvec_s* b)
 {
 	dest->x = a->x + b->x;
 	dest->y = a->y + b->y;
 	dest->z = a->z + b->z;
 }
 
-void NuVecSub(struct Vec* dest, struct Vec* a, struct Vec* b)
+void NuVecSub(struct nuvec_s* dest, struct nuvec_s* a, struct nuvec_s* b)
 {
 	dest->x = a->x + b->x;
 	dest->y = a->y + b->y;
 	dest->z = a->z + b->z;
 }
 
-void NuVecScale(f32 scale, struct Vec* dest, struct Vec* v)
+void NuVecScale(f32 scale, struct nuvec_s* dest, struct nuvec_s* v)
 {
 	dest->x = v->x * scale;
 	dest->y = v->y * scale;
 	dest->z = v->z * scale;
 }
 
-void NuVecScaleAccum(f32 scale, struct Vec* dest, struct Vec* v)
+void NuVecScaleAccum(f32 scale, struct nuvec_s* dest, struct nuvec_s* v)
 {
 	dest->x = v->x * scale + dest->x;
 	dest->y = v->y * scale + dest->y;
 	dest->z = v->z * scale + dest->z;
 }
 
-void NuVecCross(struct Vec* dest, struct Vec* a, struct Vec* b)
+void NuVecCross(struct nuvec_s* dest, struct nuvec_s* a, struct nuvec_s* b)
 {
 	dest->x = a->y * b->z - a->z * b->y;
 	dest->y = a->z * b->x - a->x * b->z;
 	dest->z = a->x * b->y - a->y * b->x;
 }
 
-f32 NuVecDot(struct Vec* a, struct Vec* b)
+f32 NuVecDot(struct nuvec_s* a, struct nuvec_s* b)
 {
 	return a->x * b->x + a->y * b->y + a->z * b->z;
 }
 
-f32 NuVecMag(struct Vec* v)
+f32 NuVecMag(struct nuvec_s* v)
 {
 	return NuFsqrt(NuVecDot(v, v));
 }
 
-f32 NuVecMagSqr(struct Vec* v)
+f32 NuVecMagSqr(struct nuvec_s* v)
 {
 	return NuVecDot(v, v);
 }
 
-void NuVecNorm(struct Vec* dest, struct Vec* v)
+void NuVecNorm(struct nuvec_s* dest, struct nuvec_s* v)
 {
 	f32 x, y, z;
 	f32 mag = NuVecMag(v);
@@ -143,9 +143,9 @@ void NuVecNorm(struct Vec* dest, struct Vec* v)
 	dest->z = z;
 }
 
-f32 NuVecDist(struct Vec* a, struct Vec* b, struct Vec* dist)
+f32 NuVecDist(struct nuvec_s* a, struct nuvec_s* b, struct nuvec_s* dist)
 {
-	struct Vec tmp;
+	struct nuvec_s tmp;
 	if (dist == NULL)
 	{
 		NuVecSub(&tmp, a, b);
@@ -158,9 +158,9 @@ f32 NuVecDist(struct Vec* a, struct Vec* b, struct Vec* dist)
 	return NuVecMag(dist);
 }
 
-f32 NuVecDistSqr(struct Vec* a, struct Vec* b, struct Vec* dist)
+f32 NuVecDistSqr(struct nuvec_s* a, struct nuvec_s* b, struct nuvec_s* dist)
 {
-	struct Vec tmp;
+	struct nuvec_s tmp;
 	if (dist == NULL)
 	{
 		NuVecSub(&tmp, a, b);
@@ -173,9 +173,9 @@ f32 NuVecDistSqr(struct Vec* a, struct Vec* b, struct Vec* dist)
 	return NuVecMagSqr(dist);
 }
 
-f32 NuVecXZDist(struct Vec* a, struct Vec* b, struct Vec* dist)
+f32 NuVecXZDist(struct nuvec_s* a, struct nuvec_s* b, struct nuvec_s* dist)
 {
-	struct Vec tmp;
+	struct nuvec_s tmp;
 	if (dist == NULL)
 	{
 		dist = &tmp;
@@ -192,9 +192,9 @@ f32 NuVecXZDist(struct Vec* a, struct Vec* b, struct Vec* dist)
 	return NuVecMag(dist);
 }
 
-f32 NuVecXZDistSqr(struct Vec* a, struct Vec* b, struct Vec* dist)
+f32 NuVecXZDistSqr(struct nuvec_s* a, struct nuvec_s* b, struct nuvec_s* dist)
 {
-	struct Vec tmp;
+	struct nuvec_s tmp;
 	if (dist == NULL)
 	{
 		dist = &tmp;
