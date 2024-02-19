@@ -6,3 +6,33 @@ We love Crash Bandicoot! If you plan to play this, you must legally dump assets 
 
 ## Other Notice
 This README will be more complete and detailed with instructions to contribute, build, and play once they exist!
+
+## todo list
+
+### initialisation project
+- [x] SDL link
+- [x] OpenGL link
+- [ ] SDL Mixer li,k
+- [ ] OpenGL ES 3 or OpenGL 3 link
+
+### nulib compile
+- [ ] nu3dx function (98%)
+- [x] nucore function (90%)
+- [x] numath function (100%)
+- [x] nusound function (dummy)
+- [x] nuraster function (100%)
+- [ ] system function (90%) 
+- [ ] gamelib function (30%)
+
+### nulib test
+- [ ] nu3dx validation test
+- [ ] nucore validation test 
+- [ ] numath validation test 
+- [ ] nusound validation test 
+- [ ] nuraster validation test 
+- [ ] system validation test 
+- [ ] gamelib validation test 
+
+### game
+- [ ] gamecode (20%)
+
