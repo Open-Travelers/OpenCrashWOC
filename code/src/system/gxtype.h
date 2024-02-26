@@ -1,7 +1,11 @@
 #ifndef GXTYPES_H
 #define GXTYPES_H
 
+#define AT_ADDRESS(xyz) __attribute__((address((xyz))))
+
 #include "types.h"
+
+typedef f32 Mtx44[4][4];
 
 static inline u32 ppcmask(u32 mb, u32 me)
 {
@@ -28,8 +32,8 @@ static inline u32 __rlwimi(u32 ra, u32 rs, u32 sh, u32 mb, u32 me)
 
 ///////////////////////////Gamecube SDK////////////////////////////
 #define GX_BP_LOAD_REG(data)                \
-	GXWGFifo.s8  = GX_FIFO_CMD_LOAD_BP_REG; \
-	GXWGFifo.s32 = (data);
+	GXFIFO.s8  = GX_FIFO_CMD_LOAD_BP_REG; \
+	GXFIFO.s32 = (data);
 #define GX_GET_REG(reg, st, end)      GX_BITGET((reg), (st), ((end) - (st) + 1))
 #define GX_SET_REG(reg, x, st, end)   GX_BITFIELD_SET((reg), (st), ((end) - (st) + 1), (x))
 #define GX_BITFIELD(field, pos, size, value)       (__rlwimi((field), (value), 31 - (pos) - (size) + 1, (pos), (pos) + (size)-1))
@@ -1345,7 +1349,8 @@ typedef union {
 } PPCWGPipe;
 
 volatile PPCWGPipe WGPIPE;
-volatile PPCWGPipe GXWGFifo;
+//volatile PPCWGPipe GXWGFifo;
+volatile PPCWGPipe GXFIFO AT_ADDRESS(0xCC008000);
 
 typedef struct _GXContexts {
     GXContext* main;

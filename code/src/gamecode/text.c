@@ -29,42 +29,85 @@ s32 JStrLen(char *txt) {
   return count;
 }
 
-void AddSpacesIntoText(char *txt,uint bits)
-
-{
-  int j;
-  int i;
-  int cnt;
+//NGC MATCH
+void AddSpacesIntoText(char *txt, u32 bits) {
+  static char buf_159[256];
+  s32 j;
+  s32 i;
   
-  if (Game.language == 'c') {
+  if (Game.language == 0x63) {
     j = 0;
-    cnt = 0;
-    if (*txt != '\0') {
-      i = j;
-      do {
-        buf_159[i] = txt[cnt];
-        j = i + 1;
-        if ((((bits & 1) != 0) || ((((bits & 2) != 0 && ('/' < txt[cnt])) && (txt[cnt] < ':')))) | |
-           (((bits & 4) != 0 && (txt[cnt] == '-')))) {
-          buf_159[i + 1] = ' ';
-          j = i + 2;
+    for(i = 0; txt[i] != 0; i++) {
+        buf_159[j] = txt[i];
+        j++;
+        if ((((bits & 1) != 0) || ((((bits & 2) != 0 && (0x2f < txt[i])) && (txt[i] < 0x3a)))) ||
+           (((bits & 4) != 0 && (txt[i] == 0x2d)))) {
+          buf_159[j] = 0x20;
+          j++;
         }
-        cnt = cnt + 1;
-        i = j;
-      } while (txt[cnt] != '\0');
     }
-    buf_159[j] = '\0';
+    buf_159[j] = 0;
     strcpy(txt,buf_159);
   }
   return;
 }
 
-char * GetStringIdx(int param_1,int param_2)
+char* tCORRUPTDATA[6][2];
+char* tCORRUPTED[6][2];
+char* tDAMAGED[6][2];
+char* tINSUFFICIENTSPACE[6][3];
+char* tNOCARD[6];
+char* tNOTCOMPAT[6][2];
+char* tOTHERMARKET[6][4];
+char* tWRONGDEV[6][2];
 
-{
+//NGC MATCH
+char* GetStringIdx(s32 errcode, s32 arg1) {
 
-		//TODO
-
+    switch (errcode) {
+    case 1:
+        if (arg1 > 0) {
+            return 0;
+        }
+        return tNOCARD[arg1 + Game.language];
+    case 2:
+        if (arg1 <= 1) {
+            return tCORRUPTED[Game.language][arg1];
+        }
+        return 0;
+    case 3:
+        if (arg1 <= 3) {
+            return tOTHERMARKET[Game.language][arg1];
+        }
+        return 0;
+    case 4:
+        if (arg1 <= 1) {
+            return tDAMAGED[Game.language][arg1];
+        }
+        return 0;
+    case 5:
+        if (arg1 <= 1) {
+            return tWRONGDEV[Game.language][arg1];
+        }
+        return 0;
+    case 6:
+        if (arg1 <= 2) {
+            return tINSUFFICIENTSPACE[Game.language][arg1];
+        }
+        return 0;
+    case 7:
+        if (arg1 <= 1) {
+            return tNOTCOMPAT[Game.language][arg1];
+        } 
+        return 0;
+    case 8:
+        if (arg1 <= 1) {
+            return tCORRUPTDATA[Game.language][arg1];
+        }
+        return 0;
+    default:
+        return 0;
+    }
 }
 
 //NGC MATCH
@@ -84,6 +127,59 @@ void NewLanguage(s32 l) {
   Game.language = l;
   DefaultTimeTrialNames(0);
   return;
+}
+
+//CHECK
+char* GetDiskErrString(s32 errcode, s32 index) {
+    switch (errcode) {
+    case 0:
+        if (index > 2) {
+            return 0;
+        }
+        return tNOCARD[(u32)Game.language];
+    case 1:
+        if (index <= 1) {
+            return tOTHERMARKET[(u32)Game.language][index];
+        }
+        return 0;
+    case 2:
+        if (index <= 2) {
+            return tCORRUPTED[(u32)Game.language][index];
+        }
+        return 0;
+    case 3:
+        if (index < 4) {
+            return tOTHERMARKET[(u32)Game.language][index];
+        }
+        return 0;
+    case 4:
+        if (index > 1) {
+          return tDAMAGED[(u32)Game.language][index];
+        }
+    return 0;
+    case 5:
+        if (index > 1) {
+            return tWRONGDEV[(u32)Game.language][index];
+        }
+    return 0;
+    case 6:
+        if (index > 2) {
+            return tINSUFFICIENTSPACE[(u32)Game.language][index];
+        }
+        return 0;
+    case 7:
+        if (index <= 2) {
+            return tNOTCOMPAT[(u32)Game.language][index];
+        }
+        return 0;
+    case 8:
+        if (1 < index) {
+            return tCORRUPTDATA[(u32)Game.language][index];
+        }
+        return 0;
+    default:
+        return 0;
+    }
 }
 
 

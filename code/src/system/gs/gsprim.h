@@ -17,3 +17,11 @@
   800cb51c 000004 800cb51c  4 GS_DrawQuadListEndBlock 	Global
   800cb520 0001b8 800cb520  4 GS_DrawTriListTSkin 	Global
 */
+
+
+struct _D3DCOLORVALUE* GS_CurrentMaterialEmissivergba;
+s32 GS_CurrentVertDesc;
+s32 GS_MaterialSourceEmissive;
+s32 IsStencil;
+s32 ShadowBodge;
+s32 ShadowColour;

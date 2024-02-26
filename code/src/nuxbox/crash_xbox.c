@@ -6,56 +6,57 @@
 
 s32 VEHICLECONTROL; //vehicle.c
 
+//NGC MATCH
 void AddQuad3DrotXYZ(struct nuvec_s *pos,struct nuvec_s *shape,struct numtl_s *mtl,struct nuangvec_s *a,float *uvs,u32 colour)
 {
   s32 outcode;
   struct numtx_s mtx;
-  struct nuvtx_tc1_s vtx [4];
+  u32 col;
+  struct nuvtx_tc1_s pt[4];
 
-  vtx[0].diffuse =
-       (colour & 0xff000000) + (colour & 0xff) * 0x10000 + (colour & 0xff00) +
-       (colour >> 0x10 & 0xff);
+  col = (colour & 0xff000000) + (colour & 0xff) * 0x10000 + (colour & 0xff00) + (colour >> 0x10 & 0xff);
   outcode = NuCameraClipTestPoints(pos,1,NULL);
   if (outcode == 0) {
     NuMtxSetRotateXYZ(&mtx,a);
     NuMtxTranslate(&mtx,pos);
-    vtx[0].pnt.x = shape->x;
-    vtx[0].pnt.y = shape->y;
-    vtx[0].pnt.z = shape->z;
-    vtx[0].tc[1] = uvs[1];
-    vtx[1].pnt.x = shape[1].x;
-    vtx[1].pnt.y = shape[1].y;
-    vtx[1].pnt.z = shape[1].z;
-    vtx[1].tc[0] = uvs[2];
-    vtx[1].tc[1] = uvs[3];
-    vtx[2].pnt.x = shape[2].x;
-    vtx[0].tc[0] = *uvs;
-    vtx[2].pnt.y = shape[2].y;
-    vtx[0].nrm.x = 1.0f;
-    vtx[0].nrm.y = 0.0f;
-    vtx[0].nrm.z = 0.0f;
-    vtx[1].nrm.x = 1.0f;
-    vtx[1].nrm.y = 0.0f;
-    vtx[1].nrm.z = 0.0f;
-    vtx[3].pnt.z = shape[3].z;
-    vtx[3].tc[1] = uvs[7];
-    vtx[2].pnt.z = shape[2].z;
-    vtx[2].tc[0] = uvs[4];
-    vtx[2].tc[1] = uvs[5];
-    vtx[3].pnt.x = shape[3].x;
-    vtx[3].pnt.y = shape[3].y;
-    vtx[3].tc[0] = uvs[6];
-    vtx[3].nrm.x = 1.0f;
-    vtx[3].nrm.z = 0.0f;
-    vtx[2].nrm.x = 1.0f;
-    vtx[2].nrm.y = 0.0f;
-    vtx[2].nrm.z = 0.0f;
-    vtx[3].nrm.y = 0.0f;
-    vtx[1].diffuse = vtx[0].diffuse;
-    vtx[2].diffuse = vtx[0].diffuse;
-    vtx[3].diffuse = vtx[0].diffuse;
-    NuRndrTri3d(vtx,mtl,&mtx);
-    NuRndrTri3d(vtx + 1,mtl,&mtx);
+    pt[0].pnt.x = shape->x;
+    pt[0].pnt.y = shape->y;
+    pt[0].pnt.z = shape->z;
+    pt[0].nrm.x = 1.0f;
+    pt[0].nrm.y = 0.0f;
+    pt[0].nrm.z = 0.0f;
+    pt[0].tc[0] = *uvs;
+    pt[0].tc[1] = uvs[1];
+    pt[1].pnt.x = shape[1].x;
+    pt[1].pnt.y = shape[1].y;
+    pt[1].pnt.z = shape[1].z;
+    pt[1].tc[0] = uvs[2];
+    pt[1].tc[1] = uvs[3];
+    pt[1].nrm.x = 1.0f;
+    pt[1].nrm.y = 0.0f;
+    pt[1].nrm.z = 0.0f;
+    pt[0].diffuse = col;
+    pt[1].diffuse = pt[0].diffuse;
+    pt[2].pnt.x = shape[2].x;
+    pt[2].pnt.y = shape[2].y;
+    pt[2].pnt.z = shape[2].z;
+    pt[2].tc[0] = uvs[4];
+    pt[2].tc[1] = uvs[5];
+    pt[2].diffuse = pt[0].diffuse;
+    pt[2].nrm.x = 1.0f;
+    pt[2].nrm.y = 0.0f;
+    pt[2].nrm.z = 0.0f;
+    pt[3].pnt.x = shape[3].x;
+    pt[3].pnt.y = shape[3].y;
+    pt[3].pnt.z = shape[3].z;
+    pt[3].diffuse = pt[0].diffuse;
+    pt[3].tc[0] = uvs[6];
+    pt[3].tc[1] = uvs[7];
+    pt[3].nrm.x = 1.0f;
+    pt[3].nrm.y = 0.0f;
+    pt[3].nrm.z = 0.0f;
+    NuRndrTri3d(pt,mtl,&mtx);
+    NuRndrTri3d(&pt[1],mtl,&mtx);
   }
   return;
 }

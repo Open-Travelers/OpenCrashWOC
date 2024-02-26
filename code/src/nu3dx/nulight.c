@@ -41,7 +41,7 @@ void NuLightFog(float pnear,float pfar,u32 colour,s32 blur,s32 haze) {
   return;
 }
 
-//86% NGC
+//NGC MATCH
 void NuLightInit(void) {
   s32 i;
 
@@ -53,9 +53,9 @@ void NuLightInit(void) {
   memset(light,0,0x12c);
   light[0].last = -1;
   light[0].next = 1;
-  for (i = 1; i < 2; i++) {
-    light[i].next = i - 1;
-    light[i].index = i;
+  for (i = 1; i <= 1; i++) {
+    light[i].last = i - 1;
+    light[i].next = i + 1;
   }
   light[i].last = i - 1;
   light[i].next = -1;
@@ -85,44 +85,44 @@ void* NuLightCreate(void) {
   return &light[id].light;
 }
 
-//55% NGC
-void NuLightUpdate(struct nulight_s *l) {
-  struct _D3DLIGHT8 d3dlight;
-  s32 id;
+//MATCH NGC
+void NuLightUpdate(struct nulight_s* l) {
+    struct _D3DLIGHT8 d3dlight;
+    s32 id;
 
-  d3dlight.Diffuse.b = (l->diffuse).r;
-  d3dlight.Diffuse.r = (l->diffuse).b;
-  d3dlight.Diffuse.g = (l->diffuse).g;
-  d3dlight.Direction.x = -(l->mtx)._20;
-  d3dlight.Direction.y = -(l->mtx)._21;
-  d3dlight.Direction.z = -(l->mtx)._22;
-  d3dlight.Ambient.b = (l->ambient).r;
-  d3dlight.Ambient.r = (l->ambient).b;
-  d3dlight.Ambient.g = (l->ambient).g;
-  d3dlight.Position.x = (l->mtx)._30;
-  d3dlight.Position.y = (l->mtx)._31;
-  d3dlight.Position.z = (l->mtx)._32;
-  id = light[0].index * 0x3d70 >> 2;	//id = (int)(l + 0x1741a7c) * -0x3d70a3d7 >> 2;  //?
-  d3dlight.Type = D3DLIGHT_DIRECTIONAL;
-  d3dlight.Diffuse.a = 1.0f;
-  d3dlight.Specular.r = 0.0f;
-  d3dlight.Specular.g = 0.0f;
-  d3dlight.Specular.b = 0.0f;
-  d3dlight.Specular.a = 1.0f;
-  d3dlight.Ambient.a = 1.0f;
-  d3dlight.range = 1000.0f;
-  d3dlight.phi = 0.0f;
-  d3dlight.falloff = 0.0f;
-  d3dlight.attenuation0 = 1.0f;
-  d3dlight.attenuation1 = 0.0f;
-  d3dlight.attenuation2 = 0.0f;
-  d3dlight.theta = 0.0f;
-  if (((d3dlight.Direction.x == 0.0f) && (d3dlight.Direction.y == 0.0f)) && (d3dlight.Direction.z == 0.0f)) {
-    d3dlight.Direction.x = 1.0f;
-  }
-  //GS_SetLight(id,&d3dlight);
-  //GS_LightEnable(id,1);
-  return;
+    id = (struct nusyslight_s*)l - &light[0];
+    d3dlight.Direction.x = -(l->mtx)._20;
+    d3dlight.Type = D3DLIGHT_DIRECTIONAL;
+    d3dlight.Diffuse.r = (l->diffuse).b;
+    d3dlight.Diffuse.g = (l->diffuse).g;
+    d3dlight.Diffuse.b = (l->diffuse).r;
+    d3dlight.Ambient.r = (l->ambient).b;
+    d3dlight.Ambient.g = (l->ambient).g;
+    d3dlight.Ambient.b = (l->ambient).r;
+    d3dlight.Diffuse.a = 1.0f;
+    d3dlight.Position.x = (l->mtx)._30;
+    d3dlight.Position.y = (l->mtx)._31;
+    d3dlight.Position.z = (l->mtx)._32;
+    d3dlight.Specular.r = 0.0f;
+    d3dlight.Specular.g = 0.0f;
+    d3dlight.Specular.b = 0.0f;
+    d3dlight.Specular.a = 1.0f;
+    d3dlight.Ambient.a = 1.0f;
+    d3dlight.Direction.y = -(l->mtx)._21;
+    d3dlight.Direction.z = -(l->mtx)._22;
+    d3dlight.range = 1000.0f;
+    d3dlight.falloff = 0.0f;
+    d3dlight.attenuation0 = 1.0f;
+    d3dlight.attenuation1 = 0.0f;
+    d3dlight.attenuation2 = 0.0f;
+    d3dlight.theta = 0.0f;
+    d3dlight.phi = 0.0f;
+    if (((d3dlight.Direction.x == 0.0) && (d3dlight.Direction.y == 0.0)) && (d3dlight.Direction.z == 0.0)) {
+        d3dlight.Direction.x = 1.0f;
+    }
+    GS_SetLight(id, &d3dlight);
+    GS_LightEnable(id, 1);
+    return;
 }
 
 //MATCH NGC
@@ -159,97 +159,44 @@ void NuLightSetAmbientLight(struct nuvec_s *c0) {
   return;
 }
 
-//96% NGC
+//NGC MATCH
 void NuLightSetDirectionalLights (struct nuvec_s *d0,struct nucolour3_s *c0,struct nuvec_s *d1,struct nucolour3_s *c1,struct nuvec_s *d2,struct nucolour3_s *c2) {
-  struct nulight_s *curr;
-    float tmp;
-
   if ((currentlight1 != NULL) || (currentlight1 = NuLightCreate(), currentlight1 != NULL)) {
-    curr = currentlight1;
-    (curr->ambient).r = 0.6f;
-    (curr->ambient).b = 0.6f;
-    (curr->ambient).g = 0.6f;
-    if (1.0f < c0->r) {
-      tmp = 1.0f;
-    } else{
-        tmp = c0->r;
-    }
-      (curr->diffuse).r = tmp;
-    if (1.0f < c0->g) {
-      tmp = 1.0f;
-    } else{
-      tmp = c0->g;
-    }
-      (curr->diffuse).g = tmp;
-    if (1.0f < c0->b) {
-      tmp = 1.0f;
-    } else{
-        tmp = c0->b;
-    }
-      (curr->diffuse).b = tmp;
-    NuMtxSetIdentity(&curr->mtx);
+    (currentlight1->ambient).r = 0.6f;
+    (currentlight1->ambient).g = 0.6f;
+    (currentlight1->ambient).b = 0.6f;
+    (currentlight1->diffuse).r = (1.0f < c0->r) ? 1.0f : c0->r;
+    (currentlight1->diffuse).g = (1.0f < c0->g) ? 1.0f : c0->g;
+    (currentlight1->diffuse).b = (1.0f < c0->b) ? 1.0f : c0->b;
+    NuMtxSetIdentity(&currentlight1->mtx);
     NuMtxAlignZ(&currentlight1->mtx,d0);
   }
   if ((currentlight2 != NULL) || (currentlight2 = NuLightCreate(), currentlight2 != NULL)) {
-      curr = currentlight2;
-    (curr->ambient).r = 0.6f;
-    (curr->ambient).b = 0.6f;
-    (curr->ambient).g = 0.6f;
-    if (1.0f < c1->r) {
-      tmp = 1.0f;
-    } else{
-        tmp = c1->r;
-    }
-      (curr->diffuse).r = tmp;
-    if (1.0f < c1->g) {
-      tmp  = 1.0f;
-    } else{
-        tmp = c1->g;
-    }
-      (curr->diffuse).g = tmp;
-    if (1.0f < c1->b) {
-      tmp = 1.0f;
-    } else{
-        tmp = c1->b;
-    }
-      (curr->diffuse).b = tmp;
-    NuMtxSetIdentity(&curr->mtx);
+    (currentlight2->ambient).r = 0.6f;
+    (currentlight2->ambient).g = 0.6f;
+    (currentlight2->ambient).b = 0.6f;
+    (currentlight2->diffuse).r = (1.0f < c1->r) ? 1.0f : c1->r;
+    (currentlight2->diffuse).g = (1.0f < c1->g) ? 1.0f : c1->g;
+    (currentlight2->diffuse).b = (1.0f < c1->b) ? 1.0f : c1->b;
+    NuMtxSetIdentity(&currentlight2->mtx);
     NuMtxAlignZ(&currentlight2->mtx,d1);
   }
   if ((currentlight3 != NULL) || (currentlight3 = NuLightCreate())) {
-      curr = currentlight3;
-      (curr->ambient).r = 0.6f;
-      (curr->ambient).b = 0.6f;
-      (curr->ambient).g = 0.6f;
-
-      if (1.0f < c2->r) {
-        tmp = 1.0f;
-      } else{
-          tmp = c2->r;
-      }
-      (curr->diffuse).r = tmp;
-      if (1.0f < c2->g) {
-        tmp = 1.0f;
-      } else{
-            tmp = c2->g;
-       }
-      (curr->diffuse).g = tmp;
-      if (1.0f < c2->b) {
-        tmp = 1.0f;
-      } else{
-            tmp = c2->b;
-        }
-      (curr->diffuse).b = tmp;
-      NuMtxSetIdentity(&curr->mtx);
+      (currentlight3->ambient).r = 0.6f;
+      (currentlight3->ambient).g = 0.6f;
+      (currentlight3->ambient).b = 0.6f;
+      (currentlight3->diffuse).r = (1.0f < c2->r) ? 1.0f : c2->r;
+      (currentlight3->diffuse).g = (1.0f < c2->g) ? 1.0f : c2->g;
+      (currentlight3->diffuse).b = (1.0f < c2->b) ? 1.0f : c2->b;
+      NuMtxSetIdentity(&currentlight3->mtx);
       NuMtxAlignZ(&currentlight3->mtx,d2);
   }
   current_lights_stored = 0;
   return;
 }
 
-//92% NGC
+//NGC MATCH
 s32 NuLightStoreCurrentLights(void) {
-  struct nulight_s *pnVar3;
   s32 i;
   s32 lightsleft;
 
@@ -258,15 +205,13 @@ s32 NuLightStoreCurrentLights(void) {
   }
   if (current_lights_stored == 0) {
       for (i = 0; i < numlights; i++) {
-        pnVar3 = NuLightGetLight(i);
-        StoredLights[num_stored_lights].light[i] = *pnVar3;
+        StoredLights[num_stored_lights].light[i] = *NuLightGetLight(i);
       }
     current_lights_stored = 1;
-    lightsleft = num_stored_lights++;
+    return num_stored_lights++;
   }
-  else {
-    lightsleft = num_stored_lights + -1;
-  }
+
+  lightsleft = num_stored_lights - 1;
   return lightsleft;
 }
 

@@ -1,25 +1,28 @@
-void InitCredits(void)
+s32 CREDITCOUNT;
+struct CREDIT_s Credit [323];
+f32 credit_speed;
+f32 credit_time;
+
+// Size: 0x8
+struct CREDIT_s
 {
-  float fVar1;
-  Credit_s *Cr;
-  short size;
-  float tot;
-  
-  fVar1 = 0.0f;
-  CREDITCOUNT = 0;
-  if (0 < Credit[0].size) {
-    CREDITCOUNT = 0;
-    Cr = Credit;
-    size = Credit[0].size;
-    do {
-      CREDITCOUNT = CREDITCOUNT + 1;
-      size = Cr[1].size;
-      tot = size / 1000.0f;
-      fVar1 = fVar1 + tot + tot;
-      Cr = Cr + 1;
-    } while (0 < size);
-  }
-  credit_time = (fVar1 + 2.0f) / credit_speed;
+    char* txt; // Offset: 0x0, DWARF: 0x188E9D
+    short colour; // Offset: 0x4, DWARF: 0x188EC6
+    short size; // Offset: 0x6, DWARF: 0x188EEF
+};
+
+//NGC MATCH
+void InitCredits(void) {
+  struct CREDIT_s* credit;
+  float size;
+
+    credit = Credit;
+    size = 0.0f;
+    for (CREDITCOUNT = 0; credit->size > 0; CREDITCOUNT++,credit++) {
+      size += (((float)credit->size) / 1000.0f) + (((float)credit->size) / 1000.0f);
+    }
+  size += 2.0f;
+  credit_time = size / credit_speed;
   return;
 }
 

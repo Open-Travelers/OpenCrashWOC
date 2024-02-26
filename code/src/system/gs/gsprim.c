@@ -6,7 +6,6 @@
 volatile PPCWGPipe GXFIFO AT_ADDRESS(0xCC008000);
 
 
-
 static inline void GXPosition3f32(const f32 x, const f32 y, const f32 z)
 {
     GXFIFO.f32 = x;
@@ -40,6 +39,10 @@ static inline void GXNormal1x16(const u16 index)
     GXFIFO.u16 = index;
 }
 
+static inline void GXPosition1x16(const u16 index) {
+    GXFIFO.u16 = index;
+}
+
 static inline void GXTexCoord1x16(const u16 index)
 {
     GXFIFO.u16 = index;
@@ -50,81 +53,101 @@ static inline void GXColor1u32(const u32 clr)
     GXFIFO.u32 = clr;
 }
 
-/*
-void GS_DrawTriStrip(int nverts,float *vertlist,int stride)
+static inline void GXColor1u16(const u16 clr) {
+    GXFIFO.u16 = clr;
+}
 
-{
-    bool bVar1;
-    int iVar2;
-    uint uVar3;
-    
+static inline void GXColor3f32(const f32 r, const f32 g, const f32 b) {
+    GXFIFO.u8 = (u8)(r * 255.0);
+    GXFIFO.u8 = (u8)(g * 255.0);
+    GXFIFO.u8 = (u8)(b * 255.0);
+}
+
+/*
+//NGC MATCH
+void GS_DrawTriStrip(u32 nverts, f32* vert_list, s32 stride) {
+    s32 diff;
+    short i;
+
     if (stride == 0x1c) {
         if (GS_CurrentVertDesc != 0x81) {
             GS_CurrentVertDesc = 0x81;
             GXClearVtxDesc();
-            GXSetVtxDesc(GX_VA_POS,GX_DIRECT);
-            GXSetVtxDesc(GX_VA_CLR0,GX_DIRECT);
-            GXSetVtxDesc(GX_VA_TEX0,GX_DIRECT);
+            GXSetVtxDesc(GX_VA_POS, GX_DIRECT);
+            GXSetVtxDesc(GX_VA_CLR0, GX_DIRECT);
+            GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
         }
-    }
-    else if (GS_CurrentVertDesc != 0x83) {
+    } else if (GS_CurrentVertDesc != 0x83) {
         GS_CurrentVertDesc = 0x83;
         GXClearVtxDesc();
-        GXSetVtxDesc(GX_VA_POS,GX_INDEX16);
-        GXSetVtxDesc(GX_VA_NRM,GX_INDEX16);
-        GXSetVtxDesc(GX_VA_CLR0,GX_DIRECT);
-        GXSetVtxDesc(GX_VA_TEX0,GX_INDEX16);
+        GXSetVtxDesc(GX_VA_POS, GX_INDEX16);
+        GXSetVtxDesc(GX_VA_NRM, GX_INDEX16);
+        GXSetVtxDesc(GX_VA_CLR0, GX_DIRECT);
+        GXSetVtxDesc(GX_VA_TEX0, GX_INDEX16);
     }
-    uVar3 = stride & 0xff;
-    GXSetArray(GX_VA_POS,(int)vertlist,uVar3);
-    bVar1 = stride != 0x1c;
-    if (bVar1) {
-        GXSetArray(GX_VA_NRM,(int)(vertlist + 3),uVar3);
+    
+    GXSetArray(GX_VA_POS, vert_list, stride);
+    if (stride != 0x1c) {
+    ;
+        GXSetArray(GX_VA_NRM, vert_list+3, stride);
     }
-    iVar2 = stride >> 2;
-    GXSetArray(GX_VA_TEX0,(int)(vertlist + iVar2 + -2),uVar3);
-    if (bVar1) {
-        GXBegin(GX_TRIANGLESTRIP,GX_VTXFMT2,(ushort)nverts);
+    GXSetArray(GX_VA_TEX0, vert_list + ((stride >> 2) -2), stride); 
+    if (stride == 0x1c) {
+        GXBegin(GX_TRIANGLESTRIP, GX_VTXFMT1, nverts);
+    } else {
+        GXBegin(GX_TRIANGLESTRIP, GX_VTXFMT2, nverts);
     }
-    else {
-        GXBegin(GX_TRIANGLESTRIP,GX_VTXFMT1,(ushort)nverts);
-    }
-    uVar3 = 0;
-    if (nverts != 0) {
-        do {
-            if (bVar1) {
-                DAT_cc008000_2 = SUB42(vertlist[uVar3 * iVar2 + iVar2 + -3],0);
-                if ((IsStencil == 0) && (ShadowBodge == GX_TEVSTAGE0)) goto joined_r0x800ca7d8;
-LAB_800ca7d0:
-                DAT_cc008000_2 = (undefined2)ShadowColour;
+
+    for (i = 0; i < nverts; i++) {
+        if (stride == 0x1c) {
+            GXPosition1x16(i);
+            diff = ((struct _GS_VERTEXTL*)&vert_list[(((i * (stride >> 2)) + (stride >> 2)) - 7)])->diffuse;
+            if ((IsStencil != 0) || (ShadowBodge != GX_TEVSTAGE0)) {
+                        GXColor1u32(ShadowColour);
+            } else {
+                    if (GS_MaterialSourceEmissive != 0) {
+                        GXColor1u32(diff);
+                    } else {
+                        GXColor1u32((u32)GS_CurrentMaterialEmissivergba);
+                    }
             }
-            else {
-                DAT_cc008000_2 = SUB42(vertlist[uVar3 * 7 + 4],0);
-                if ((IsStencil != 0) || (ShadowBodge != GX_TEVSTAGE0)) goto LAB_800ca7d0;
-joined_r0x800ca7d8:
-                if (GS_MaterialSourceEmissive == 0) {
-                    DAT_cc008000_2 = SUB42(GS_CurrentMaterialEmissivergba,0);
-                }
+            GXColor1u16(i);
+        } else {
+          GXNormal1x16(i);
+          GXPosition1x16(i);
+            diff = ((struct _GS_VERTEXTL*)&vert_list[(((i * (stride >> 2)) + (stride >> 2)) - 7)])->diffuse;
+            if ((IsStencil != 0) || (ShadowBodge != GX_TEVSTAGE0)) {
+                        GXColor1u32(ShadowColour);
+            } else {
+                    if (GS_MaterialSourceEmissive != 0) {
+                        GXColor1u32(diff);
+                    } else {
+                        GXColor1u32((u32)GS_CurrentMaterialEmissivergba);
+                    }
             }
-            _DAT_cc008000 = CONCAT22((short)uVar3,DAT_cc008000_2);
-            uVar3 = (uint)(short)((short)uVar3 + 1);
-        } while (uVar3 < (uint)nverts);
+            GXColor1u16(i);
+        }
     }
     return;
 }
 
-void GS_DrawTriList(int nverts,float *vertlist,int stride)
-
-{
-  _GSMATRIX GSmtx;
-
+//NGC MATCH (stack problem)
+void GS_DrawTriList(s32 nverts,float *vertlist,s32 stride) {
+  Mtx44 GSmtx;
+  Mtx44 GSmtx2;
+  s32 i;
+  s32 diff;
+  f32* temp_vert;
+  
   DBTimerStart(0x15);
+  temp_vert = vertlist;
   if (stride == 0x1c) {
-    C_MTXOrtho(0.0,448.0,0.0,640.0,0.0,-1.0,&GSmtx);
-    GXSetProjection(&GSmtx,GX_ORTHOGRAPHIC );
-    PSMTXIdentity((_GSMATRIX *)&stack0xffffffb8);
-    GXSetCurrentMtx((uint)(_GSMATRIX *)&stack0xffffffb8);
+    C_MTXOrtho(GSmtx,0.0f,448.0f,0.0f,640.0f,0.0f,-1.0f);
+    GXSetProjection(GSmtx,GX_ORTHOGRAPHIC);
+    PSMTXIdentity(GSmtx2);
+    GXLoadPosMtxImm(GSmtx2,0); 
     GXSetCurrentMtx(0);
+    //iVar5 = stride >> 2;
     if (GS_CurrentVertDesc != 0x81) {
       GS_CurrentVertDesc = 0x81;
       GXClearVtxDesc();
@@ -132,15 +155,25 @@ void GS_DrawTriList(int nverts,float *vertlist,int stride)
       GXSetVtxDesc(GX_VA_CLR0,GX_DIRECT);
       GXSetVtxDesc(GX_VA_TEX0,GX_DIRECT);
     }
-    GXBegin(GX_TRIANGLES,GX_VTXFMT1,(ushort)nverts);
-    if (0 < nverts) {
-      do {
-        _DAT_cc008000 = vertlist[6];
-        vertlist = vertlist + 7;
-        nverts = nverts + -1;
-      } while (nverts != 0);
+    GXBegin(GX_TRIANGLES,GX_VTXFMT1,nverts);
+    for (i = 0; i < nverts; i++) {
+            GXPosition3f32(((struct _GS_VERTEXTL*)vertlist)[0].x,((struct _GS_VERTEXTL*)vertlist)[0].y,((struct _GS_VERTEXTL*)vertlist)[0].z);
+            diff = *(u32*)&((struct _GS_VERTEXTL*)temp_vert)[0].v;
+            if ((IsStencil != 0) || (ShadowBodge != GX_TEVSTAGE0)) {
+                GXColor1u32(ShadowColour);
+            } else {
+                if (GS_MaterialSourceEmissive != 0) {
+                   GXColor1u32(diff);
+                } else {
+                    GXColor1u32((u32)GS_CurrentMaterialEmissivergba);
+                }
+            }
+        GXTexCoord2f32(((struct _GS_VERTEXTL*)vertlist)[0].u, ((struct _GS_VERTEXTL*)vertlist)[0].v);
+        vertlist += 7;
+
+        
     }
-    GS_SetProjectionMatrix((_GSMATRIX *)&stack0xffffffb8);
+    GS_SetProjectionMatrix(&GSmtx2);
   }
   else {
     if (GS_CurrentVertDesc != 0x82) {
@@ -151,25 +184,52 @@ void GS_DrawTriList(int nverts,float *vertlist,int stride)
       GXSetVtxDesc(GX_VA_CLR0,GX_DIRECT);
       GXSetVtxDesc(GX_VA_TEX0,GX_DIRECT);
     }
-    GXBegin(GX_TRIANGLES,GX_VTXFMT2,(ushort)nverts);
-    if (0 < nverts) {
-      do {
-        _DAT_cc008000 = vertlist[8];
-        vertlist = vertlist + 9;
-        nverts = nverts + -1;
-      } while (nverts != 0);
+    GXBegin(GX_TRIANGLES,GX_VTXFMT2,nverts);
+    for (i = 0; i < nverts; i++) {
+                
+                GXPosition3f32(((struct _GS_VERTEX*)vertlist)[0].x,((struct _GS_VERTEX*)vertlist)[0].y,((struct _GS_VERTEX*)vertlist)[0].z); 
+                GXNormal3f32(((struct _GS_VERTEX*)vertlist)[0].nx, ((struct _GS_VERTEX*)vertlist)[0].ny, ((struct _GS_VERTEX*)vertlist)[0].nz);
+                diff = ((struct _GS_VERTEX*)temp_vert)->diffuse;
+                if ((IsStencil != 0) || (ShadowBodge != GX_TEVSTAGE0)) {
+                        GXColor1u32(ShadowColour);
+                } else {
+                if (GS_MaterialSourceEmissive != 0) {
+                    GXColor1u32(diff);
+                }else {
+                    GXColor1u32((u32)GS_CurrentMaterialEmissivergba);
+                }
+            }
+        GXTexCoord2f32(((struct _GS_VERTEX*)vertlist)[0].u, ((struct _GS_VERTEX*)vertlist)[0].v);
+        vertlist += 9;
     }
   }
   DBTimerEnd(0x15);
   return;
 }
 
+//NGC MATCH
+static inline void SetVertexStridedI(short index, struct _GS_VERTEX* vertlist, s32 stride,struct _GS_VERTEX * d) {
+    u32 dd;
+    GXPosition3f32(vertlist->x,vertlist->y, vertlist->z);
+    GXNormal3f32(vertlist->nx,vertlist->ny, vertlist->nz);
+    dd= d->diffuse;
+            if ((IsStencil != 0) || (ShadowBodge != GX_TEVSTAGE0)) {
+                GXColor1u32(ShadowColour);
+            } else {
+                if (GS_MaterialSourceEmissive != 0) {
+                   GXColor1u32(dd);
+                } else {
+                    GXColor1u32((u32)GS_CurrentMaterialEmissivergba);
+                }
+            }
+    GXTexCoord2f32(vertlist->u,vertlist->v);
+}
 
-void GS_DrawQuadList(uint nverts,float *vertlist,int stride)
-
-{
-  uint i;
-
+//NGC MATCH
+void GS_DrawQuadList(u32 nverts,struct _GS_VERTEX *vertlist, s32 stride) {
+    s32 i;
+    struct _GS_VERTEX *d = vertlist;
+    
   if (GS_CurrentVertDesc != 0x82) {
     GS_CurrentVertDesc = 0x82;
     GXClearVtxDesc();
@@ -178,22 +238,35 @@ void GS_DrawQuadList(uint nverts,float *vertlist,int stride)
     GXSetVtxDesc(GX_VA_CLR0,GX_DIRECT);
     GXSetVtxDesc(GX_VA_TEX0,GX_DIRECT);
   }
-  GXBegin(GX_QUADS,GX_VTXFMT2,(ushort)nverts);
-  i = 0;
-  if (nverts != 0) {
-    do {
-      i = i + 1;
-      _DAT_cc008000 = vertlist[8];
-      vertlist = vertlist + 9;
-    } while (i < nverts);
-  }
+  GXBegin(GX_QUADS,GX_VTXFMT2,(u16)nverts);
+    for (i = 0; i < nverts; i++) {
+        SetVertexStridedI(nverts,vertlist,stride, d);
+        vertlist++;
+    }
   return;
 }
 
+//NGC MATCH
+static inline void SetVertexT (struct _GS_VERTEX *vertlist) {
+    s32 diff;
 
-void GS_DrawPrimitiveQuad(_GS_VERTEX *vertlist)
+    GXPosition3f32(vertlist->x,vertlist->y,vertlist->z);
+    GXNormal3f32(vertlist->nx,vertlist->ny,vertlist->nz);
+    diff = vertlist->diffuse;
+            if ((IsStencil != 0) || (ShadowBodge != GX_TEVSTAGE0)) {
+                GXColor1u32(ShadowColour);
+            } else {
+                if (GS_MaterialSourceEmissive != 0) {
+                   GXColor1u32(diff);
+                } else {
+                    GXColor1u32((u32)GS_CurrentMaterialEmissivergba);
+                }
+            }
+    GXTexCoord2f32(vertlist->u,vertlist->v);
+}
 
-{
+//NGC MATCH
+void GS_DrawPrimitiveQuad(struct _GS_VERTEX *vertlist) {
   if (GS_CurrentVertDesc != 0x82) {
     GS_CurrentVertDesc = 0x82;
     GXClearVtxDesc();
@@ -203,68 +276,79 @@ void GS_DrawPrimitiveQuad(_GS_VERTEX *vertlist)
     GXSetVtxDesc(GX_VA_TEX0,GX_DIRECT);
   }
   GXBegin(GX_QUADS,GX_VTXFMT2,4);
-  _DAT_cc008000 = vertlist[3].v;
+    SetVertexT(vertlist);
+    SetVertexT(vertlist + 1);
+    SetVertexT(vertlist + 2);
+    SetVertexT(vertlist + 3);
   return;
 }
 
+//NGC MATCH
+static inline void SetVertexIndex(s16* index, float * vertlist, s32 stride) {
+    s32 diff;
 
-void GS_DrawIndexedTriStrip(uint VertexCount,short *pIndexData,float *vertlist,int stride)
-
-{
-  int iVar1;
-
-  DBTimerStart(0x19);
-  if (GS_CurrentVertDesc != 0x82) {
-    GS_CurrentVertDesc = 0x82;
-    GXClearVtxDesc();
-    GXSetVtxDesc(GX_VA_POS,GX_DIRECT);
-    GXSetVtxDesc(GX_VA_NRM,GX_DIRECT);
-    GXSetVtxDesc(GX_VA_CLR0,GX_DIRECT);
-    GXSetVtxDesc(GX_VA_TEX0,GX_DIRECT);
-  }
-  if (VertexCount != 0) {
-    do {
-      GXBegin(GX_TRIANGLESTRIP,GX_VTXFMT2,*pIndexData);
-      for (iVar1 = (int)*pIndexData; pIndexData = (short *)((ushort *)pIndexData + 1), 0 < iVar1;
-          iVar1 = iVar1 + -1) {
-        VertexCount = VertexCount - 1;
-        _DAT_cc008000 = vertlist[*pIndexData * 9 + 8];
-      }
-      VertexCount = VertexCount - 1;
-    } while (VertexCount != 0);
-  }
-  DBTimerEnd(0x19);
-  return;
+        GXPosition3f32(((struct _GS_VERTEX*)vertlist)[*(s16*)index].x,((struct _GS_VERTEX*)vertlist)[*(s16*)index].y, ((struct _GS_VERTEX*)vertlist)[*(s16*)index].z);
+        GXNormal3f32(((struct _GS_VERTEX*)vertlist)[*(s16*)index].nx,((struct _GS_VERTEX*)vertlist)[*(s16*)index].ny, ((struct _GS_VERTEX*)vertlist)[*(s16*)index].nz);
+            diff = ((struct _GS_VERTEX*)vertlist)[*(s16*)index].diffuse;
+            if ((IsStencil != 0) || (ShadowBodge != GX_TEVSTAGE0)) {
+                    GXColor1u32(ShadowColour); 
+            } else {
+                if (GS_MaterialSourceEmissive != 0) {
+                    GXColor1u32(diff); 
+                } else {
+                    GXColor1u32((u32)GS_CurrentMaterialEmissivergba);
+                }
+            }
+            GXTexCoord2f32(((struct _GS_VERTEX*)vertlist)[*(s16*)index].u,((struct _GS_VERTEX*)vertlist)[*(s16*)index].v);
+    
 }
 
+//NGC MATCH
+void GS_DrawIndexedTriStrip(u32 VertexCount,short *pIndexData,float *vertlist,s32 stride) {
+    s32 j;
+    s32 i;
 
-void GS_DrawIndexedTriList(uint nverts,short *indexlist,float *vertlist,int stride)
+    i = VertexCount;
+    DBTimerStart(0x19);
+    if (GS_CurrentVertDesc != 0x82) {
+        GS_CurrentVertDesc = 0x82;
+        GXClearVtxDesc();
+        GXSetVtxDesc(GX_VA_POS,GX_DIRECT);
+        GXSetVtxDesc(GX_VA_NRM,GX_DIRECT);
+        GXSetVtxDesc(GX_VA_CLR0,GX_DIRECT);
+        GXSetVtxDesc(GX_VA_TEX0,GX_DIRECT);
+    }
+    for (i = VertexCount; i != 0; i--) {
+            GXBegin(GX_TRIANGLESTRIP,GX_VTXFMT2,*pIndexData);
+            for (j = *pIndexData++; j > 0; j--) {
+                SetVertexIndex(pIndexData, vertlist, stride);
+                pIndexData += 1;
+                i -= 1;
+            }
+    }
+    DBTimerEnd(0x19);
+}
 
-{
-  short sVar1;
-  uint uVar2;
+//NGC MATCH
+void GS_DrawIndexedTriList(u32 nverts,short *indexlist,float *vertlist,s32 stride) {
+    s32 i;
 
-  DBTimerStart(0x18);
-  if (GS_CurrentVertDesc != 0x82) {
-    GS_CurrentVertDesc = 0x82;
-    GXClearVtxDesc();
-    GXSetVtxDesc(GX_VA_POS,GX_DIRECT);
-    GXSetVtxDesc(GX_VA_NRM,GX_DIRECT);
-    GXSetVtxDesc(GX_VA_CLR0,GX_DIRECT);
-    GXSetVtxDesc(GX_VA_TEX0,GX_DIRECT);
-  }
-  GXBegin(GX_TRIANGLES,GX_VTXFMT2,(ushort)nverts);
-  uVar2 = 0;
-  if (nverts != 0) {
-    do {
-      sVar1 = *indexlist;
-      uVar2 = uVar2 + 1;
-      indexlist = indexlist + 1;
-      _DAT_cc008000 = vertlist[sVar1 * 9 + 8];
-    } while (uVar2 < nverts);
-  }
-  DBTimerEnd(0x18);
-  return;
+    DBTimerStart(0x18);
+    if ((s32) GS_CurrentVertDesc != 0x82) {
+        GS_CurrentVertDesc = 0x82;
+        GXClearVtxDesc();
+        GXSetVtxDesc(GX_VA_POS,GX_DIRECT);
+        GXSetVtxDesc(GX_VA_NRM,GX_DIRECT);
+        GXSetVtxDesc(GX_VA_CLR0,GX_DIRECT);
+        GXSetVtxDesc(GX_VA_TEX0,GX_DIRECT);
+    }
+    GXBegin(GX_TRIANGLES,GX_VTXFMT2,nverts);
+    
+    for (i = 0; i < nverts; i++) {
+            SetVertexIndex(indexlist, vertlist, stride);
+            indexlist++;
+    }
+    DBTimerEnd(0x18);
 }
 
 //NGC MATCH
@@ -276,10 +360,22 @@ void TTLLights(void) {
   return;
 }
 
+//NGC MATCH
+static inline void SetVertexTTL(struct _GS_VERTEXTL * vert) {
+    GXPosition3f32(vert->x, vert->y, vert->z);
+            GXColor4u8(
+                ((vert->diffuse >> 0x10) == 0) ? 0 : 1,
+                ((vert->diffuse >> 0x8) == 0) ? 0 : 1,
+                ((vert->diffuse) == 0) ? 0 : 1,
+                ((vert->diffuse >> 0x18) == 0) ? 0 : 1
+            );
+          GXTexCoord2f32(vert->u, vert->v);    
+}
 
-void GS_DrawTriStripTTL(_GS_VERTEXTL *vertlist,int nverts)
-
-{
+//NGC MATCH
+void GS_DrawTriStripTTL(struct _GS_VERTEXTL *vertlist,int nverts) {
+  s32 i;
+  
   if (GS_CurrentVertDesc != 0x81) {
     GS_CurrentVertDesc = 0x81;
     GXClearVtxDesc();
@@ -288,53 +384,38 @@ void GS_DrawTriStripTTL(_GS_VERTEXTL *vertlist,int nverts)
     GXSetVtxDesc(GX_VA_TEX0,GX_DIRECT);
   }
   TTLLights();
-  GXBegin(GX_TRIANGLESTRIP,GX_VTXFMT1,(ushort)nverts);
-  if (0 < nverts) {
-    do {
-      _DAT_cc008000 = vertlist->v;
-      vertlist = vertlist + 1;
-      nverts = nverts + -1;
-    } while (nverts != 0);
+  GXBegin(GX_TRIANGLESTRIP,GX_VTXFMT1,(u16)nverts);
+  for (i = 0; i < nverts; i++) {
+      SetVertexTTL(&vertlist[i]);
   }
   return;
 }
 
-void GS_DrawTriListTTL(nuvtx_tltc1_s *vtx,int nverts)
+//NGC MATCH
+void GS_DrawTriListTTL(struct _GS_VERTEXTL* vertlist, s16 nverts) {
+    s32 i;
 
-{
-  uint uVar1;
-  int unaff_r13;
-  int iVar2;
-
-  if (GS_CurrentVertDesc != 1) {
-    GS_CurrentVertDesc = 1; //0x81
-    GXClearVtxDesc();
-    GXSetVtxDesc(GX_VA_POS,GX_DIRECT);
-    GXSetVtxDesc(GX_VA_CLR0,GX_DIRECT);
-    GXSetVtxDesc(GX_VA_TEX0,GX_DIRECT);
-  }
-  TTLLights();
-  GXBegin(GX_TRIANGLES,GX_VTXFMT1,(ushort)nverts);
-  if (0 < nverts) {
-    iVar2 = 0;
-    do {
-      GXPosition3f32(*(float *)((int)vtx->tc + iVar2 + -0x14),
-                     *(float *)((int)vtx->tc + iVar2 + -0x10),
-                     *(float *)((int)vtx->tc + iVar2 + -0xc));
-      uVar1 = *(uint *)((int)vtx->tc + iVar2 + -4);
-      GXColor4u8(uVar1 >> 0x10 != 0,uVar1 >> 8 != 0,uVar1 != 0,uVar1 >> 0x18 != 0);
-      GXTexCoord2f32(*(float *)((int)vtx->tc + iVar2),*(float *)((int)vtx->tc + iVar2 + 4));
-      nverts = nverts + -1;
-      iVar2 = iVar2 + 0x1c;
-    } while (nverts != 0);
-  }
-  if (*(char *)(unaff_r13 + -0x5ef8) == '\0') {
-    OSPanic("C:/DolphinSDK1.0/include/dolphin/gx/GXGeometry.h",0x6d,
-            "GXEnd: called without a GXBegin");
-  }
-  *(undefined *)(unaff_r13 + -0x5ef8) = 0;
-  return;
-}*/
+    if (GS_CurrentVertDesc != 0x81) {
+        GS_CurrentVertDesc = 0x81;
+        GXClearVtxDesc();
+        GXSetVtxDesc(GX_VA_POS, GX_DIRECT);
+        GXSetVtxDesc(GX_VA_CLR0, GX_DIRECT);
+        GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+    }
+    TTLLights();
+    GXBegin(GX_TRIANGLES, GX_VTXFMT1, nverts);
+    for (i = 0; i < nverts; i++) {
+        GXPosition3f32(vertlist[i].x, vertlist[i].y, vertlist[i].z);
+        GXColor4u8(
+            ((vertlist[i].diffuse >> 0x10) == 0) ? 0 : 1,
+            ((vertlist[i].diffuse >> 0x8) == 0) ? 0 : 1,
+            ((vertlist[i].diffuse >> 0x0) == 0) ? 0 : 1,
+            ((vertlist[i].diffuse >> 0x18) == 0) ? 0 : 1
+        );
+        GXTexCoord2f32(vertlist[i].u, vertlist[i].v);
+    }
+}
+*/
 
 //NGC MATCH
 void GS_DrawQuadListBeginBlock(int nverts,int arg1) {
@@ -393,8 +474,8 @@ void GS_DrawTriListTSkin(struct _GS_VERTEXNORM *vertlist,s32 nverts,struct _GS_V
       GXSetVtxDesc(GX_VA_CLR0,GX_DIRECT);
       GXSetVtxDesc(GX_VA_TEX0,GX_DIRECT);
     }
-//  GXSetArray(10,&srcverts->nx,0x38);
-//  GXSetArray(0xd,&srcverts->u,0x38);
+//  GXSetArray(10,&srcverts->nx,0x38); //alpha version
+//  GXSetArray(0xd,&srcverts->u,0x38); //alpha version
     GXBegin(GX_TRIANGLES,GX_VTXFMT2,(u16)nverts);
       for (i = 0; i < nverts; i++) {
       GXPosition3f32(vertlist->x,vertlist->y,vertlist->z);

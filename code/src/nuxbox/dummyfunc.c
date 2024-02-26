@@ -748,7 +748,7 @@ void NuRndrRectUV2di(s32 x,s32 y,s32 w,s32 h,float tx,float ty,float tw,float th
 }
 
 //NGC MATCH
-void NuRndrParticleGroup(struct _sceDmaTag* data, struct setup_s *setup,struct numtl_s *mtl,float time,struct numtx_s *wm) {
+void NuRndrParticleGroup(struct _sceDmaTag* data, struct PartHeader_testretail *setup,struct numtl_s *mtl,float time,struct numtx_s *wm) {
     s32 instruction; //
     s32 address; //
     s32 qcount; //
@@ -757,8 +757,9 @@ void NuRndrParticleGroup(struct _sceDmaTag* data, struct setup_s *setup,struct n
     s32 s; //
     s32 t; //
     struct _sceDmaTag* data2; //
+	//char pad[7];
 
-    setup->grav = time;
+    setup->gtime = time;
     rdat = data;
     instruction = 0;
     for(qcount = 0; qcount < 0x101; qcount++) {
@@ -864,30 +865,23 @@ DWARF renderpsdma
     int numprims; //
 
 //88% NGC
-void* renderpsdma(s32 count, struct rdata_s* rdata, struct setup_s* setup, struct numtl_s* mtl, float time, struct numtx_s* wm) {
-
+void* renderpsdma(s32 count, struct rdata_s* rdata, struct PartHeader_testretail* setup, struct numtl_s* mtl, float time, struct numtx_s* wm) {
     s32 uVar1;
-    float fVar2;
     s32 i;
     struct NuVec* pdatpt;
     // struct rdata_s* rdat;
-    float dVar6;
-    float dVar9;
+    float elapsed;
     struct NuVec pos1;
     struct NuVec pos2;
     struct NuVec pos3;
     struct NuVec pos4;
-    char pad[9];
-    struct rdeb_s* rdeb;
+    struct uv1deb* rdeb;
     float u1, v1, u2, v2;
     float grav = setup->grav;
-    struct {
-        struct NuVec vt[3]; // Offset: 0x0
-        s32 colour; // Offset: 0x24
-    }* pdat;
+    struct PartList_s* pdat;
 
     grav /= gravdiv;
-    rdeb = &rdata->debris[0];
+    rdeb = (struct uv1deb*)&rdata->unpackdata[0];
     ResetShaders();
     GS_SetAlphaCompare(4, 0);
     NuTexSetTexture(0, mtl->tid);
@@ -905,34 +899,35 @@ void* renderpsdma(s32 count, struct rdata_s* rdata, struct setup_s* setup, struc
     GS_LoadWorldMatrixIdentity();
     NuMtxCalcDebrisFaceOn(&debmtx);
 
-    u1 = setup->grav;
-    v2 = setup->gtime;
-    u2 = *(float*)&setup->DmaBody[0];
-    v1 = *(float*)&setup->DmaBody[1];
+    u1 = setup->u0;
+    v2 = setup->v0;
+    u2 = setup->u1;
+    v1 = setup->v1;
     for (i = 0; i < 32; i++) {
         // rdeb = &rdata->debris[i];
         if (rdeb->etime < 0.0f) {
-            dVar6 = (time - rdeb->time);
-            uVar1 = (rdeb->time * dVar6);
+            elapsed = (time - rdeb->time);
+            uVar1 = (rdeb->time * elapsed);
             if (uVar1 > 0x3FU) {
                 rdeb->etime = -1.0f;
             } else {
-                float f11 = dVar6 * grav;
+                float f11 = grav * elapsed;
                 pdat = &setup->Data[uVar1];
                 pdatpt = pdat->vt;
-                debmtx._30 = (rdeb->x * dVar6 + rdeb->mx) + wm->_30;
-                debmtx._32 = (rdeb->z * dVar6 + rdeb->mz) + wm->_32;
-                debmtx._31 = f11 * ((rdeb->y * dVar6 + rdeb->my) + wm->_31) + dVar6;
-                DebMtxTransform(&pos1, pdatpt);
+                debmtx._30 = (rdeb->x + elapsed * rdeb->mx) + wm->_30;
+                debmtx._32 = (rdeb->z + elapsed * rdeb->mz) + wm->_32;
+                debmtx._31 = f11 * ((rdeb->my * elapsed + rdeb->y) + wm->_31) + elapsed;
+                rdeb++;
+                DebMtxTransform(&pos1, &pdatpt[0]);
                 GS_SetQuadListRGBA(
                     pdat->colour >> 0x10 & 0xff, pdat->colour >> 8 & 0xff,
                     pdat->colour & 0xff, (pdat->colour >> 0x18) & 0xff
                 );
                 GS_DrawQuadListBeginBlock(4, 1);
                 GS_DrawQuadListSetVert((struct _GS_VECTOR3*)&pos1, u1, v1);
-                DebMtxTransform(&pos3, pdatpt + 1);
+                DebMtxTransform(&pos2, &pdatpt[1]);
                 GS_DrawQuadListSetVert((struct _GS_VECTOR3*)&pos2, u1, v2);
-                DebMtxTransform(&pos2, pdatpt + 2);
+                DebMtxTransform(&pos3, &pdatpt[2]);
                 GS_DrawQuadListSetVert((struct _GS_VECTOR3*)&pos3, u2, v2);
                 pos4.x = (pos2.x - pos3.x) + pos1.x;
                 pos4.y = (pos2.y - pos3.y) + pos1.y;
@@ -941,12 +936,10 @@ void* renderpsdma(s32 count, struct rdata_s* rdata, struct setup_s* setup, struc
                 GS_DrawQuadListEndBlock();
             }
         }
-        rdeb++;
     }
     GS_EnableLighting(1);
     return rdeb;
 }
-
 */
 
 

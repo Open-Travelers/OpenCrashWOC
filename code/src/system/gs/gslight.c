@@ -1,48 +1,54 @@
 #include "gslight.h"
 
-//56% NGC
-void GS_SetMaterial(const struct _D3DMATERIAL8 *pMaterial) { 
-    u32 uVar1;
-    u32 uVar2;
-    u32 uVar3;
-    u32 uVar4;
+struct _D3DMATERIAL8 GS_CurrentMaterial;
+struct _GXColor GS_CurrentMaterialAmbient;
+struct _GXColor GS_CurrentMaterialDiffuse;
+struct _GXColor GS_CurrentMaterialDiffuseGX;
+struct _GXColor GS_CurrentMaterialEmissive;
+struct _GXColor GS_CurrentMaterialEmissiveGX;
+struct _GXColor GS_CurrentMaterialEmissivergba;
+
+//MATCH NGC
+void GS_SetMaterial(struct _D3DMATERIAL8 *pMaterial) {
+    u8 diff_b;
+    u8 diff_r;
+    u8 diff_g;
+    u8 diff_a;
+    u8 em_r;
+    u8 em_g;
+    u8 em_b;
+    u8 em_a;
 
     GS_CurrentMaterial = *pMaterial;
+    *(u32*)&GS_CurrentMaterialAmbient = (u32)(
+        ((s32) (255.0f * GS_CurrentMaterial.Ambient.a) << 0x18) & 0xff000000 | 
+        ((s32) (255.0f * GS_CurrentMaterial.Ambient.r) << 0x10) & 0xff0000| 
+        ((s32) (255.0f * GS_CurrentMaterial.Ambient.g) << 8) & 0xff00| 
+        (s32) (255.0f * GS_CurrentMaterial.Ambient.b) & 0xFF
+    );
 
-    uVar2 = (int)(GS_CurrentMaterial.Emissive.r * 255.0f) & 0xff;
-    uVar3 = (int)(GS_CurrentMaterial.Emissive.g * 255.0f) & 0xff;
-    uVar4 = (int)(GS_CurrentMaterial.Emissive.b * 255.0f) & 0xff;
-    uVar1 = (int)(GS_CurrentMaterial.Emissive.a * 255.0f) & 0xff;
-    GS_CurrentMaterialAmbient =
-         (struct _GXColor *)
-         ((int)(GS_CurrentMaterial.Ambient.a * 255.0f) << 0x18 |
-          ((int)(GS_CurrentMaterial.Ambient.r * 255.0f) & 0xffU) << 0x10 |
-          ((int)(GS_CurrentMaterial.Ambient.g * 255.0f) & 0xffU) << 8 |
-         (int)(GS_CurrentMaterial.Ambient.b * 255.0f) & 0xffU);
-    GS_CurrentMaterialDiffuse =
-         (struct _GXColor *)
-         ((int)(GS_CurrentMaterial.Diffuse.a * 255.0f) << 0x18 |
-          ((int)(GS_CurrentMaterial.Diffuse.r * 255.0f) & 0xffU) << 0x10 |
-          ((int)(GS_CurrentMaterial.Diffuse.g * 255.0f) & 0xffU) << 8 |
-         (int)(GS_CurrentMaterial.Diffuse.b * 255.0f) & 0xffU);
-
-    GS_CurrentMaterialDiffuseGX->r = (s32)(GS_CurrentMaterial.Diffuse.r * 255.0f) << 0x18;
-    GS_CurrentMaterialDiffuseGX->g = (s32)(GS_CurrentMaterial.Diffuse.g * 255.0f) << 0x10;
-    GS_CurrentMaterialDiffuseGX->b = (s32)(GS_CurrentMaterial.Diffuse.b * 255.0f) << 8;
-    GS_CurrentMaterialDiffuseGX->a = (s32)(GS_CurrentMaterial.Diffuse.a * 255.0f);
-    GS_CurrentMaterialEmissive = (struct _GXColor *)(uVar1 << 0x18 | uVar2 << 0x10 | uVar3 << 8 | uVar4);
-     /*     GS_CurrentMaterialEmissive->r = (s32)(GS_CurrentMaterial.Emissive.r * 255.0f) << 0x18;
-          GS_CurrentMaterialEmissive->g = (s32)(GS_CurrentMaterial.Emissive.g * 255.0f) << 0x10;
-          GS_CurrentMaterialEmissive->b = (s32)(GS_CurrentMaterial.Emissive.b * 255.0f) << 8;
-          GS_CurrentMaterialEmissive->a = (s32)(GS_CurrentMaterial.Emissive.a * 255.0f);*/
+    diff_a = (s8) (GS_CurrentMaterial.Diffuse.a * 255.0f); 
+    diff_r = (s8) (GS_CurrentMaterial.Diffuse.r * 255.0f);
+    diff_g = (s8) (GS_CurrentMaterial.Diffuse.g * 255.0f);
+    diff_b = (s8) (GS_CurrentMaterial.Diffuse.b * 255.0f);
     
-    GS_CurrentMaterialEmissivergba =
-         (struct _GXColor *)(uVar2 << 0x18 | uVar3 << 0x10 | uVar4 << 8 | uVar1);
-    GS_CurrentMaterialEmissiveGX->r = uVar2;
-    GS_CurrentMaterialEmissiveGX->g = uVar3;
-    GS_CurrentMaterialEmissiveGX->b = uVar4;
-    GS_CurrentMaterialEmissiveGX->a = uVar1;
-    return;
+    em_a = (s8) (GS_CurrentMaterial.Emissive.a * 255.0f);
+    em_r = (s8) (GS_CurrentMaterial.Emissive.r * 255.0f);
+    em_g = (s8) (GS_CurrentMaterial.Emissive.g * 255.0f);
+    em_b = (s8) (GS_CurrentMaterial.Emissive.b * 255.0f);
+    
+     
+    *(u32*)&GS_CurrentMaterialDiffuse =  (u32)((diff_a << 0x18) | (diff_r << 0x10) | (diff_g << 8) | diff_b << 0);
+    GS_CurrentMaterialDiffuseGX.a = diff_a;
+    GS_CurrentMaterialDiffuseGX.r = diff_r;
+    GS_CurrentMaterialDiffuseGX.g = diff_g;
+    GS_CurrentMaterialDiffuseGX.b = diff_b;
+    *(u32*)&GS_CurrentMaterialEmissive = (u32)((em_a << 0x18) | (em_r << 0x10) | (em_g << 8) | em_b);
+    *(u32*)&GS_CurrentMaterialEmissivergba = (u32)((em_r << 0x18) | (em_g << 0x10) | (em_b << 8) | em_a);
+    GS_CurrentMaterialEmissiveGX.a = em_a; 
+    GS_CurrentMaterialEmissiveGX.r = em_r; 
+    GS_CurrentMaterialEmissiveGX.g = em_g;
+    GS_CurrentMaterialEmissiveGX.b = em_b;
 }
 
 //NGC MATCH
@@ -68,22 +74,34 @@ void GS_XFormLightVec(struct _GS_VECTOR3 *XFlight_pos,struct _GS_VECTOR4 *light_
   return;
 }
 
-//75% NGC
+//81% NGC
 void GS_SetLightingNone(void) {
-  struct _GXColor col;
-  
-  col = GX_White;
-  GXSetChanAmbColor(GX_COLOR0A0,&col);
-  col.r = (s32)(GS_CurrentMaterial.Diffuse.r * 255.0f);
-  col.g = (s32)(GS_CurrentMaterial.Diffuse.g * 255.0f);
-  col.b = (s32)(GS_CurrentMaterial.Diffuse.b * 255.0f);
-  col.a = (s32)(GS_CurrentMaterial.Diffuse.a * 255.0f);
+    struct _GXColor col;
+    u8 diff_b;
+    u8 diff_r;
+    u8 diff_g;
+    u8 diff_a;
+
+    col = GX_White;
+  GXSetChanAmbColor(GX_COLOR0A0,col);
+    diff_a = (s8) (GS_CurrentMaterial.Diffuse.a * 255.0f); 
+    diff_r = (s8) (GS_CurrentMaterial.Diffuse.r * 255.0f);
+    diff_g = (s8) (GS_CurrentMaterial.Diffuse.g * 255.0f);
+    diff_b = (s8) (GS_CurrentMaterial.Diffuse.b * 255.0f);
+    
+    *(u32*)&col = (u32)(
+        ((s32) (255.0f * GS_CurrentMaterial.Diffuse.b) << 8) & 0xff00 | 
+        ((s32) (255.0f * GS_CurrentMaterial.Diffuse.g) << 0x10) & 0xff0000 | 
+        ((s32) (255.0f * GS_CurrentMaterial.Diffuse.r) << 0x18) | 
+        (s32) (255.0f * GS_CurrentMaterial.Diffuse.a) & 0xFF
+    );
+    
  /* col = //(struct _GXColor)
         (((int)(GS_CurrentMaterial.Diffuse.b * 255.0) & 0xffU) << 8 |
         ((int)(GS_CurrentMaterial.Diffuse.g * 255.0) & 0xffU) << 0x10 |
         (int)(GS_CurrentMaterial.Diffuse.r * 255.0) << 0x18 |
         (int)(GS_CurrentMaterial.Diffuse.a * 255.0) & 0xffU);*/
-  GXSetChanMatColor(GX_COLOR0A0,&col);
+  GXSetChanMatColor(GX_COLOR0A0,col);
   if ((GS_MaterialSourceEmissive != 0) || (ShadowBodge != GX_TEVSTAGE0)) {
     GXSetChanCtrl(GX_COLOR0A0,0,GX_SRC_REG,GX_SRC_VTX,0,GX_DF_NONE,GX_AF_NONE);
   }
@@ -164,10 +182,10 @@ extern struct _GS_VECTOR3 XFLightPos;
 */
 
 
-//78% NGC
+//81% NGC
 void GS_Set3Lights(struct _GS_VECTOR4 *LIGHT1_POS,struct _GS_VECTOR4 *LIGHT2_POS,struct _GS_VECTOR4 *LIGHT3_POS,
-                  struct _GS_VECTOR4 *LIGHT1_COLOR,struct _GS_VECTOR4 *LIGHT2_COLOR,
-                    struct _GS_VECTOR4 *LIGHT3_COLOR, struct _GS_VECTOR4 *AMB_COLOR) {
+                  struct _D3DCOLORVALUE *LIGHT1_COLOR,struct _D3DCOLORVALUE *LIGHT2_COLOR,
+                    struct _D3DCOLORVALUE *LIGHT3_COLOR, struct _D3DCOLORVALUE *AMB_COLOR) {
     struct _GXColor col;
     struct _GXColor ambient;
     //struct _GXColor mat_color;
@@ -176,15 +194,12 @@ void GS_Set3Lights(struct _GS_VECTOR4 *LIGHT1_POS,struct _GS_VECTOR4 *LIGHT2_POS
         GS_SetLightingNone();
     }
     else {
-        col.r = ((s32)AMB_COLOR->x & 0x33333300);
-        col.g = ((s32)AMB_COLOR->y & 0x33333300);
-        col.b = ((s32)AMB_COLOR->z & 0x33333300);
-        col.a = ((s32)AMB_COLOR->w & 0x33333300);
-        GXSetChanAmbColor(GX_COLOR0A0,&col);
+        *(u32*)&ambient = ((u32)AMB_COLOR & 0xff | 0x33333300);
+        GXSetChanAmbColor(GX_COLOR0A0,&ambient);
+          col.a = (s32)(GS_CurrentMaterial.Diffuse.a * 255.0f);
           col.r = (s32)(GS_CurrentMaterial.Diffuse.r * 255.0f);
           col.g = (s32)(GS_CurrentMaterial.Diffuse.g * 255.0f);
           col.b = (s32)(GS_CurrentMaterial.Diffuse.b * 255.0f);
-          col.a = (s32)(GS_CurrentMaterial.Diffuse.a * 255.0f);
     /*    col = (struct _GXColor)
               (((int)(GS_CurrentMaterial.Diffuse.b * 255.0f) & 0xffU) << 8 |
               ((int)(GS_CurrentMaterial.Diffuse.g * 255.0f) & 0xffU) << 0x10 |
@@ -208,31 +223,31 @@ void GS_Set3Lights(struct _GS_VECTOR4 *LIGHT1_POS,struct _GS_VECTOR4 *LIGHT2_POS
          //     (((int)(LIGHT1_COLOR->z * 255.0f) & 0xffU) << 8 |
         //      ((int)(LIGHT1_COLOR->y * 255.0f) & 0xffU) << 0x10 |
           //    (int)(LIGHT1_COLOR->x * 255.0f) << 0x18 | (int)(LIGHT1_COLOR->w * 255.0f) & 0xffU);
-          col.r = (s32)(LIGHT1_COLOR->w * 255.0f);
-          col.g = (s32)(LIGHT1_COLOR->x * 255.0f);
-          col.b = (s32)(LIGHT1_COLOR->y * 255.0f);
-          col.a = (s32)(LIGHT1_COLOR->z * 255.0f);
+          col.a = (s32)(LIGHT1_COLOR->a * 255.0f);
+          col.r = (s32)(LIGHT1_COLOR->r * 255.0f);
+          col.g = (s32)(LIGHT1_COLOR->g * 255.0f);
+          col.b = (s32)(LIGHT1_COLOR->b * 255.0f);
         GXInitLightColor(&GSLights[0],&col);
         GXLoadLightObjImm(&GSLights[0],GX_LIGHT0);
         GS_XFormLightVec(&XFLightPos,LIGHT2_POS,&GS_CurMat);
         GXInitLightPos(&GSLights[1],XFLightPos.x,XFLightPos.y,XFLightPos.z);
-          col.r = (s32)(LIGHT2_COLOR->w * 255.0f);
-          col.g = (s32)(LIGHT2_COLOR->x * 255.0f);
-          col.b = (s32)(LIGHT2_COLOR->y * 255.0f);
-          col.a = (s32)(LIGHT2_COLOR->z * 255.0f);
+          col.a = (s32)(LIGHT2_COLOR->a * 255.0f);
+          col.r = (s32)(LIGHT2_COLOR->r * 255.0f);
+          col.g = (s32)(LIGHT2_COLOR->g * 255.0f);
+          col.b = (s32)(LIGHT2_COLOR->b * 255.0f);
         //col = (struct _GXColor)
          //     (((int)((double)LIGHT2_COLOR->z * 255.0f) & 0xffU) << 8 |
          //     ((int)((double)LIGHT2_COLOR->y * 255.0f) & 0xffU) << 0x10 |
          //     (int)((double)LIGHT2_COLOR->x * 255.0f) << 0x18 |
           //    (int)((double)LIGHT2_COLOR->w * 255.0f) & 0xffU);
-        GXInitLightColor(&GSLights[1],&col);
+        GXInitLightColor(&GSLights[0],&col);
         GXLoadLightObjImm(&GSLights[1],GX_LIGHT1);
         GS_XFormLightVec(&XFLightPos,LIGHT3_POS,&GS_CurMat);
         GXInitLightPos(&GSLights[2],XFLightPos.x,XFLightPos.y,XFLightPos.z);
-          col.r = (s32)(LIGHT3_COLOR->w * 255.0f);
-          col.g = (s32)(LIGHT3_COLOR->x * 255.0f);
-          col.b = (s32)(LIGHT3_COLOR->y * 255.0f);
-          col.a = (s32)(LIGHT3_COLOR->z * 255.0f);
+          col.a = (s32)(LIGHT3_COLOR->a * 255.0f);
+          col.r = (s32)(LIGHT3_COLOR->r * 255.0f);
+          col.g = (s32)(LIGHT3_COLOR->g * 255.0f);
+          col.b = (s32)(LIGHT3_COLOR->b * 255.0f);
         //col = (struct _GXColor)
          //     (((int)((double)LIGHT3_COLOR->z * 255.0f) & 0xffU) << 8 |
           //    ((int)((double)LIGHT3_COLOR->y * 255.0f) & 0xffU) << 0x10 |

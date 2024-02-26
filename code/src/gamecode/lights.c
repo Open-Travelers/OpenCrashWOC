@@ -107,68 +107,76 @@ void LoadLights(void) {
 
 //NGC MATCH
 void UpdateGlobals(struct Nearest_Light_s *nl) {
+  s32 i;
   s32 found_amb;
   s32 found_dir;
-  s32 i;
-  
+
+  found_amb = 0;
   found_dir = 0;
   nl->glbambindex = -1;
   (nl->glbdirectional).Index = -1;
-  found_amb = 0;
-    for(i = 0; ((i < LIGHTCOUNT) && ((!found_amb || (!found_dir)))); i++) {
-      if ((Lights[i].type == 0) && (Lights[i].globalflag == 4)) {
-        nl->glbambindex = i;
-        found_amb = 1;
-      }
-      if ((Lights[i].type == 1 || Lights[i].type == 2) && (Lights[i].globalflag == 4)) {
-        (nl->glbdirectional).Index = i;
-        found_dir = 1;
-      }
-    }
+  for(i = 0; (i < LIGHTCOUNT) && (!found_amb || !found_dir); i++) {
+        if (((Lights[i].type) == 0) && (Lights[i].globalflag == 4)) {
+            nl->glbambindex = i;
+            found_amb = 1;
+        }
+        if ( ((Lights[i].type == 1) || (Lights[i].type == 2)) && (Lights[i].globalflag == 4)) {
+            (nl->glbdirectional).Index = i;
+            found_dir = 1;
+        }
+  }
   return;
 }
 
-void ResetLights(Nearest_Light_s *nl)
-
-{
-  nl->pDir3rd = &nl->dir3;
-  nl->pDir2nd = &nl->dir2;
+//NGC MATCH
+void ResetLights(struct Nearest_Light_s *nl) {
   nl->pDir1st = &nl->dir1;
-  nl->ambientdist = 8000.0;
-  (nl->dir1).Distance = 8000.0;
-  (nl->dir2).Distance = 8000.0;
-  (nl->dir3).Distance = 8000.0;
+  nl->pDir2nd = &nl->dir2;
+  nl->pDir3rd = &nl->dir3;
+  nl->ambientdist = 8000.0f;
+  (nl->dir1).Distance = 8000.0f;
+  (nl->dir2).Distance = 8000.0f;
+  (nl->dir3).Distance = 8000.0f;
   nl->AmbIndex = -1;
-  (nl->AmbCol).x = 0.0;
-  (nl->AmbCol).y = 0.0;
-  (nl->AmbCol).z = 0.0;
+  (nl->AmbCol).x = 0.0f;
+  (nl->AmbCol).y = 0.0f;
+  (nl->AmbCol).z = 0.0f;
   (nl->dir1).Index = -1;
   (nl->dir2).Index = -1;
   (nl->dir3).Index = -1;
-  (nl->dir1).Direction.x = 0.0;
-  (nl->pDir1st->Direction).y = 0.0;
-  (nl->pDir1st->Direction).z = 0.0;
-  (nl->pDir3rd->Direction).x = 0.0;
-  (nl->pDir2nd->Direction).x = 0.0;
-  (nl->pDir2nd->Direction).y = 0.0;
-  (nl->pDir2nd->Direction).z = 0.0;
-  (nl->pDir3rd->Direction).x = 0.0;
-  (nl->pDir3rd->Direction).x = 0.0;
-  (nl->pDir3rd->Direction).y = 0.0;
-  (nl->pDir3rd->Direction).z = 0.0;
-  (nl->pDir3rd->Direction).x = 0.0;
+  //(nl->dir1).Direction.x = 0.0f;
+  (nl->pDir1st->Direction).x = 0.0f;
+  (nl->pDir1st->Direction).y = 0.0f;
+  (nl->pDir1st->Direction).z = 0.0f;
+  (nl->pDir3rd->Direction).x = 0.0f;
+  (nl->pDir2nd->Direction).x = 0.0f;
+  (nl->pDir2nd->Direction).y = 0.0f;
+  (nl->pDir2nd->Direction).z = 0.0f;
+  (nl->pDir3rd->Direction).x = 0.0f;
+  (nl->pDir3rd->Direction).x = 0.0f;
+  (nl->pDir3rd->Direction).y = 0.0f;
+  (nl->pDir3rd->Direction).z = 0.0f;
+  (nl->pDir3rd->Direction).x = 0.0f;
   nl->negativeindex = -1;
-  nl->negativedist = 8000.0;
+  nl->negativedist = 8000.0f;
   UpdateGlobals(nl);
   return;
 }
 
-
-void ScaleColour(nucolour3_s* colour, unsigned char r, unsigned char g, unsigned char b, unsigned char power)
-{
-
-
+//NGC MATCH
+void ScaleColour(struct nucolour3_s *colour,u8 r,u8 g,u8 b,u8 power) {
+  if ((power == 6)) {
+    colour->r = ((s32)r) * sf2;
+    colour->g = ((s32)g) * sf2;
+    colour->b = ((s32)b) * sf2;
+  } else if (power == 7) {
+    colour->r = ((s32)r) * sf;
+    colour->g = ((s32)g) * sf;
+    colour->b = ((s32)b) * sf;
+    }
+  return;
 }
+
 
 //96%
 void SortLights(struct Nearest_Light_s *nearLgt) {
@@ -244,109 +252,102 @@ void SetLights(nucolour3_s *vCOL0,nuvec_s *vDIR0,nucolour3_s *vCOL1,nuvec_s *vDI
   return;
 }
 
-
-void SetLevelLights(void)
-
-{
-
-}
-
-
-void SetCreatureLights(creature_s *c)
-
-{
-  pdir_s *ppVar1;
-  pdir_s *ppVar2;
-  pdir_s *ppVar3;
-  nuvec_s ambcol;
-  nuvec_s dir [3];
-  nucolour3_s col [3];
-  float dur;
-  float t;
-  
-  if ((USELIGHTS == 0) || (LIGHTCREATURES == 0)) {
-    if ((c->obj).dead != '\x11') {
-      return;
-    }
-    ambcol.x = acol.x;
-    ambcol.y = acol.y;
-    ambcol.z = acol.z;
-    col[0].r = lcol[0].r;
-    col[0].g = lcol[0].g;
-    col[0].b = lcol[0].b;
-    dir[0].x = ldir[0].x;
-    dir[0].y = ldir[0].y;
-    dir[0].z = ldir[0].z;
-    col[1].r = lcol[1].r;
-    col[1].g = lcol[1].g;
-    col[1].b = lcol[1].b;
-    dir[1].x = ldir[1].x;
-    dir[1].z = ldir[1].z;
-    dir[1].y = ldir[1].y;
-    col[2].r = lcol[2].r;
-    col[2].g = lcol[2].g;
-    col[2].b = lcol[2].b;
-    dir[2].x = ldir[2].x;
-    dir[2].y = ldir[2].y;
-    dir[2].z = ldir[2].z;
+//98% NGC
+void SetLevelLights(void) {
+  if ((((GameMode == 1) && (gamecut != 0)) && (gamecut != 6)) && ((gamecut != 0xb && (gamecut != 0x10)))) {
+    RotateDirectionalLight(lcutdir,((GameTimer.frame % 0x78) * 0x10000) / 0x78,((GameTimer.frame % 0x78) * 0x10000) / 0x78);
+    RotateDirectionalLight(lcutdir + 1,((GameTimer.frame % 0x78) * 0x10000) / 0x78,((GameTimer.frame % 0x78) * 0x10000) / 0x78);
+    RotateDirectionalLight(lcutdir + 2,((GameTimer.frame % 0x78) * 0x10000) / 0x78,((GameTimer.frame % 0x78) * 0x10000) / 0x78);
+    SetLights(lcutdircol,lcutdir,lcutdircol + 1,lcutdir + 1,lcutdircol + 2,lcutdir + 2,&lcutambcol );
+  }
+  else if (cutmovie == 0) {
+    RotateDirectionalLight(titledir,((GameTimer.frame % 0xf0) * 0x10000) / 0xf0,
+               ((GameTimer.frame % 0x186) * 0x10000) / 0x186 );
+    RotateDirectionalLight(titledir + 1,((GameTimer.frame % 0x14a) * 0x10000) / 0x14a,
+               ((GameTimer.frame % 0x1c2) * 0x10000) / 0x1c2);
+    RotateDirectionalLight(titledir + 2,((GameTimer.frame % 0x78) * 0x10000) / 0x78,
+               ((GameTimer.frame % 0x96) * 0x10000) / 0x96);
+    SetLights(&titlergb,titledir,&titlergb,titledir + 1,&titlergb2,titledir + 2,&titlergb);
+  }
+  else if ((Level == 0x2b) && (cutmovie == -1)) {
+    intensity = NuFabs(NuTrigTable[creditsang[0] & 0xffff]);
+    NuVecRotateY(creditsdir,&ZVec,(s32)(creditsang[0] / 40.0f));
+    creditsang[0] = creditsang[0] + 0x100;
+    creditsdircol[0].r = intensity;
+    intensity = NuFabs(NuTrigTable[creditsang[1] & 0xffff]);
+    NuVecRotateY(creditsdir + 1,&ZVec,(s32)(-creditsang[1] / 40.0f));
+    creditsang[1] = creditsang[1] + 0x100;
+    creditsdircol[1].r = intensity;
+    intensity = NuFabs(NuTrigTable[creditsang[2] & 0xffff]);
+    NuVecRotateX(creditsdir + 2,&ZVec,(s32)(creditsang[2] / 40.0f));
+    creditsang[2] = creditsang[2] + 0x100;
+    creditsdircol[2].r = intensity;
+    NuLightSetDirectionalLights(creditsdir,creditsdircol,creditsdir + 1,creditsdircol + 1,creditsdir + 2,
+               creditsdircol + 2);
+    NuLightSetAmbientLight(&creditsrgb);
   }
   else {
-    ambcol.x = (c->lights).AmbCol.x;
-    ambcol.z = (c->lights).AmbCol.z;
-    ambcol.y = (c->lights).AmbCol.y;
-    ppVar3 = (c->lights).pDir1st;
-    ppVar1 = (c->lights).pDir2nd;
-    col[0].r = (ppVar3->Colour).r;
-    col[0].b = (ppVar3->Colour).b;
-    col[0].g = (ppVar3->Colour).g;
-    ppVar2 = (c->lights).pDir3rd;
-    dir[0].x = (ppVar3->Direction).x;
-    dir[0].z = (ppVar3->Direction).z;
-    dir[0].y = (ppVar3->Direction).y;
-    col[1].r = (ppVar1->Colour).r;
-    col[1].b = (ppVar1->Colour).b;
-    col[1].g = (ppVar1->Colour).g;
-    dir[1].x = (ppVar1->Direction).x;
-    dir[1].z = (ppVar1->Direction).z;
-    dir[1].y = (ppVar1->Direction).y;
-    col[2].r = (ppVar2->Colour).r;
-    col[2].b = (ppVar2->Colour).b;
-    col[2].g = (ppVar2->Colour).g;
-    dir[2].x = (ppVar2->Direction).x;
-    dir[2].z = (ppVar2->Direction).z;
-    dir[2].y = (ppVar2->Direction).y;
+    SetLights(lcol,ldir,lcol + 1,ldir + 1,lcol + 2,ldir + 2,&acol);
   }
-  if ((c->obj).dead == '\x11') {
-    dur = (c->obj).die_duration;
-    t = (c->obj).die_time;
-    if (dur <= t) {
-      dur = 0.0;
-    }
-    else {
-      dur = 1.0 - t / dur;
-    }
-  }
-  else {
-    dur = 1.0;
-  }
-  if (dur != 1.0) {
-    ambcol.x = ambcol.x * dur;
-    ambcol.y = ambcol.y * dur;
-    ambcol.z = ambcol.z * dur;
-    col[0].r = col[0].r * dur;
-    col[0].g = col[0].g * dur;
-    col[0].b = col[0].b * dur;
-    col[1].r = col[1].r * dur;
-    col[1].g = col[1].g * dur;
-    col[1].b = col[1].b * dur;
-    col[2].r = col[2].r * dur;
-    col[2].g = col[2].g * dur;
-    col[2].b = col[2].b * dur;
-  }
-  SetLights(col,dir,col + 1,dir + 1,col + 2,dir + 2,&ambcol);
   return;
 }
 
+//NGC MATCH
+void SetCreatureLights(struct creature_s *c) {
+  struct nuvec_s ambcol;
+  struct nuvec_s dir[3];
+  struct nucolour3_s col[3];
+  float f;
+  
+  if ((USELIGHTS != 0) && (LIGHTCREATURES != 0)) {
+    ambcol = (c->lights).AmbCol;
+    col[0] = ((c->lights).pDir1st->Colour);
+    dir[0] = ((c->lights).pDir1st->Direction);
+    col[1] = ((c->lights).pDir2nd->Colour);
+    dir[1] = ((c->lights).pDir2nd->Direction);
+    col[2] = ((c->lights).pDir3rd->Colour);
+    dir[2] = ((c->lights).pDir3rd->Direction);
+  }
+  else {
+    if ((c->obj).dead != 0x11) {
+      return;
+    }
+    ambcol = acol;
+    col[0] = lcol[0];
+    dir[0] = ldir[0];
+    col[1] = lcol[1];
+    dir[1] = ldir[1];
+    col[2] = lcol[2];
+    dir[2] = ldir[2];
+  }
+  if ((c->obj).dead == 0x11) {
+    if ( (c->obj).die_time < (c->obj).die_duration) {
+      f = 1.0f - (c->obj).die_time / (c->obj).die_duration;
+    }
+    else {
+      f = 0.0f;
+    }
+  }
+  else {
+    f = 1.0f;
+  }
+  if (f != 1.0f) {
+    ambcol.x = ambcol.x * f;
+    ambcol.y = ambcol.y * f;
+    ambcol.z = ambcol.z * f;
+    col[0].r = col[0].r * f;
+    col[0].g = col[0].g * f;
+    col[0].b = col[0].b * f;
+    col[1].r = col[1].r * f;
+    col[1].g = col[1].g * f;
+    col[1].b = col[1].b * f;
+    col[2].r = col[2].r * f;
+    col[2].g = col[2].g * f;
+    col[2].b = col[2].b * f;
+  }
+  SetLights(&col[0],dir,&col[1],&dir[1],&col[2],&dir[2],&ambcol);
+  return;
+}
 
 void SetNearestLights(Nearest_Light_s *l)
 
@@ -362,5 +363,3 @@ void SetNearestLights(Nearest_Light_s *l)
 struct nuvec_s * GetLightPosition(s32 index) {
   return &Lights[index].pos;
 }
-
-

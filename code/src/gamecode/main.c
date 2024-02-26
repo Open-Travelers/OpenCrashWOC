@@ -119,15 +119,6 @@ void ResetSuperBuffer2(void) {
     superbuffer_ptr = superbuffer_reset_base;
     return;
 }
-
-//debris.c (gamelib)
-void DebrisMalloc(void) {
-  if (debbuffer == NULL) {
-    debbuffer = (char *)malloc_x(0x93400);
-  }
-  return;
-}
-
 */
 
 void InitTexAnimScripts(void)	//PS2
@@ -647,96 +638,81 @@ void ResumeGame(void) {
 }
 
 /*
-
-void DoInput(void)
-
-{
-  float fVar1;
-  int iVar2;
-  nupad_s *pad;
-  void *local_10;
-  void *pvStack_c;
-
+//NGC MATCH
+void DoInput(void) {
+  struct nupad_s *pad;
+  s32 sfx;
+  s32 menu_active;
+  float f;
+  float f12;
+    s32 temp;
+  
   XbPollPeripherals();
-  XbPollAllControllers(Cursor.menu != -1);
-  pad = Pad[0];
-  iVar2 = NuPs2ReadPad((nupad_s *)&pad);
-  if (iVar2 == 0) {
-    if ((((Paused == 0) && (Pad[0] != (nupad_s *)0x0)) && ((Pad[0]->paddata_db & 0x20000000) == 0) )
-       && (((Demo == 0 && (Cursor.menu != '\0')) &&
-           ((Cursor.menu != '#' && ((GameMode != 1 && (cutmovie == -1)))))))) {
-      PauseGame();
-    }
-    Pad[0] = XbGetWorkingController();
+  menu_active = 1;
+  if(Cursor.menu == -1) {
+      menu_active = 0;
   }
-  else {
+  XbPollAllControllers(menu_active);
+  pad = Pad[0];
+  if (NuPs2ReadPad((struct nupad_s*)&pad) != 0) {
     lost_controller = 0;
-    if ((pad->padhandle == (void *)0x0) &&
-       ((PadRecInfo == (PadRecInfo *)0x0 || (PadRecInfo->padmode != 2)))) {
-      if ((((((Paused == 0) || (pause_dir == 2)) &&
-            ((Pad[0] != (nupad_s *)0x0 &&
-             (((((Pad[0]->paddata_db & 0x20000000) == 0 && (Demo == 0)) && (Cursor.menu != '\0'))  &&
-              ((Cursor.menu != '#' && (GameMode != 1)))))))) && (cutmovie == -1)) &&
-          (((new_mode == -1 && (new_level == -1)) && ((fadeval == 0 && (Cursor.menu == -1)))))) &&
-         ((PLAYERCOUNT == 0 ||
-          (((player->obj).finished == '\0' &&
-           (((Level != 0x25 || (tumble_duration <= tumble_time)) || (last_hub == -1)))))))) {
-        XbPollAllControllers(1);
-        Pad[0] = (nupad_s *)0x0;
-        PauseGame();
-      }
-    }
-    else {
-      if ((pad_record != 0) && (((pad->old_paddata & 0x800) != 0 || ((player->obj).dead != '\0'))) )
-      {
+    if ((pad->padhandle != NULL) || ((PadRecInfo != NULL && (PadRecInfo->padmode == 2)))) {
+      if ((pad_record != 0) && (((pad->oldpaddata & 0x800) != 0 || ((player->obj).dead != 0)))) {
         pad_record = 0;
       }
       stick_bits = 0;
-      fVar1 = (float)((double)CONCAT44(0x43300000,(uint)pad->buttons_hi) -
-                     (double)0x4330000000000000) - 127.5;
-      if (-85.0 <= fVar1) {
-        if (85.0 < fVar1) {
-          stick_bits = 0x2000;
-        }
-      }
-      else {
+        f12 = 85.0f;
+      f = (u32)pad->buttons_hi - 127.5f;
+      if ((f < -f12)) {
         stick_bits = 0x8000;
       }
-      pvStack_c = (void *)(uint)pad->buttons_lo;
-      local_10 = (void *)0x43300000;
-      fVar1 = (float)((double)CONCAT44(0x43300000,pvStack_c) - (double)0x4330000000000000) - 127.5 ;
-      if (-85.0 <= fVar1) {
-        if (85.0 < fVar1) {
-          stick_bits = stick_bits | 0x4000;
-        }
+      else if (f > 85.0f) {
+          stick_bits = 0x2000;
       }
-      else {
-        stick_bits = stick_bits | 0x1000;
+      f = (u32)pad->buttons_lo - 127.5f;
+      if (f < -f12) {
+        stick_bits |= 0x1000;
       }
-      stick_bits_db = stick_bits & ~stick_oldbits;
-      stick_oldbits = stick_bits;
-      if (((((pad->old_paddata & 0x800) != 0) && ((LDATA->flags & 1) != 0)) && (new_mode == -1)) & &
+      else if (f > f12) {
+          stick_bits |= 0x4000;
+      } 
+        temp = stick_bits;
+      stick_bits_db = temp & ~stick_oldbits;
+      stick_oldbits = temp;
+      if (((((pad->oldpaddata & 0x800) != 0) && ((LDATA->flags & 1) != 0)) && (new_mode == -1)) &&
          (((new_level == -1 && (fadeval == 0)) && ((GameMode != 1 && (cutmovie == -1)))))) {
-        if ((((Paused != 0) || (Cursor.menu != -1)) ||
-            ((PLAYERCOUNT != 0 &&
-             (((player->obj).finished != '\0' ||
-              (((Level == 0x25 && (tumble_time < tumble_duration)) && (last_hub != -1)))))))) ||
-           (((LBIT._4_4_ & 0x3e00000) != 0 && (boss_dead == 2)))) {
-          if (Paused != 0x1e) {
-            lost_controller = 0;
-            stick_oldbits = stick_bits;
-            return;
-          }
-          iVar2 = 0x3c;
-          pause_dir = 2;
-        }
-        else {
+        if ((((Paused == 0) && (Cursor.menu == -1)) && ((PLAYERCOUNT == 0 || (((player->obj).finished == 0 &&
+              (((Level != 0x25 || !(tumble_time < tumble_duration)) || (last_hub == -1)))))))) &&
+           (((LBIT & 0x3e00000) == 0 || (boss_dead != 2)))) {
           PauseGame();
-          iVar2 = 0x36;
+          sfx = 0x36;
         }
-        GameSfx(iVar2,(nuvec_s *)0x0);
-      }
+        else if (Paused == 0x1e) {
+            pause_dir = 2;
+            sfx = 0x3c;
+          } else {
+             return;
+          }
+        GameSfx(sfx,NULL);
+      }  
     }
+    else if ((((((Paused == 0) || (pause_dir == 2)) && ((Pad[0] != NULL &&
+             (((((Pad[0]->paddata_db & 0x20000000) == 0 && (Demo == 0)) && (Cursor.menu != 0)) &&
+              ((Cursor.menu != '#' && (GameMode != 1)))))))) && (cutmovie == -1)) &&
+          (((new_mode == -1 && (new_level == -1)) && ((fadeval == 0 && (Cursor.menu == -1)))))) &&
+         ((PLAYERCOUNT == 0 || (((player->obj).finished == 0 &&
+           (((Level != 0x25 || !(tumble_time < tumble_duration)) || (last_hub == -1)))))))) {
+        XbPollAllControllers(1);
+        Pad[0] = NULL;
+        PauseGame();
+      }
+  }
+  else {
+    if ((((Paused == 0) && (Pad[0] != NULL)) && ((Pad[0]->paddata_db & 0x20000000) == 0))
+       && (((Demo == 0 && (Cursor.menu != 0)) && ((Cursor.menu != '#' && ((GameMode != 1 && (cutmovie == -1)))))))) {
+      PauseGame();
+    }
+    Pad[0] = XbGetWorkingController(); 
   }
   return;
 }
@@ -915,37 +891,38 @@ s32 CopyFilesThreadProc() {
 }
 
 /*
-
-void LoadGBABG(void)
-
-{
-  int iVar1;
-  numtl_s *mtl;
-  numtlattrib_s attr;
-  nutex_s tex;
+//NGC MATCH
+void LoadGBABG(void) {
+  struct numtl_s *mtl;
+  struct nutex_s tex;
 
   GBABG_Ptr = malloc_x(0x2000c);
   NuFileLoadBuffer("gfx\\crash2gb.s3",GBABG_Ptr,0x2000c);
+  tex.width = 0x200;
   tex.height = 0x200;
   tex.decal = 0;
   tex.bits = GBABG_Ptr;
   iss3cmp = 0x20000;
-  tex.width = 0x200;
   tex.mmcnt = 1;
-  tex.pal = (int *)0x0;
+  tex.pal = NULL;
   tex.type = NUTEX_RGB24;
   GBABG_tid = NuTexCreate(&tex);
   iss3cmp = 0;
   mtl = NuMtlCreate(1);
-  iVar1 = GBABG_tid;
-  attr = mtl->attrib;
   GBABG_mtl = mtl;
-  (mtl->diffuse).b = 1.0;
-  mtl->alpha = 0.999;
-  mtl->tid = iVar1;
-  (mtl->diffuse).r = 1.0;
-  (mtl->diffuse).g = 1.0;
-  mtl->attrib = (numtlattrib_s)((uint)attr & 0xcc0cffff | 0x16e8000);
+  (mtl->diffuse).r = 1.0f;
+  (mtl->diffuse).g = 1.0f;
+  (mtl->diffuse).b = 1.0f;
+  //mtl->attrib = (numtlattrib_s)((uint)attr & 0xcc0cffff | 0x16e8000);
+    mtl->attrib.cull = 2;
+    mtl->attrib.zmode = 3;
+    mtl->attrib.filter = 0;
+    mtl->attrib.lighting = 2;
+    mtl->attrib.colour = 1;
+    mtl->alpha = 0.999f;
+    mtl->tid = GBABG_tid;
+    mtl->attrib.utc = 1;
+    mtl->attrib.vtc = 1;
   NuMtlUpdate(mtl);
   return;
 }
@@ -1221,7 +1198,7 @@ s32 main(int argc /* r3 */, char * * argv /* r4 */) {
 
 //89% NGC (86% PS2)
 /*
-int main(s32 argc,char **argv) {
+s32 main(s32 argc,char **argv) {
   //s32 bVar1;
   //s32 bVar2;
   float fVar3;
@@ -1475,16 +1452,20 @@ LAB_80051ba4:
         NuSoundSetLevelAmbience();
       }
       NuGetFrameAdvance();
+        FRAMES = 1;
+      if ((FixFrameRate != 0) || (pad_record != 0) || (pad_play != 0)) {
+             FRAMES = 1;
+      }
       plr = player;
       FRAMES = 1;
-      if (cufps < 59.0f) {
+      if ((s32)cufps < 59.0f) {
         FRAMES = 2;
       }
       if (cufps < 29.0f) {
-        FRAMES = FRAMES + 1;
+        FRAMES++;
       }
       if (cufps < 19.0f) {
-        FRAMES = FRAMES + 1;
+        FRAMES++;
       }
       if (cufps < 14.0f) {
         FRAMES = FRAMES + 1;
@@ -1841,10 +1822,9 @@ LAB_80051ba4:
         }
         else {
           if (Cursor.menu == 0x22) {
-            iVar9 = (s32)(1.0f - (((POWERTEXTY + 0.7f) + 1.0f) * 0.5f)) * (SHEIGHT << 3);
-            NuRndrRect2di(0,iVar9,SWIDTH << 4,
-                          (s32)((1.0f - ((POWERTEXTY - 0.75f) + 1.0f) * 0.5f) * 
-                                                (SHEIGHT << 3)) - iVar9,0x18777777, fade_mtl);
+            iVar9 = (s32)(1.0f - (((POWERTEXTY + 0.7f) + 1.0f) * 0.5f)) * (SHEIGHT);
+            NuRndrRect2di(0,iVar9,SWIDTH,(s32)((1.0f - ((POWERTEXTY - 0.75f) + 1.0f) * 0.5f) * 
+                                                (SHEIGHT)) - iVar9,0x18777777, fade_mtl);
           }
         }
         NuRndrClear(10,0,1.0f);
