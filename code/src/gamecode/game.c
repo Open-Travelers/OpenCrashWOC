@@ -1030,6 +1030,252 @@ void DrawMaskFeathers(void) {
     return;
 }
 
+#define ABS(x) (x >= 0 ? x : -x)
+
+//95% NGC (FIX)
+void UpdateMask(struct mask_s* mask, struct obj_s* obj) {
+    struct nuvec_s v;
+    struct nuvec_s local_40;
+    u16 uVar10;
+    u16 unaff_r29;
+    s32 bVar7;
+    s32 iVar8;
+    float dx;
+    s32 uVar13;
+    u16 sVar14;
+    u16 xrot;
+    u16 yrot;
+    float dz;
+    float f;
+    float y;
+    float mul;
+    struct numtx_s* mtx;
+
+    if (CRemap[3] == -1) {
+        return;
+    }
+    if ((obj->idle_gametime > 0.0f) && (Cursor.menu != 0x24)) {
+        mask->idle_time += 0.01666667f;
+        if (mask->idle_time >= mask->idle_duration) {
+            do {
+                iVar8 = qrand() / 0x5556;
+            } while (iVar8 == mask->idle_mode);
+            mask->idle_mode = iVar8;
+            mask->idle_time = 0.0f;
+            mul = qrand() * 0.000015259022f;
+            mask->idle_duration = mul + mul + 3.0f;
+        }
+    } else {
+        mask->idle_mode = 0;
+        mask->idle_time = 0.0f;
+        mul = qrand() * 0.000015259022f;
+        mask->idle_duration = mul + mul + 3.0f;
+    }
+    dx = (obj->pos).x - (mask->pos).x;
+    dz = (obj->pos).z - (mask->pos).z;
+    dz = NuFsqrt(dx * dx + dz * dz);
+    if (Cursor.menu == 0x24) {
+        (mask->newpos).x = GameCam->pos.x + GameCam->vZ.x + GameCam->vX.x * 0.25f;
+        (mask->newpos).y = GameCam->pos.y + GameCam->vZ.y + GameCam->vX.y * 0.25f;
+        (mask->newpos).z = GameCam->pos.z + GameCam->vZ.z + GameCam->vX.z * 0.25f;
+    } else {
+        if (best_cRPos != NULL) {
+            uVar10 = best_cRPos->angle;
+            uVar13 = RotDiff(obj->hdg, uVar10);
+            if ((best_cRPos->mode & 3) != 0) {
+                if (best_cRPos->fACROSS > 0.5f) {
+                    uVar10 -= 0x4000;
+                    if (ABS(uVar13) > 0x4000) {
+                        unaff_r29 = uVar10 + 0x1555;
+                    } else {
+                        unaff_r29 = uVar10 - 0x1555;
+                    }
+                } else {
+                    uVar10 += 0x4000;
+                    if (ABS(uVar13) > 0x4000) {
+                        unaff_r29 = uVar10 - 0x1555;
+                    } else {
+                        unaff_r29 = uVar10 + 0x1555;
+                    }
+                }
+            } else if ((best_cRPos->mode & 4) != 0) {
+                sVar14 = uVar10 + 0x4000;
+                if (ABS(uVar13) < 0x4000) {
+                    unaff_r29 = sVar14 + 0x2000;
+                } else {
+                    unaff_r29 = uVar10 - 0x2000;
+                }
+            } else if ((best_cRPos->mode & 8) != 0) {
+                sVar14 = uVar10 + 0xc000;
+                if (0x3fff < ABS(uVar13)) {
+                    unaff_r29 = sVar14 + 0x2000;
+                }
+                else
+                {
+                    unaff_r29 = uVar10 - 0x2000;
+                }
+            } else {
+                goto LAB_800306cc;
+            }
+        } else {
+        LAB_800306cc:
+            sVar14 = NuAtan2D(GameCam->pos.x - (mask->pos).x, GameCam->pos.z - (mask->pos).z);
+            if (RotDiff(GameCam->yrot, obj->hdg) < 0) {
+                unaff_r29 = sVar14 - 0x2000;
+            } else {
+                unaff_r29 = sVar14 + 0x2000;
+            }
+        }
+        mask->angle = TurnRot(mask->angle, unaff_r29, 0x444);
+        (mask->newpos).x = NuTrigTable[mask->angle] * 0.7f + (obj->pos).x;
+        (mask->newpos).y = obj->top * obj->SCALE + (obj->pos).y;
+        if (1.0f > dz) {
+            (mask->newpos).y -= 0.1f;
+        } else if (1.5f > dz) {
+            (mask->newpos).y -= ((dz - 1.0f) + (dz - 1.0f)) * 0.2f + 0.1f;
+        } else {
+            (mask->newpos).y -= 0.3f;
+        }
+        (mask->newpos).z = (obj->pos).z + (NuTrigTable[(mask->angle + 0x4000) & 0xffff] * 0.7f);
+    }
+    if ((dz < 1.0f) || (Cursor.menu == 0x24)) {
+        mask->wibble_ang[0] = mask->wibble_ang[0] + 0xb4;
+        mask->wibble_ang[1] = mask->wibble_ang[1] + 0x104;
+        mask->wibble_ang[2] = mask->wibble_ang[2] + 0xe1;
+        dz = 0.1f;
+    } else {
+        mask->wibble_ang[0] = mask->wibble_ang[0] + 0x2d0;
+        mask->wibble_ang[1] = mask->wibble_ang[1] + 0x410;
+        mask->wibble_ang[2] = mask->wibble_ang[2] + 900;
+        dz = (dz - 1.0f) * 0.4f + 0.1f;
+    }
+    (mask->newpos).x = NuTrigTable[mask->wibble_ang[0]] * dz + (mask->newpos).x;
+    (mask->newpos).y = NuTrigTable[mask->wibble_ang[1]] * dz * 0.5f + (mask->newpos).y;
+    (mask->newpos).z = NuTrigTable[mask->wibble_ang[2]] * dz + (mask->newpos).z;
+    if ((mask->idle_mode == 1) || (Cursor.menu == 0x24)) {
+        unaff_r29 = (u16)NuAtan2D(GameCam->pos.x - (mask->pos).x, GameCam->pos.z - (mask->pos).z);
+    } else if (mask->idle_mode == 0) {
+        unaff_r29 = obj->hdg;
+    } else if (mask->idle_mode == 2) {
+        unaff_r29 = (u16)NuAtan2D((obj->pos).x - (mask->pos).x, (obj->pos).z - (mask->pos).z);
+    }
+    dz = 0.0f;
+    yrot = mask->yrot;
+    if (obj->idle_gametime > 0.0f) {
+        iVar8 = 0x111;
+    } else {
+        iVar8 = 0x222;
+    }
+    mask->yrot = TurnRot(yrot, unaff_r29, iVar8);
+    mask->shadow = NewShadowMaskPlat(&mask->pos, dz, -1);
+    mask->surface_xrot = 0;
+    mask->surface_zrot = 0;
+    if (mask->shadow != 2000000.0f) {
+        iVar8 = ShadowInfo();
+        if ((TerSurface[iVar8].flags & 1) != 0) {
+            mask->shadow = 2000000.0f;
+        } else {
+            mask->reflect = (char)(TerSurface[iVar8].flags >> 2) & 1;
+            v = ShadNorm;
+            FindAnglesZX(&v);
+            mask->surface_xrot = temp_xrot;
+            mask->surface_zrot = temp_zrot;
+        }
+    } else {
+        mask->reflect = 0;
+    }
+    f = CrateTopBelow(&mask->pos);
+    if ((f != 2000000.0f) && ((mask->shadow == 2000000.0f || (f > mask->shadow)))) {
+        mask->shadow = f;
+        mask->reflect = 0;
+        mask->surface_xrot = 0;
+        mask->surface_zrot = 0;
+    }
+    f = CreatureTopBelow(&mask->pos, 4);
+    if ((f != 2000000.0f) && ((mask->shadow == 2000000.0f || (f > mask->shadow)))) {
+        mask->shadow = f;
+        mask->reflect = 0;
+        mask->surface_xrot = 0;
+        mask->surface_zrot = 0;
+    }
+    if (GameTimer.frame != 0) {
+        local_40 = (mask->pos);
+        dx = ((mask->newpos).x - (mask->pos).x) * 0.05f + (mask->pos).x;
+        (mask->pos).x = dx;
+        (mask->pos).y += ((mask->newpos).y - (mask->pos).y) * 0.05f;
+        local_40.z += ((mask->newpos).z - local_40.z) * 0.05f;
+        local_40.z -= (mask->pos).z;
+        (mask->pos).z = local_40.z;
+        dx -= local_40.x;
+        mul = dx * dx + dx * dx;
+        f = NuFsqrt(mul);
+        if (f > 0.05f) {
+            xrot = 0xf555;
+        } else {
+            xrot = (f * 20.0f * -2731.0f);
+        }
+    } else {
+        xrot = 0;
+        mask->pos = mask->newpos;
+    }
+    mask->xrot = SeekRot(mask->xrot, xrot, 2);
+    (mask->anim).oldaction = (mask->anim).action;
+    (mask->anim).newaction = 0x22;
+    UpdateAnimPacket(&CModel[CRemap[3]], &mask->anim, 0.5f, 0.0f);
+    mtx = NULL;
+    bVar7 = 0;
+    if (obj->parent == player) {
+        if ((player->obj).character == 0) {
+            if ((((mask->active > 2) && (player->spin != 0)) && (player->spin_frame > 0))
+                && (player->spin_frame < player->spin_frames - player->OnFootMoveInfo->SPINRESETFRAMES))
+            {
+                iVar8 = 0;
+            } else {
+            if ((LBIT & 0x0000000400000040) == 0) {
+                iVar8 = 3;
+            } else {
+                iVar8 = 0;
+            }
+            if (((mask->active > 2) && (player->spin != 0))
+                && (player->spin_frame == 0
+                    || (player->spin_frame < player->spin_frames - (player->OnFootMoveInfo->SPINRESETFRAMES - 1))))
+            {
+                bVar7 = 1;
+            }
+          }
+        } else {
+            iVar8 = 2;
+        }
+        if (iVar8 != -1) {
+            mtx = &player->mtxLOCATOR[0][iVar8];
+        }
+    }
+    if (bVar7) {
+        (mask->pos).x = (mask->mM)._30;
+        (mask->pos).y = (mask->mM)._31;
+        (mask->pos).z = (mask->mM)._32;
+    } else {
+        MakeMaskMatrix(mask, &mask->mM, &mask->mS, mtx, 1.0f);
+    }
+    if (mask->active > 2) {
+        v.x = (player->obj).pos.x;
+        v.y = ((player->obj).bot + (player->obj).top) * (player->obj).SCALE * 0.5f + (player->obj).pos.y;
+        v.z = (player->obj).pos.z;
+        AddVariableShotDebrisEffect(GDeb[155].i, &v, 1, 0, 0);
+    } else {
+        if (1 < mask->active) {
+            v.x = (mask->pos).x;
+            v.y = (mask->pos).y;
+            v.z = (mask->pos).z;
+            AddVariableShotDebrisEffect(GDeb[156].i, &v, 1, 0, 0);
+        }
+    }
+    if ((USELIGHTS != 0) && (LIGHTMASK != 0)) {
+        GetLights(&mask->pos, &mask->lights, 1);
+    }
+    return;
+}
+
 //NGC MATCH
 void Draw3DCrateCount(struct nuvec_s *pos,u16 angle) {
   struct nuvec_s v;

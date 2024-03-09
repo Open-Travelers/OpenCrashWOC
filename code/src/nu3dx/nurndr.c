@@ -101,7 +101,7 @@ void NuRndrSwapScreen(s32 hRT) {
     return;
 }
 
-//95% NGC
+//96% NGC
 s32 NuRndrGobj(struct nugobj_s* gobj, struct numtx_s* wm, f32** blendvals) {
     struct nugeomitem_s* item;
     struct nufaceongeom_s* facegeom;
@@ -140,10 +140,10 @@ s32 NuRndrGobj(struct nugobj_s* gobj, struct numtx_s* wm, f32** blendvals) {
                 max = gobj->bounding_box_max;
                 NuVecAdd(&min, &gobj->bounding_box_min, &gobj->origin);
                 NuVecAdd(&max, &gobj->bounding_box_max, &gobj->origin);
-                //outcode = NuCameraClipTestExtents(&min, &max, wm);
+                outcode = NuCameraClipTestExtents(&min, &max, wm);
             }
             else {
-                //outcode = NuCameraClipTestExtents(&gobj->bounding_box_min, &gobj->bounding_box_max, wm);
+                outcode = NuCameraClipTestExtents(&gobj->bounding_box_min, &gobj->bounding_box_max, wm);
             }
         }
 
@@ -187,7 +187,7 @@ s32 NuRndrGobj(struct nugobj_s* gobj, struct numtx_s* wm, f32** blendvals) {
                     item->geom = geom;
                     item->blendvals = blendvals;
 
-                    //item->hShader = NuShaderAssignShader(geom);
+                    item->hShader = NuShaderAssignShader(geom);
                     if ((nurndr_forced_mtl_table != NULL) && ((geom->mtl)->special_id != 0))
                     {
                         if (nurndr_forced_mtl_table[(geom->mtl)->special_id] != NULL)
@@ -249,7 +249,6 @@ s32 NuRndrGrassGobj(struct nugobj_s *gobj,struct numtx_s *wm,float **blendvals) 
     struct nuvec_s min;
     struct nuvec_s max;
     struct numtl_s* mtl;
-        //char pad[0x7];
 
     total_outcode = -1;
 
@@ -262,7 +261,7 @@ s32 NuRndrGrassGobj(struct nugobj_s *gobj,struct numtx_s *wm,float **blendvals) 
             dy = min.y - wm->_31;
             dz = min.z - wm->_32;
             dist = dx * dx + dy * dy + dz * dz;
-            if (dist > 100.0f) {
+            if (dist > 100.0) {
                 outcode = 0;
             }
             else {
@@ -301,7 +300,7 @@ s32 NuRndrGrassGobj(struct nugobj_s *gobj,struct numtx_s *wm,float **blendvals) 
                                 item->geom = geom;
                                 item->blendvals = blendvals;
 
-                                //item->hShader = NuShaderAssignShader(geom);
+                                item->hShader = NuShaderAssignShader(geom);
                                 if ((nurndr_forced_mtl_table != NULL) && (geom->mtl->special_id != 0))
                                 {
                                     if (nurndr_forced_mtl_table[geom->mtl->special_id] != NULL)
@@ -342,7 +341,7 @@ s32 NuRndrGobjSkin2(struct nugobj_s *gobj, int nummtx, struct numtx_s *wm, float
         outcode = NuCameraClipTestBoundingSphere(&gobj->bounding_box_center, &gobj->bounding_radius_from_center, wm);
     }
     else {
-        //outcode = NuCameraClipTestExtents(&gobj->bounding_box_min, &gobj->bounding_box_max, wm);
+        outcode = NuCameraClipTestExtents(&gobj->bounding_box_min, &gobj->bounding_box_max, wm);
     }
 
     if (outcode != 0) {
@@ -372,7 +371,7 @@ s32 NuRndrGobjSkin2(struct nugobj_s *gobj, int nummtx, struct numtx_s *wm, float
                 item->mtx = mtx;
                 item->geom = geom;
 
-                //item->hShader = NuShaderAssignShader(geom);
+                item->hShader = NuShaderAssignShader(geom);
                 if ((nurndr_forced_mtl_table != NULL) && ((geom->mtl)->special_id != 0)) {
                     if (nurndr_forced_mtl_table[(geom->mtl)->special_id] != NULL) {
                         NuMtlAddRndrItem(nurndr_forced_mtl_table[(geom->mtl)->special_id], &item->hdr);
@@ -490,44 +489,44 @@ float NuRndrItemDist(struct nurndritem_s *item) {
 }
 
 //MATCH NGC
-s32 NuRndrStrip3d(struct nuvtx_tc1_s **param_1,struct numtl_s *mtl,int param_3,int param_4) {
-
-    int stride;
-    int i;
-    int iVar6;
-    int iVar7;
-    int hvb;
-    struct nuvtx_tc1_s *pfVar7;
-
-    struct nusysmtl_s* sm; //where??
+s32 NuRndrStrip3d(struct nuvtx_tc1_s **vtx,struct numtl_s *mtl,struct numtx_s* wm,s32 pts) {
+    
     struct nugeom_s *geom;
-    struct NuPrim *prim;
+    struct nuprim_s *prim;
+    struct nuvtx_tc1_s *vb;
+    s32 stride;
+    s32 i;
+    s32 ix;
+    s32 realpts;
 
-    iVar6 = (param_4 - 2);
-    iVar7 = iVar6 * 3;
+    
+    ix = (pts - 2);
+    realpts = ix * 3;
     NuMtlGet3dBuffer(mtl, NUPT_TRI, &geom, &prim, &superbuffer_ptr, &superbuffer_end);
-    if (geom->vtxmax - geom->vtxcnt < (iVar7)) {
+    if ((geom->vtxmax - geom->vtxcnt) < realpts) {
         NuErrorProlog("C:/source/crashwoc/code/nu3dx/nurndr.c", 0x643,"NuRndrStrip3d : Vertex buffer full!");
     }
     stride = NuVtxStride(geom->vtxtype);
-    hvb = geom->hVB;
-    if (hvb == 0) {
+    vb = (struct nuvtx_tc1_s *)geom->hVB;
+    if (vb == 0) {
         NuErrorProlog("C:/source/crashwoc/code/nu3dx/nurndr.c", 0x64c,"NuRndrTri3d : Lock VB failed!");
     }
-
-    hvb += stride * geom->vtxcnt;
-
-    for (i = 0; i < iVar6; i++) {
-        memcpy(hvb, param_1[0], 0x24);
-        hvb += stride;
-        memcpy(hvb, param_1[1], 0x24);
-        hvb += stride;
-        memcpy(hvb, param_1[2], 0x24);
-        hvb += stride;
-        param_1--;
+    
+    vb = (struct nuvtx_tc1_s *) ((s32)vb + stride * geom->vtxcnt);
+    
+    for (i = 0; i < ix; i++) {
+        memcpy(vb, *vtx, 0x24);
+        (s32)vb += stride;
+        vtx++;
+        memcpy(vb, *vtx, 0x24);
+        (s32)vb += stride;
+        vtx++;
+        memcpy(vb, *vtx, 0x24);
+        (s32)vb += stride;
+        vtx--;
     }
-
-    geom->vtxcnt += iVar7;
+    
+    geom->vtxcnt += realpts;
     return 1;
 }
 
@@ -536,14 +535,14 @@ static void NuRndr2dItem(struct nugeomitem_s *item) {
   struct nuprim_s *prim;
 
   if ((struct _GSMATRIX *)item->mtx != NULL) {
-    //GS_SetWorldMatrix((struct _GSMATRIX*)item->mtx);
+    GS_SetWorldMatrix((struct _GSMATRIX*)item->mtx);
   }
   else {
-    //GS_LoadWorldMatrixIdentity();
+    GS_LoadWorldMatrixIdentity();
   }
-  //SetupShaders(item);
+  SetupShaders(item);
   for (prim = item->geom->prim; prim != NULL; prim = prim->next) {
-    //GS_DrawTriList(item->geom->vtxcnt,(float *)item->geom->hVB,NuVtxStride(item->geom->vtxtype));
+    GS_DrawTriList(item->geom->vtxcnt,(float *)item->geom->hVB,NuVtxStride(item->geom->vtxtype));
   }
   return;
 }
@@ -567,10 +566,8 @@ void NuRndrFaceItem(struct nugeomitem_s* item) {
     float w;
     float h;
 
-    int pad[13];
-
     DBTimerStart(0x1c);
-    //SetupShaders(item);
+    SetupShaders(item);
     NuMtxSetIdentity(&identity);
     NuMtxSetIdentity(&centre);
 
@@ -578,7 +575,7 @@ void NuRndrFaceItem(struct nugeomitem_s* item) {
     centre._31 = item->mtx->_31;
     centre._32 = item->mtx->_32;
 
-    //GS_LoadWorldMatrixIdentity();
+    GS_LoadWorldMatrixIdentity();
 
     rotation = *item->mtx;
     rotation._30 = 0.0f;
@@ -638,7 +635,7 @@ void NuRndrFaceItem(struct nugeomitem_s* item) {
             vertices[3].nrm.x = 1.0f;
             vertices[3].nrm.y = 0.0f;
             vertices[3].nrm.z = 0.0f;
-            //GS_DrawPrimitiveQuad(&vertices);
+            GS_DrawPrimitiveQuad(&vertices);
         }
     }
     DBTimerStart(0x1c);
@@ -651,33 +648,33 @@ static void NuRndrGeomItem(struct nugeomitem_s *item) {
 
   DBTimerStart(6);
   if ((struct _GSMATRIX *)item->mtx != NULL) {
-    //GS_SetWorldMatrix((struct _GSMATRIX *)item->mtx);
+    GS_SetWorldMatrix((struct _GSMATRIX *)item->mtx);
   }
   else {
-    //GS_LoadWorldMatrixIdentity();
+    GS_LoadWorldMatrixIdentity();
   }
-  //SetupShaders(item);
+  SetupShaders(item);
   for (prim = item->geom->prim; prim != NULL; prim = prim->next) {
           switch (prim->type) {
               case NUPT_POINT:
-                    //GS_DrawPointList(item->geom->vtxcnt, item->geom->hVB, NuVtxStride(item->geom->vtxtype)); //GS_DrawPointList --> EMPTY FUNCTION
+                    GS_DrawPointList(item->geom->vtxcnt, item->geom->hVB, NuVtxStride(item->geom->vtxtype)); //GS_DrawPointList --> EMPTY FUNCTION
                     break;
               case NUPT_LINE:
                   break;
                 case NUPT_TRI:
-                    //GS_DrawTriList(item->geom->vtxcnt,(float *)item->geom->hVB,NuVtxStride(item->geom->vtxtype));
+                    GS_DrawTriList(item->geom->vtxcnt,(float *)item->geom->hVB,NuVtxStride(item->geom->vtxtype));
                     break;
                 case NUPT_TRISTRIP:
-                    //GS_DrawTriStrip(item->geom->vtxcnt,(float *)item->geom->hVB,NuVtxStride(item->geom->vtxtype));
+                    GS_DrawTriStrip(item->geom->vtxcnt,(float *)item->geom->hVB,NuVtxStride(item->geom->vtxtype));
                     break;
                 case NUPT_QUADLIST:
-                    //GS_DrawQuadList(item->geom->vtxcnt,(float *)item->geom->hVB,NuVtxStride(item->geom->vtxtype));
+                    GS_DrawQuadList(item->geom->vtxcnt,(float *)item->geom->hVB,NuVtxStride(item->geom->vtxtype));
                     break;
                 case NUPT_NDXTRI:
-                    //GS_DrawIndexedTriList(prim->cnt,(short *)prim->idxbuff,(float *)item->geom->hVB,NuVtxStride(item->geom->vtxtype));
+                    GS_DrawIndexedTriList(prim->cnt,(short *)prim->idxbuff,(float *)item->geom->hVB,NuVtxStride(item->geom->vtxtype));
                     break;
                 case NUPT_NDXTRISTRIP:
-                    //GS_DrawIndexedTriStrip(prim->cnt,(short *)prim->idxbuff,(float *)item->geom->hVB,NuVtxStride(item->geom->vtxtype));
+                    GS_DrawIndexedTriStrip(prim->cnt,(short *)prim->idxbuff,(float *)item->geom->hVB,NuVtxStride(item->geom->vtxtype));
               break;
           }
   }
@@ -726,10 +723,10 @@ static void NuRndrBlendedSkinItem(struct nugeomitem_s* item) {
   //PPCMtmmcr1(0);
   //PPCMtmmcr0(0);
   DBTimerEnd(0xd);
-  //SetupShaders(item);
-  //GS_LoadWorldMatrixIdentity();
-  //GS_SetVertexSource((float *)item->geom->hVB);
-  //GS_SetBlendSource((struct _GS_VECTOR3 *)item->geom->blendgeom->hVB);
+  SetupShaders(item);
+  GS_LoadWorldMatrixIdentity();
+  GS_SetVertexSource((float *)item->geom->hVB);
+  GS_SetBlendSource((struct _GS_VECTOR3 *)item->geom->blendgeom->hVB);
   for (prim = item->geom->prim; prim != NULL; prim = prim->next) {
     NuShaderSetSkinningConstants(item,prim);
     if (prim->type == NUPT_NDXTRI) {
@@ -752,9 +749,9 @@ void NuRndrSkinItem2(struct nugeomitem_s *item) {
         return;
     }
     DBTimerStart(5);
-    //SetupShaders(item);
-    //GS_LoadWorldMatrixIdentity();
-    //GS_SetVertexSource((float *)item->geom->hVB);
+    SetupShaders(item);
+    GS_LoadWorldMatrixIdentity();
+    GS_SetVertexSource((float *)item->geom->hVB);
     for (prim = item->geom->prim; prim != NULL; prim = prim->next) {
         NuShaderSetSkinningConstants(item,prim);
         if (prim->type == NUPT_NDXTRI) {
@@ -1283,7 +1280,6 @@ void NuRndrAddWaterRipple(struct nuvec_s *pos,float size,float endsize,s32 durat
 
 //NGC MATCH
 void NuRndrAddShadow(struct nuvec_s* v, f32 scale, s16 shade, s16 xrot,  s16 yrot, s16 zrot) {
-    //char pad [3];
 
     if ((NuCameraClipTestPoints(v, 1, NULL) == 0) && ((s32) NuRndrShadowCnt < 0x80)) {
         v->y += 0.01f;
@@ -1299,7 +1295,7 @@ void NuRndrAddShadow(struct nuvec_s* v, f32 scale, s16 shade, s16 xrot,  s16 yro
 }
 
 
-//DONE 90%
+//DONE 93% (regswap)
 int NuHGobjRndr(struct NUHGOBJ_s *hgobj,struct numtx_s *wm,int nlayers,short *layers)
 {
     struct numtx_s *T;

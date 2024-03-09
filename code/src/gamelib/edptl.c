@@ -1,5 +1,6 @@
 #include "../nu.h"
 
+//NGC MATCH
 void edppRegisterPointerToGameCharLocation(struct nuvec_s *charloc) {
   edmainRegisterLocVec(charloc);
   return;
@@ -11,6 +12,27 @@ void edppPtlDestroy(s32 sel) {
     DebFreeInstantly(&edpp_ptls[sel].handle);
     edpp_ptls[sel].handle = -1;
   }
+  return;
+}
+
+//NGC MATCH
+void edppDestroyAllParticles(void) {
+  s32 n;
+
+  for(n = 0; n < 0x100; n++) {
+    edppPtlDestroy(n);
+  }
+  return;
+}
+
+//NGC MATCH
+void edppDestroyAllEffects(void) {
+  s32 i;
+
+  for(i = 1; i < 0x80; i++) {
+    debtab[i] = NULL;
+  }
+  effect_types_used = 1;
   return;
 }
 
@@ -36,6 +58,135 @@ void edppDetermineNearest(float ndist) {
         }
   }
   return;
+}
+
+//NGC MATCH
+void UpdateTotalPtls(struct debinftype* dt) {
+/*
+    s32 i; // r30
+    s32 frames; // r11
+    s32 on_frames; // r9
+    s32 off_frames; // r7
+    s32 count; // r8
+    s32 fcount; // r10
+*/
+
+    s32 i;
+    s32 frames;
+    s32 iVar1;
+    s32 iVar3;
+    s32 iVar5;
+    s32 fcount;
+    s32 iVar9;
+
+    iVar1 = 0;
+    iVar3 = 0;
+    
+    fcount = (s32)(dt->etime * 60.0f);
+    
+    iVar9 = 1;
+    
+    if (dt->ival_off == 0) {
+        frames = fcount;
+    } else {
+        frames = (s32)dt->ival_on + (s32)dt->ival_on_ran;
+    }
+    
+    for (i = 0; i < fcount; i++) {
+        if (frames != 0) {
+            if (dt->generate >= 0) {
+                iVar1 += dt->generate;
+            } else {
+                iVar5 = dt->generate > 0 ? dt->generate : -dt->generate;
+                if (iVar3 == (iVar3 / iVar5) * iVar5) {
+                    iVar1++;
+                }
+            }
+            iVar3++;
+            frames--;
+            if (frames == 0) {
+                iVar9 = (s32)dt->ival_off;
+            }
+        } else {
+            iVar9--;
+            if (iVar9 == 0) {
+                iVar3 = 0;
+                frames = (s32)dt->ival_on + (s32)dt->ival_on_ran;
+            }
+        }
+    }
+
+    dt->debnum = iVar1;
+    if (dt->debnum < 1) {
+        dt->debnum = 1;
+    }
+
+    for (i = 0; i < 0x100; i++) {
+        if ((edpp_ptls[i].handle != -1) && (debtab[debkeydata[edpp_ptls[i].handle].type] == dt)) {
+            DebReAlloc(debkeydata + edpp_ptls[i].handle, (s32)dt->debnum);
+        }
+    }
+    return;
+}
+
+//NGC MATCH
+void UpdateTotalPtls(struct debinftype* dt) {
+    int iVar1;
+    int iVar3;
+    int iVar5;
+    int frames;
+    int fcount;
+    int iVar9;
+    int i;
+
+    iVar1 = 0;
+    iVar3 = 0;
+    
+    fcount = (int)(dt->etime * 60.0f);
+    
+    iVar9 = 1;
+    
+    if (dt->ival_off == 0) {
+        frames = fcount;
+    } else {
+        frames = (int)dt->ival_on + (int)dt->ival_on_ran;
+    }
+    
+    for (i = 0; i < fcount; i++) {
+        if (frames != 0) {
+            if (dt->generate >= 0) {
+                iVar1 += dt->generate;
+            } else {
+                iVar5 = dt->generate > 0 ? dt->generate : -dt->generate;
+                if (iVar3 == (iVar3 / iVar5) * iVar5) {
+                    iVar1++;
+                }
+            }
+            iVar3++;
+            frames--;
+            if (frames == 0) {
+                iVar9 = (int)dt->ival_off;
+            }
+        } else {
+            iVar9--;
+            if (iVar9 == 0) {
+                iVar3 = 0;
+                frames = (int)dt->ival_on + (int)dt->ival_on_ran;
+            }
+        }
+    }
+
+    dt->debnum = iVar1;
+    if (dt->debnum < 1) {
+        dt->debnum = 1;
+    }
+
+    for (i = 0; i < 0x100; i++) {
+        if ((edpp_ptls[i].handle != -1) && (debtab[debkeydata[edpp_ptls[i].handle].type] == dt)) {
+            DebReAlloc(debkeydata + edpp_ptls[i].handle, (int)dt->debnum);
+        }
+    }
+    return;
 }
 
 //NGC MATCH
@@ -307,4 +458,38 @@ int edppLoadEffects(char *file,char list) {
               return 1;
         }
    }
+}
+
+//NGC MATCH
+void edppRestartAllEffectsInLevel(void) {
+  s32 i;
+  
+  for (i = 0; i < 256; i++) {
+    if (edpp_ptls[i].handle != -1) {
+      edpp_ptls[i].handle = -1;
+      edpp_ptls[i].type = LookupDebrisEffect(edpp_ptls[i].name);
+      AddDebrisEffect(&edpp_ptls[i].handle,edpp_ptls[i].type,(edpp_ptls[i].pos).x,edpp_ptls[i].pos.y,edpp_ptls[i].pos.z);
+      if (edpp_ptls[i].handle != -1) {
+        DebrisOrientation(edpp_ptls[i].handle,edpp_ptls[i].rotz,edpp_ptls[i].roty);
+        DebrisEmitterOrientation(edpp_ptls[i].handle,edpp_ptls[i].emitrotz,edpp_ptls[i].emitroty);
+        DebrisStartOffset(edpp_ptls[i].handle,edpp_ptls[i].offset);
+        DebrisSetTrigger(edpp_ptls[i].handle,edpp_ptls[i].trigger_type,edpp_ptls[i].trigger_id,
+                         edpp_ptls[i].trigger_var);
+        DebrisReflectionOrientation(edpp_ptls[i].handle,edpp_ptls[i].refrotz,edpp_ptls[i].refroty,edpp_ptls[i].refoff,edpp_ptls[i].refbounce);
+        DebrisSetGroupID(edpp_ptls[i].handle,edpp_ptls[i].group_id);
+      }
+    }
+  }
+  return;
+}
+
+//NGC MATCH
+void ParticleReset(void) {
+  s32 n;
+  
+  for(n = 0; n < 0x100; n++) {
+    edpp_ptls[n].handle = -1;
+  }
+  edpp_nextalloc = 0;
+  return;
 }

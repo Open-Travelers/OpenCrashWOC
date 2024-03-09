@@ -107,7 +107,7 @@ void DrawMask(struct mask_s *mask) {
                 }
             }
             if ((USELIGHTS != 0) && (LIGHTMASK != 0)) {
-                //SetLevelLights();
+                SetLevelLights();
             }
         }
     }
@@ -117,16 +117,16 @@ void DrawMask(struct mask_s *mask) {
 struct nuvec_s tempvec;
 struct nuvec4_s tempvec4;
 
-void* makenuvec(float x,float y,float z)
-{
+//NGC MATCH
+void* makenuvec(float x,float y,float z) {
   tempvec.x = x;
   tempvec.y = y;
   tempvec.z = z;
   return &tempvec;
 }
 
-void * makenuvec4(float x,float y,float z,float w)
-{
+//NGC MATCH
+void* makenuvec4(float x,float y,float z,float w) {
   tempvec4.x = x;
   tempvec4.y = y;
   tempvec4.z = z;
@@ -176,9 +176,8 @@ void RemoveWaterCausticTextures(void) {
   return;
 }
 
-
-struct nuscene_s * NuSceneReader(union variptr_u *buffer,union variptr_u *buffend,char *filename)
-{
+//NGC MATCH
+struct nuscene_s * NuSceneReader(union variptr_u *buffer,union variptr_u *buffend,char *filename) {
   struct nuscene_s *data;
 
   if (buffer != NULL) {
@@ -191,18 +190,18 @@ struct nuscene_s * NuSceneReader(union variptr_u *buffer,union variptr_u *buffen
   return data;
 }
 
-struct nuscene_s * NuSceneReader2(union variptr_u *buffer,union variptr_u *buffend,char *file)
-{
-  struct nuscene_s *scene;
+//NGC MATCH
+struct nuscene_s * NuSceneReader2(union variptr_u *buffer,union variptr_u *buffend,char *file) {
+  struct nuscene_s *data;
 
   if (buffer != NULL) {
     NuMemSetExternal(buffer,buffend);
   }
-  scene = NuSceneLoad(file);
+  data = NuSceneLoad(file);
   if (buffer != NULL) {
     NuMemSetExternal(NULL,NULL);
   }
-  return scene;
+  return data;
 }
 
 
