@@ -26,8 +26,43 @@ struct Bridge_s
     float posth; // Offset: 0xB48, DWARF: 0x73D24A
 };
 
-
+struct nugscn_s* NuBridge_base_scene;
 #define SQR(x) ((x)*(x))
+
+
+//NGC MATCH
+struct Bridge_s* NuBridgeAlloc(void) {
+  if (BridgeFree < 8) {
+      return &Bridges[BridgeFree++];
+  }
+  return NULL;
+}
+
+//NGC MATCH
+void NuBridgeRegisterBaseScene(struct nugscn_s *scn) {
+  NuBridge_base_scene = scn;
+  return;
+}
+
+//NGC MATCH
+s32 NuBridgeLookupInstanceIndex(struct nuinstance_s *instance) {
+  s32 i;
+  
+  if (NuBridge_base_scene == NULL) {
+    return -1;
+  }
+  for(i = 0; i < NuBridge_base_scene->numinstance; i++) {
+      if (&NuBridge_base_scene->instances[i] == instance) {
+        return i;
+      }
+  }
+  return -1;
+}
+
+//NGC MATCH
+void NuBridgeInit(void) {
+    BridgeFree = 0;
+}
 
 //NGC MATCH
 s32* NuBridgeCreate(struct nuinstance_s** instance,struct nuinstance_s* ipost,struct nuvec_s* start,struct nuvec_s* end,float width,

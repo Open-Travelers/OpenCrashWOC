@@ -350,15 +350,14 @@ void GS_SetProjectionMatrix(struct _GSMATRIX *pMatrix) {
 
 //NGC MATCH
 void GS_SetLightingMatrix(struct _GSMATRIX *mtx) {
-  float local_b0 [4][4];
+  float local_b0 [6][4];
   float local_50 [4][4];
-  float local_52[7];
   
   memcpy(&local_50, mtx, sizeof(struct _GSMATRIX));
   MatReorder(&local_50);
   memcpy(&local_b0, &local_50, sizeof(float) * 12);
-  PSMTXInverse(&local_b0,&local_b0[4][1]);
-  PSMTXTranspose(&local_b0[4][1],&local_b0);
+  PSMTXInverse(&local_b0,&local_b0[3][0]);
+  PSMTXTranspose(&local_b0[3][0],&local_b0);
   GXLoadNrmMtxImm(&local_b0,0);
   return;
 }

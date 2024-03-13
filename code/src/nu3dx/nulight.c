@@ -65,24 +65,27 @@ void NuLightInit(void) {
   return;
 }
 
-//85% NGC
+//NGC MATCH
 void* NuLightCreate(void) {
-  s32 id;
+    s32 id;
+    s32 next;
+    s32 tempalloclight;
 
   if (numlights < maxlights) {
+    next = light[freelight].next;
+    tempalloclight = alloclight;
+    alloclight = freelight;
     id = alloclight;
-    freelight = light[freelight].next;
-    light[light[freelight].next].last = -1;
-    light[alloclight].last = freelight;
-    light[freelight].next = id;
-    memset(&light[alloclight],0,100);
+    freelight = next;
+    light[freelight].last = -1;
+    light[tempalloclight].last = alloclight;
+    light[alloclight].next = tempalloclight;
+    memset(&light[id],0,100);
     NuMtxSetIdentity(&light[id].light.mtx);
     numlights++;
+    return &light[id].light;
   }
-  else {
     return NULL;
-  }
-  return &light[id].light;
 }
 
 //MATCH NGC

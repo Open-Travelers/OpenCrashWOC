@@ -21,6 +21,12 @@ struct nuwindgrp_s
 
 s32 NuWindGCount;
 struct nuwindgrp_s NuWindGroup[64];
-
+struct numtx_s NuWindMtxs[512];
+s32 NuWindQS;
+s32 NuWindDir;
+s32 NuWindDir2;
+s32 NuWindGCount;
+s32 NuWindMtxIndex;
+s32 NuWindWave;
 
 #endif // !NUWIND_H

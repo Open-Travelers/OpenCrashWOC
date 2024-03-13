@@ -1,5 +1,54 @@
 #include "nuwind.h"
 
+extern struct numtx_s ropemat; //nubridge.c
+
+//NGC MATCH
+s32 NuWindRand(void) {
+  NuWindQS = (NuWindQS * 0x24cd) + 1U & 0xffff;
+  return NuWindQS;
+}
+
+//NGC MATCH
+void NuWindInit(void) {
+  NuWindDir = 0;
+  NuWindDir2 = 0;
+  NuWindWave = 0;
+  NuWindGCount = 0;
+  NuWindMtxIndex = 0;
+}
+
+//NGC MATCH
+struct nuwindgrp_s* NuWindAllocateGrp(void) {
+  if (NuWindGCount < 0x40) {
+      NuWindGCount++;
+      return (NuWindGCount * 0xa) + &ropemat._12; //NuWindMtxs??
+  }
+  return 0;
+}
+
+//NGC MATCH
+void NuWindFreeGrp(struct nuwindgrp_s *grp) {
+  if (grp != NULL) {
+    NuWindGCount--;
+  }
+}
+
+//NGC MATCH
+struct numtx_s * NuWindAllocMtxs(s32 count) {
+  if (count + NuWindMtxIndex < 0x200) {
+      NuWindMtxIndex += count;
+      return &NuWindMtxs[(NuWindMtxIndex - count)];
+  }
+  return NULL;
+}
+
+//NGC MATCH
+void NuWindFreeMtxs(struct numtx_s *mtx,s32 count) {
+   if (mtx != NULL) {
+     NuWindMtxIndex -= count;
+   }
+}
+
 //NGC MATCH
 void NuWindDraw(struct nugscn_s *scn) {
     s32 lp;
