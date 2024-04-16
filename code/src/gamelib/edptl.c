@@ -130,66 +130,6 @@ void UpdateTotalPtls(struct debinftype* dt) {
 }
 
 //NGC MATCH
-void UpdateTotalPtls(struct debinftype* dt) {
-    int iVar1;
-    int iVar3;
-    int iVar5;
-    int frames;
-    int fcount;
-    int iVar9;
-    int i;
-
-    iVar1 = 0;
-    iVar3 = 0;
-    
-    fcount = (int)(dt->etime * 60.0f);
-    
-    iVar9 = 1;
-    
-    if (dt->ival_off == 0) {
-        frames = fcount;
-    } else {
-        frames = (int)dt->ival_on + (int)dt->ival_on_ran;
-    }
-    
-    for (i = 0; i < fcount; i++) {
-        if (frames != 0) {
-            if (dt->generate >= 0) {
-                iVar1 += dt->generate;
-            } else {
-                iVar5 = dt->generate > 0 ? dt->generate : -dt->generate;
-                if (iVar3 == (iVar3 / iVar5) * iVar5) {
-                    iVar1++;
-                }
-            }
-            iVar3++;
-            frames--;
-            if (frames == 0) {
-                iVar9 = (int)dt->ival_off;
-            }
-        } else {
-            iVar9--;
-            if (iVar9 == 0) {
-                iVar3 = 0;
-                frames = (int)dt->ival_on + (int)dt->ival_on_ran;
-            }
-        }
-    }
-
-    dt->debnum = iVar1;
-    if (dt->debnum < 1) {
-        dt->debnum = 1;
-    }
-
-    for (i = 0; i < 0x100; i++) {
-        if ((edpp_ptls[i].handle != -1) && (debtab[debkeydata[edpp_ptls[i].handle].type] == dt)) {
-            DebReAlloc(debkeydata + edpp_ptls[i].handle, (int)dt->debnum);
-        }
-    }
-    return;
-}
-
-//NGC MATCH
 void FileLoadSingleEffectType(struct debinftype *effect,s32 version,char list) {
   s32 i;
   
@@ -303,161 +243,146 @@ void FileLoadSingleEffectType(struct debinftype *effect,s32 version,char list) {
   return;
 }
 
-//83% NGC
-int edppLoadEffects(char *file,char list) {
-  int version;
-  int i;
-  int iVar8;
+//90% NGC
+s32 edppLoadEffects(char* file, char list) {
+    s32 i;
+    s32 version;
+    s32 maxptl;
 
-  
-  iVar8 = EdFileOpen(file,NUFILE_READ);
-  if (iVar8 == 0) {
-      EdFileClose();
-      return 0;
-  } else {
+    if (EdFileOpen(file, NUFILE_READ) != 0) {
         version = EdFileReadInt();
         if (version > 0xf) {
             EdFileClose();
             return 0;
-        } else {
-              if (version > 1) {
-                effect_types_used = EdFileReadInt();
-              }
-              else {
-                effect_types_used = 0x80;
-              }
-              if (version > 3) {
-                effect_types_used++;
-                  for(i = 0; i < effect_types_used; i++) {
-                    FileLoadSingleEffectType(&effecttypes[i],version,list);
-                  }
-              }
-              else {
-                  for(i = 1; i < effect_types_used; i++) {
-                    FileLoadSingleEffectType(&effecttypes[i],version,list);
-                  }
-              }
-              if (effect_types_used < 0x80) {
-                i = 0x80 - effect_types_used;
-                effecttypes[i] = effecttypes[effect_types_used];
-              }
-              if (version < 3) {
-                    iVar8 = 0;
-                    EdFileRead(debtab,0x200);
-                    effect_types_used = 0;
-                    for(i = 0; i < 0x80; i++) {
-                          if (debtab[i] != 0) {
-                            debtab[i] = &effecttypes[i];
-                            effect_types_used++;
-                            UpdateTotalPtls(&effecttypes[i]);
-                          }
-                    }
-              }
-              else {
-                    for(i = 0; i < 0x80; i++) {
-                      if (i < effect_types_used) {
-                        debtab[i] = &effecttypes[i];
-                        UpdateTotalPtls(&effecttypes[i]);
-                      }
-                      else {
-                        debtab[i] = NULL;
-                      }
-                    }
-              }
-              if ((list == 0) || (list == 1)) {
-                ParticleReset();
-                if (version < 5) {
-                      for(i = 0; i <= 256; i++) {
-                        EdFileRead(&edpp_ptls[i],0xc);
-                        edpp_ptls[i].type = EdFileReadInt();
-                        edpp_ptls[i].handle = EdFileReadInt();
-                        edpp_ptls[i].emitrotz = (short)EdFileReadInt();
-                        edpp_ptls[i].emitroty = (short)EdFileReadInt();
-                        if (debtab[edpp_ptls[i].type] == NULL) {
-                          *edpp_ptls[i].name = 0;
-                        }
-                        else {
-                           memcpy(edpp_ptls[i].name, debtab[edpp_ptls[i].type]->id, 16);
-                        }
-                        edpp_ptls[i].offset = 0;
-                        edpp_ptls[i].trigger_type = 0;
-                        edpp_ptls[i].trigger_id = -1;
-                        edpp_ptls[i].trigger_var = 0.0f;
-                      }
-                }
-                else {
-                  i = EdFileReadInt();
-                  if (0x100 < i) {
-                    i = 0x100;
-                  }
-                    for(iVar8 = 0; iVar8 < i; iVar8++) {
-                      EdFileRead(&edpp_ptls[iVar8],0xc);
-                      if (version < 7) {
-                        edpp_ptls[iVar8].rotz = 0;
-                        edpp_ptls[iVar8].roty = 0;
-                        edpp_ptls[iVar8].emitrotz = EdFileReadInt();
-                        edpp_ptls[iVar8].emitroty = EdFileReadInt();
-                      }
-                      else {
-                        edpp_ptls[iVar8].rotz = EdFileReadShort();
-                        edpp_ptls[iVar8].roty = EdFileReadShort();
-                        edpp_ptls[iVar8].emitrotz = EdFileReadShort();
-                        edpp_ptls[iVar8].emitroty = EdFileReadShort();
-                      }
-                      if (version < 8) {
-                        edpp_ptls[iVar8].offset = 0;
-                      }
-                      else {
-                        edpp_ptls[iVar8].offset = EdFileReadInt();
-                      }
-                      EdFileRead(edpp_ptls[iVar8].name,0x10);
-                      edpp_ptls[iVar8].handle = iVar8;
-                      edpp_ptls[iVar8].type = LookupDebrisEffect(edpp_ptls[iVar8].name);
-                      if (version > 8) {
-                        edpp_ptls[iVar8].trigger_type = EdFileReadInt();
-                        edpp_ptls[iVar8].trigger_id = EdFileReadInt();
-                        edpp_ptls[iVar8].trigger_var = EdFileReadFloat();
-                      }
-                      else {
-                        edpp_ptls[iVar8].trigger_id = -1;
-                        edpp_ptls[iVar8].trigger_var = 0.0f;
-                        edpp_ptls[iVar8].trigger_type = 0;
-                      }
-                      if (version > 0xb) {
-                        edpp_ptls[iVar8].refrotz = EdFileReadShort();
-                        edpp_ptls[iVar8].refroty = EdFileReadShort();
-                        edpp_ptls[iVar8].refoff = EdFileReadFloat();
-                      }
-                      else {
-                        edpp_ptls[iVar8].refrotz = 0;
-                        edpp_ptls[iVar8].refroty = 0;
-                        edpp_ptls[iVar8].refoff = 0.0f;
-                      }
-                      if (version > 0xc) {
-                        edpp_ptls[iVar8].refbounce = EdFileReadFloat();
-                      }
-                      else {
-                        edpp_ptls[iVar8].refbounce = 0.89999998f;
-                      }
-                      if (version > 0xe) {
-                        edpp_ptls[iVar8].group_id = EdFileReadShort();
-                      }
-                      else {
-                        edpp_ptls[iVar8].group_id = 0;
-                      }
-                    }
-                }
-              }
-              EdFileClose();
-              for(i = 0; i < 0x80; i++) {
-                effecttypes[i].DmaDebTypePointer = 0;
-                effecttypes[i].variable_key = -1;
-              }
-              freeDmaDebType = 0;
-              edppDetermineNearest(1.0f);
-              return 1;
         }
-   }
+    } else {
+        return 0;
+    }
+    if (version > 1) {
+        effect_types_used = EdFileReadInt();
+    } else {
+        effect_types_used = 0x80;
+    }
+    if (version > 3) {
+        effect_types_used++;
+    } else {
+        for (i = 0; i < effect_types_used; i++) {
+            FileLoadSingleEffectType((struct debinftype*)&effecttypes[i], version, list);
+        }
+        goto test;
+    }
+    for (i = 1; i < effect_types_used; i++) {
+        FileLoadSingleEffectType((struct debinftype*)&effecttypes[i], version, list);
+    }
+test:
+    
+    for (i = effect_types_used; i < 128; i++) {
+        effecttypes[i] = effecttypes[0];
+    }
+    if (version < 4) {
+        EdFileRead(debtab, 0x200);
+        effect_types_used = 0;
+        for (i = 0; i < 0x80; i++) {
+            if (debtab[i] != 0) {
+                debtab[i] = &effecttypes[i];
+                effect_types_used++;
+                UpdateTotalPtls(&effecttypes[i]);
+            }
+        }
+    } else {
+        for (i = 0; i < 0x80; i++) {
+            if (i < effect_types_used) {
+                debtab[i] = &effecttypes[i];
+                UpdateTotalPtls(&effecttypes[i]);
+            } else {
+                debtab[i] = NULL;
+            }
+        }
+    }
+    if ((list == 0) || (list == 1)) {
+        ParticleReset();
+        if (version < 5) {
+            for (i = 0; i <= 256; i++) {
+                EdFileRead(&edpp_ptls[i], 0xc);
+                edpp_ptls[i].type = EdFileReadInt();
+                edpp_ptls[i].handle = EdFileReadInt();
+                edpp_ptls[i].emitrotz = (short)EdFileReadInt();
+                edpp_ptls[i].emitroty = (short)EdFileReadInt();
+                if (debtab[edpp_ptls[i].type] == NULL) {
+                    *edpp_ptls[i].name = 0;
+                } else {
+                    memcpy(edpp_ptls[i].name, debtab[edpp_ptls[i].type]->id, 16);
+                }
+                edpp_ptls[i].offset = 0;
+                edpp_ptls[i].trigger_type = 0;
+                edpp_ptls[i].trigger_id = -1;
+                edpp_ptls[i].trigger_var = 0.0f;
+            }
+        } else {
+            maxptl = EdFileReadInt();
+            if (0x100 < maxptl) {
+                maxptl = 0x100;
+            }
+            for (i = 0; i < maxptl; i++) {
+                EdFileRead(&edpp_ptls[i], 0xc);
+                if (version < 7) {
+                    edpp_ptls[i].rotz = 0;
+                    edpp_ptls[i].roty = 0;
+                    edpp_ptls[i].emitrotz = EdFileReadInt();
+                    edpp_ptls[i].emitroty = EdFileReadInt();
+                } else {
+                    edpp_ptls[i].rotz = EdFileReadShort();
+                    edpp_ptls[i].roty = EdFileReadShort();
+                    edpp_ptls[i].emitrotz = EdFileReadShort();
+                    edpp_ptls[i].emitroty = EdFileReadShort();
+                }
+                if (version < 8) {
+                    edpp_ptls[i].offset = 0;
+                } else {
+                    edpp_ptls[i].offset = EdFileReadInt();
+                }
+                EdFileRead(edpp_ptls[i].name, 0x10);
+                edpp_ptls[i].handle = i;
+                edpp_ptls[i].type = LookupDebrisEffect(edpp_ptls[i].name);
+                if (version > 8) {
+                    edpp_ptls[i].trigger_type = EdFileReadInt();
+                    edpp_ptls[i].trigger_id = EdFileReadInt();
+                    edpp_ptls[i].trigger_var = EdFileReadFloat();
+                } else {
+                    edpp_ptls[i].trigger_type = 0;
+                    edpp_ptls[i].trigger_id = -1;
+                    edpp_ptls[i].trigger_var = 0.0f;
+                }
+                if (version > 0xb) {
+                    edpp_ptls[i].refrotz = EdFileReadShort();
+                    edpp_ptls[i].refroty = EdFileReadShort();
+                    edpp_ptls[i].refoff = EdFileReadFloat();
+                } else {
+                    edpp_ptls[i].refrotz = 0;
+                    edpp_ptls[i].refroty = 0;
+                    edpp_ptls[i].refoff = 0.0f;
+                }
+                if (version > 0xc) {
+                    edpp_ptls[i].refbounce = EdFileReadFloat();
+                } else {
+                    edpp_ptls[i].refbounce = 0.89999998f;
+                }
+                if (version > 0xe) {
+                    edpp_ptls[i].group_id = EdFileReadShort();
+                } else {
+                    edpp_ptls[i].group_id = 0;
+                }
+            }
+        }
+    }
+    EdFileClose();
+    for (i = 0; i < 0x80; i++) {
+        effecttypes[i].DmaDebTypePointer = 0;
+        effecttypes[i].variable_key = -1;
+    }
+    freeDmaDebType = 0;
+    edppDetermineNearest(1.0f);
+    return 1;
 }
 
 //NGC MATCH
@@ -481,6 +406,52 @@ void edppRestartAllEffectsInLevel(void) {
     }
   }
   return;
+}
+
+//PS2 99% (extra nop) // NGC 86%
+s32 edppMergeEffects(char* file, char list) {
+    struct debinftype dummy;
+    s32 i;
+    s32 version;
+    s32 new_effects;
+
+    TidyAllEffects();
+    //EdFileSetMedia(1); //PS2 only
+    if (EdFileOpen(file, NUFILE_READ) != 0) {
+        version = EdFileReadInt();
+        if (version < 2) {
+            EdFileClose();
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+    new_effects = EdFileReadInt();
+    if (version < 4) {
+        new_effects--;
+        FileLoadSingleEffectType(&dummy, version, list);
+    }
+    if (0x80 < effect_types_used + new_effects) {
+        new_effects = 0x80 - effect_types_used;
+    }
+    for (i = effect_types_used; i < effect_types_used + new_effects; i++) {
+        FileLoadSingleEffectType((struct debinftype*)&effecttypes[i], version, list);
+    }
+    for (i = effect_types_used + new_effects; i < 0x80; i++) {
+        effecttypes[i] = effecttypes[0];
+    }
+    for (i = effect_types_used; i < effect_types_used + new_effects; i++) {
+        debtab[i] = &effecttypes[i];
+        UpdateTotalPtls((struct debinftype*)debtab[i]);
+    }
+    effect_types_used += new_effects;
+    EdFileClose();
+    for (i = 0; i < 0x80; i++) { //extra nop PS2
+        effecttypes[i].DmaDebTypePointer = NULL;
+        effecttypes[i].variable_key = -1;
+    }
+    freeDmaDebType = 0;
+    return 1;
 }
 
 //NGC MATCH

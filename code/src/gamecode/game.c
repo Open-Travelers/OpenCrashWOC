@@ -4652,89 +4652,82 @@ void CleanLetters(char *txt) {
   return;
 }
 
-void DrawNameInputTable(struct Cursor *cursor,float x0,float y0)
-{
-  s32 align;
-  s32 colour;
-  s32 col;
-  s32 j;
-  char *tmpchar;
-  float y;
+//97% NGC (regswap)
+void DrawNameInputTable(struct cursor_s *cursor,float x0,float y0) {
+  float size;
   float x;
+  float y;
   s32 i;
+  s32 j;
+  s32 col;
+  s32 align;
   
-  if (Game.language == 'c') {
-    tbuf[2] = '\0';
+  if (Game.language == 0x63) {
     tbuf[1] = ' ';
+    tbuf[2] = '\0';
   }
   else {
     tbuf[1] = '\0';
   }
-  y = y0 - (float)(cursor->y_max - cursor->y_min) * MENUDY * 0.5f;
-  i = 0;
-  do {
-    j = i + 1;
-    x = x0 - (float)(cursor->x_max - cursor->x_min) * 0.06f * 0.5f;
-    if (cursor->x_min <= cursor->x_max) {
-      tmpchar = (char *)((s32)NameInputTable + cursor->x_min + i * 7);
-      do {
-        tbuf[0] = *tmpchar;
+  y = y0 - (cursor->y_max - cursor->y_min) * MENUDY * 0.5f;
+  size = 0.6f;
+  for (i = 0; i < 4; i++) {
+    x = x0 - (cursor->x_max - cursor->x_min) * (0.06f * size) * 0.5f; //size = 0.7f;
+    for (j = cursor->x_min; j <= cursor->x_max; j++) {
+        *tbuf = NameInputTable[i][j];
         align = 1;
-        tmpchar = tmpchar + 1;
-        if ((i == cursor->y) && (cursor->x_min == cursor->x)) {
+        if ((i == cursor->y) && (j == cursor->x)) {
           align = 0x21;
           col = 0;
-          if (5 < GlobalTimer.frame % 0xc) {
+          if (GlobalTimer.frame % 0xc > 5) {
             col = 3;
           }
         }
         else {
           col = 2;
         }
-        cursor->x_min = cursor->x_min + 1;
-        Text3D(tbuf,x,y,1.0f,0.6f,0.6f,0.6f,align,col);
-        x = x + 0.06000000238418579f;
-      } while (cursor->x_min <= cursor->x_max);
-    }
-    x = y + MENUDY;
-    y = x;
-    i = j;
-  } while (j < 4);
-  if ('\x03' < cursor->y_max) {
-    i = 1;
-    if (cursor->y == '\x04') {
-      i = 0x21;
+        Text3D(tbuf,x,y,1.0f,size,size,size,align,col);
+        x += 0.060000002f;
+        size = 0.6f;
+      }
+    y += MENUDY;
+  }
+  if (cursor->y_max > 3) {
+    align = 1;
+    if (cursor->y == 4) {
+      align = 0x21;
       col = 0;
-      if (5 < GlobalTimer.frame % 0xc) {
+      if (GlobalTimer.frame % 0xc > 5) {
         col = 3;
       }
     }
     else {
       col = 2;
     }
-    Text3D(tDONE[Game.language],x0,x,1.0f,0.6f,0.6f,0.6f,i,col);
-    y = y + MENUDY;
+    Text3D(tDONE[Game.language],x0,y,1.0f,size,size,size,align,col);
+    size = 0.6f;
+    y += MENUDY;
   }
-  if ('\x04' < cursor->y_max) {
-    i = 1;
-    if (cursor->y == '\x05') {
-      i = 0x21;
+  if (cursor->y_max > 4) {
+    align = 1;
+    if (cursor->y == 5) {
+      align = 0x21;
       col = 0;
-      if (5 < GlobalTimer.frame % 0xc) {
+      if (GlobalTimer.frame % 0xc > 5) {
         col = 3;
       }
     }
     else {
       col = 2;
     }
-    Text3D(tCANCEL[Game.language],x0,y,1.0f,0.6f,0.6f,0.6f,i,col);
+    Text3D(tCANCEL[Game.language],x0,y,1.0f,size,size,size,align,col);
   }
-  if (((cutmovie == -1) && (cursor->menu != '\x04')) && (cursor->menu != '\x1a')) {
-    DrawPanel3DObject(0x81,x0,y0,1.0f,0.11875f,0.125f,0.11875f,0xc000,0,0,ObjTab[129].obj.scene,ObjTab[129].obj.special,0);
+  if (((cutmovie == -1) && (cursor->menu != 4)) && (cursor->menu != 0x1a)) {
+    DrawPanel3DObject(0x81,x0,y0,1.0f,0.11875f,0.125f,0.11875f,0xc000,0,0,
+                      ObjTab[129].obj.scene,ObjTab[129].obj.special,0);
   }
   return;
 }
-
 //NGC MATCH
 void DrawMenuEntry(struct cursor_s *cursor,char *txt,float *x,float *y,s32 *i) {
   s32 align;

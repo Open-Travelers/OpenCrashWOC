@@ -205,6 +205,46 @@ void UpdatePanelItem(struct plritem_s* item, int force_update, int use_change) {
     }
 }
 
+//NGC 56%
+void DrawWorldToPanelWumpa(void) {
+  //char *pcVar2;
+  float xs;
+    float x;
+    float y;
+  float ys;
+  float f;
+  float size;
+  s32 i;
+    s16 rot;
+    
+  //pcVar2 = &WScr[0].bonus;
+  //iVar3 = 0;
+      rot = 0;
+  for (i = 0; i < 32; i++) {
+    if (WScr[i].timer > 0.0f) {
+      f = (0.25f - WScr[i].timer) * 4.0f;
+      x = WScr[i].pos.x;
+      y = WScr[i].pos.y;
+      if (WScr[i].bonus != 0) {
+          size =  (0.125f - WScr[i].scale) * f + WScr[i].scale;
+      }
+      else {
+          size = (0.2f - WScr[i].scale) * f + WScr[i].scale;  
+      }
+        ys = ((WScr[i].ys - y) * f + y);
+        xs = ((WScr[i].xs -  x) * f + x);
+      if (WScr[i].bonus == 0) {
+          rot = -0x1800;
+      }
+      DrawPanel3DObject(0,xs,ys,1.0f,size,size,size,rot,
+                        PANELWUMPAYROT,0,ObjTab[0].obj.scene,ObjTab[0].obj.special,1);
+    }
+    //pcVar2 = pcVar2 + 0x20;
+    //iVar3 = iVar3 + 0x20;
+  }
+  return;
+}
+
 //87% NGC
 void DrawPanel(void) {
     s32 bVar1;

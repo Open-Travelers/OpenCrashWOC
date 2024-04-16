@@ -393,7 +393,7 @@ s32 NuRndrGobjSkin2(struct nugobj_s *gobj, int nummtx, struct numtx_s *wm, float
     return outcode;
 }
 
-
+//MATCH NGC
 s32 NuRndrTri2d(struct nuvtx_tltc1_s *vtx,struct numtl_s *mtl)
 {
   s32 stride;

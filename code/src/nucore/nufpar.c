@@ -8,29 +8,27 @@
 
 s32 old_line_pos;
 
-//96% NGC
+//99% NGC (regswap)
 char NuGetChar(struct nufpar_s* fPar) {
     s32 bufferEndPos = fPar->buffend;
     char ret;
     s32 size;
     s32 tmp;
+    s32 x;
     
     if (bufferEndPos < 0) {
         bufferEndPos = 0;
     }
     if (fPar->cpos > fPar->buffend) {
-        if (bufferEndPos + 1 < fPar->size) {
+        if (fPar->buffend + 1 < fPar->size) {
             size = fPar->size - bufferEndPos;
-            if (size > 0x1000) {
-                size = 0x1000;
-            }
-            tmp = NuFileRead(fPar->fh, fPar->fbuff, size);
+            tmp = NuFileRead(fPar->fh, fPar->fbuff, size > 0x1000 ? 0x1000 : size);
             fPar->buffstart = fPar->buffend + 1;
             fPar->buffend = fPar->buffend + tmp;
             if (tmp == 0) {
                 return 0;
             }
-        } else{
+        } else {
            return 0;
         }
     }
@@ -195,12 +193,12 @@ s32 NuFParGetLine(struct nufpar_s* fPar) {
     return i;
 }
 
-// 79% NGC
+//MATCH NGC
 s32 NuFParInterpretWord(struct nufpar_s* fPar) {
     s32 i;
-    if (fPar->compos >= 0 && fPar->comstack[fPar->compos]->fname != NULL) {
-        for (i = 0;fPar->comstack[fPar->compos]->fname != NULL; i++) {
-            if (strcasecmp((fPar->comstack[fPar->compos]->fname), fPar->wbuff) == 0) {
+    if (fPar->compos >= 0) {
+        for (i = 0; fPar->comstack[fPar->compos][i].fname != NULL; i++) {
+            if (strcasecmp((fPar->comstack[fPar->compos][i].fname), fPar->wbuff) == 0) {
                 fPar->comstack[fPar->compos][i].func(fPar);
                 return 1;
             }
