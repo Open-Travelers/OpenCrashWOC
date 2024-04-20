@@ -243,26 +243,30 @@ void FileLoadSingleEffectType(struct debinftype *effect,s32 version,char list) {
   return;
 }
 
-//90% NGC
+//92% NGC //99% PS2 (fix goto)
 s32 edppLoadEffects(char* file, char list) {
     s32 i;
     s32 version;
+    s32 numptls;
+    s32 maxversion = 15;
     s32 maxptl;
 
     if (EdFileOpen(file, NUFILE_READ) != 0) {
         version = EdFileReadInt();
-        if (version > 0xf) {
+        if (version > maxversion) {
             EdFileClose();
             return 0;
         }
     } else {
         return 0;
     }
+    
     if (version > 1) {
         effect_types_used = EdFileReadInt();
     } else {
-        effect_types_used = 0x80;
+        effect_types_used = 128;
     }
+    
     if (version > 3) {
         effect_types_used++;
     } else {
@@ -277,12 +281,13 @@ s32 edppLoadEffects(char* file, char list) {
 test:
     
     for (i = effect_types_used; i < 128; i++) {
-        effecttypes[i] = effecttypes[0];
+        *((struct debinftype*)&effecttypes[i]) = *((struct debinftype*)&effecttypes[0]);
     }
+    
     if (version < 4) {
-        EdFileRead(debtab, 0x200);
+        EdFileRead(debtab, sizeof(debtab));
         effect_types_used = 0;
-        for (i = 0; i < 0x80; i++) {
+        for (i = 0; i < 128; i++) {
             if (debtab[i] != 0) {
                 debtab[i] = &effecttypes[i];
                 effect_types_used++;
@@ -299,17 +304,18 @@ test:
             }
         }
     }
-    if ((list == 0) || (list == 1)) {
+    
+    if ((list == 1) || (list == 2)) {
         ParticleReset();
         if (version < 5) {
             for (i = 0; i <= 256; i++) {
-                EdFileRead(&edpp_ptls[i], 0xc);
+                EdFileRead(&edpp_ptls[i].pos, sizeof(edpp_ptls[i].pos));
                 edpp_ptls[i].type = EdFileReadInt();
                 edpp_ptls[i].handle = EdFileReadInt();
                 edpp_ptls[i].emitrotz = (short)EdFileReadInt();
                 edpp_ptls[i].emitroty = (short)EdFileReadInt();
                 if (debtab[edpp_ptls[i].type] == NULL) {
-                    *edpp_ptls[i].name = 0;
+                    edpp_ptls[i].name[0] = 0;
                 } else {
                     memcpy(edpp_ptls[i].name, debtab[edpp_ptls[i].type]->id, 16);
                 }
@@ -319,12 +325,10 @@ test:
                 edpp_ptls[i].trigger_var = 0.0f;
             }
         } else {
-            maxptl = EdFileReadInt();
-            if (0x100 < maxptl) {
-                maxptl = 0x100;
-            }
+            numptls = EdFileReadInt();
+            maxptl = numptls > 256 ? 256 : numptls;
             for (i = 0; i < maxptl; i++) {
-                EdFileRead(&edpp_ptls[i], 0xc);
+                EdFileRead(&edpp_ptls[i].pos, sizeof(edpp_ptls[i].pos));
                 if (version < 7) {
                     edpp_ptls[i].rotz = 0;
                     edpp_ptls[i].roty = 0;
@@ -341,7 +345,7 @@ test:
                 } else {
                     edpp_ptls[i].offset = EdFileReadInt();
                 }
-                EdFileRead(edpp_ptls[i].name, 0x10);
+                EdFileRead(edpp_ptls[i].name, sizeof(edpp_ptls[i].name));
                 edpp_ptls[i].handle = i;
                 edpp_ptls[i].type = LookupDebrisEffect(edpp_ptls[i].name);
                 if (version > 8) {
@@ -375,8 +379,10 @@ test:
             }
         }
     }
+    
     EdFileClose();
-    for (i = 0; i < 0x80; i++) {
+    
+    for (i = 0; i < 128; i++) {
         effecttypes[i].DmaDebTypePointer = 0;
         effecttypes[i].variable_key = -1;
     }
@@ -408,7 +414,7 @@ void edppRestartAllEffectsInLevel(void) {
   return;
 }
 
-//PS2 99% (extra nop) // NGC 86%
+//NGC MATCH //PS2 99% (extra nop)
 s32 edppMergeEffects(char* file, char list) {
     struct debinftype dummy;
     s32 i;
@@ -438,7 +444,7 @@ s32 edppMergeEffects(char* file, char list) {
         FileLoadSingleEffectType((struct debinftype*)&effecttypes[i], version, list);
     }
     for (i = effect_types_used + new_effects; i < 0x80; i++) {
-        effecttypes[i] = effecttypes[0];
+        *((struct debinftype*)&effecttypes[i]) = *((struct debinftype*)&effecttypes[0]);
     }
     for (i = effect_types_used; i < effect_types_used + new_effects; i++) {
         debtab[i] = &effecttypes[i];

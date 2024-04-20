@@ -26,36 +26,32 @@ void InitCredits(void) {
   return;
 }
 
-void DrawCredits(void)
-{
-  s32 i;
-  struct Credit_s *Cptr;
-  float y;
+//NGC MATCH
+void DrawCredits(void) {
+  struct CREDIT_s* credit;
   float xscale;
+  float y;
   float size;
+  s32 i;
   
-  i = 0;
-  Cptr = Credit;
-  xscale = GameTimer.ftime * credit_speed + -1.0;
-  if (0 < CREDITCOUNT) {
-    do {
-      y = xscale;
-      size = Cptr->size/ 100.0f;
-      if (((Cptr->txt != NULL) && (-1.5f < xscale)) && (xscale < 1.700000047683716f)) {
-        strcpy(tbuf,Cptr->txt);
-        xscale = 0.85f;
-        if (strcmp(tbuf,"SR. MANAGER OF PUBLIC RELATIONS") != 0) {
-          xscale = 0.9f;
+
+  credit = Credit;
+  size = GameTimer.ftime * credit_speed + (-1.0f);
+    for (i = 0; i < CREDITCOUNT; i++,credit++) {
+      xscale = (credit->size / 100.0f);
+      if (((credit->txt != NULL) && (size > -1.5f)) && (size < 1.7f)) {
+        strcpy(tbuf,credit->txt);
+        if (strcmp(tbuf,"SR. MANAGER OF PUBLIC RELATIONS") == 0) {
+            y = 0.85f;
+        } else {
+            y = 0.9f;
         }
-        if (Game.language == 'c') {
+        if (Game.language == 0x63) {
           AddSpacesIntoText(tbuf,1);
         }
-        Text3D(tbuf,0.0f,y,1.0f,(size * xscale),size,(size + size ), 2,(s32)Cptr->colour);
+        Text3D(tbuf, 0.0f, size, 1.0f,  xscale * y, xscale, xscale * 2, 2, credit->colour);
       }
-      i = i + 1;
-      xscale = (y - (size * 0.1000000014901161f + size * 0.1000000014901161f));
-      Cptr = Cptr + 1;
-    } while (i < CREDITCOUNT);
-  }
+      size = (size - ((xscale * 0.1f) + (xscale * 0.1f)));
+    }
   return;
 }

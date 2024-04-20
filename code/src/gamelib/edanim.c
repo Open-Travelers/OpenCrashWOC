@@ -12,6 +12,196 @@ float edanimPlayerAnimDistance(s32 id) {
 }
 
 //NGC MATCH
+void edanimUpdateObjects(float dt) {
+  s32 i;
+  s32 j;
+  s32 k;
+  struct nuinstance_s *instance;
+  struct nuinstanim_s *instanim;
+  struct nuvec_s emit;
+  struct numtx_s tmtx;
+  struct numtx_s orient;
+  s32 sid;
+  
+  if (edanim_base_scene != NULL) {
+    for(i = 0; i < 0x40; i++) {
+      if (AnimParams[i].objid != -1) {
+        instance = edanim_base_scene->specials[AnimParams[i].objid].instance;
+        instanim = instance->anim;
+        if (instanim != NULL) {
+            switch(AnimParams[i].trigger_type) {
+                case 0:
+                break;
+                case 1:
+                instanim->playing = 0;
+                if ((AnimParams[i].trigger_id != -1) && (object_switches[AnimParams[i].trigger_id] != 0)) {
+                    instanim->playing = 1;
+                }
+                break;
+                case 2:
+              instanim->repeating = 0;
+              if (((AnimParams[i].trigger_id != -1) &&
+                  (object_switches[AnimParams[i].trigger_id] != 0)) && (instanim->playing == 0)) {
+                instanim->ltime = 1.0f;
+                instanim->playing = 1;
+                instanim->waiting = 0;
+                instanim->backwards = 0;
+              }
+                break;
+                case 3:
+                instanim->repeating = 1;
+              if ((AnimParams[i].trigger_id != -1) && (object_switches[AnimParams[i].trigger_id] != 0)) {
+                  instanim->playing = 1;
+              }
+                break;
+                case 4:
+              if ((edanimPlayerAnimDistance(i) < AnimParams[i].trigger_var)) {
+                  instanim->playing = 1; 
+              }
+              else {
+                  instanim->playing = 0;
+              }
+                break;
+                case 5:
+              instanim->repeating = 0;
+            if ((edanimPlayerAnimDistance(i) < AnimParams[i].trigger_var) ) {
+                if (instanim->playing == 0) {
+                    instanim->playing = 1;
+                    instanim->ltime = 1.0f;
+                    instanim->waiting = 0;
+                    instanim->backwards = 0;
+                }
+            }
+                break;
+                case 6:
+                instanim->repeating = 1;
+                if (edanimPlayerAnimDistance(i) < AnimParams[i].trigger_var) {
+                  instanim->playing = 1;
+                }
+                break;
+                case 7:
+                case 8:
+                case 9:
+                    break;
+                case 0xa:
+                  instanim->ltime = 1.0f; 
+                  instanim->playing = 0;
+                break;
+                case 0xb:
+                  instanim->playing = 1; 
+                break;
+                case 0xc:
+                  instanim->playing = 1; 
+                  instanim->repeating = 1;
+                break;
+            }
+          if ((i == edanim_nearest_param_id) && ((edanim_particle_mode != 0 || (edanim_sound_mode != 0)))) {
+            instanim->ltime = 1.0f;
+          }
+        }
+        for(j = 0; j < (s32)dt; j++) {
+            for(k = 0; k < AnimParams[i].usedpart; k++) {
+                if (AnimParams[i].particle_type[k] != -1) {
+                    if ((AnimParams[i].particle_switch[k] == 0) || (((instanim != NULL && (instanim->playing > 0)) &&
+                         !(instanim->ltime >= edanim_base_scene->instanimdata[instanim->anim_ix]->time)))) {
+                  if (instanim != NULL) {
+                    NuMtxInvRSS(&tmtx,&edanim_base_scene->specials[AnimParams[i].objid].mtx );
+                    NuMtxMul(&tmtx,&tmtx,&instanim->mtx);
+                  }
+                  else {
+                    NuMtxInvRSS(&tmtx,&edanim_base_scene->specials[AnimParams[i].objid].mtx );
+                    NuMtxMul(&tmtx,&tmtx,&instance->mtx);
+                  }
+                  emit = AnimParams[i].particle_offset[k];
+                  NuVecMtxTransform(&emit,&emit,&tmtx);
+                    orient = numtx_identity;
+                  NuMtxRotateZ(&orient,AnimParams[i].particle_emitrotz[k]);
+                  NuMtxRotateY(&orient,(s32)AnimParams[i].particle_emitroty[k]);
+                  NuMtxMul(&tmtx,&orient,&tmtx);
+                  if (AnimParams[i].particle_rate[k] > 0) {
+                    AddVariableShotDebrisEffectMtx2
+                              (AnimParams[i].particle_type[k],&emit,AnimParams[i].particle_rate[k],&tmtx,&numtx_identity);
+                  }
+                  else {
+                    if ((AnimParams[i].particle_rate[k] < 0) &&
+                        (localframecount_156 + j) % 
+                          (AnimParams[i].particle_rate[k] >= 0 ? AnimParams[i].particle_rate[k] : -AnimParams[i].particle_rate[k]) == 0) {
+                      AddVariableShotDebrisEffectMtx2(AnimParams[i].particle_type[k],&emit,1,&tmtx,&numtx_identity);
+                    }
+                  }
+                }
+                }
+                else {
+                  if (AnimParams[i].particle_name[k][0] != 0) {
+                    AnimParams[i].particle_type[k] = LookupDebrisEffect(AnimParams[i].particle_name[k]);
+                    if (AnimParams[i].particle_type[k] == -1) {
+                      edanimParticleDestroy(i,k);
+                      k--;
+                    }
+                  }  
+                }
+            }
+        }
+        for(j = 0; j < AnimParams[i].usedsound; j++) {
+            if (AnimParams[i].sound_id[j] != -1) {
+              sid = -1;
+              if (AnimParams[i].sound_type[j] == 1) {
+                if ( (s32)(localframecount_156 + dt) / (s32)AnimParams[i].sound_time[j] > (s32)localframecount_156 / (s32)AnimParams[i].sound_time[j]) {
+                  sid = AnimParams[i].sound_id[j];
+                }
+              }
+              else if (instanim != NULL) {
+                if ((instanim->ltime >= AnimParams[i].sound_time[j]) &&
+                   (AnimParams[i].sound_time[j] > AnimParams[i].sound_last_time)) {
+                  sid = AnimParams[i].sound_id[j];
+                }
+                if ((((instanim->oscillate) != 0) &&
+                (instanim->ltime <= AnimParams[i].sound_time[j])) &&
+                AnimParams[i].sound_time[j] < ((s32)AnimParams[i].sound_last_time >= 0 ? (s32)AnimParams[i].sound_last_time : -(s32)AnimParams[i].sound_last_time)
+                ) {
+                    sid = AnimParams[i].sound_id[j];
+                }
+              }
+              if (sid != -1) {
+                if (instanim != NULL) {
+                  NuMtxInvRSS(&tmtx,&edanim_base_scene->specials[AnimParams[i].objid].mtx);
+                  NuMtxMul(&tmtx,&tmtx,&instanim->mtx);
+                }
+                else {
+                  NuMtxInvRSS(&tmtx,&edanim_base_scene->specials[AnimParams[i].objid].mtx);
+                  NuMtxMul(&tmtx,&tmtx,&instance->mtx); 
+                }
+                emit = AnimParams[i].sound_offset[k];
+                NuVecMtxTransform(&emit,&emit,&tmtx);
+                edbitsSoundPlay(&emit,sid);
+              }
+            }
+            else {
+              if (AnimParams[i].sound_name[j][0] != 0) {
+                AnimParams[i].sound_id[j] = edbitsLookupSoundFX(AnimParams[i].sound_name[j]);
+                if (AnimParams[i].sound_id[j] == -1) {
+                  edanimSoundDestroy(i,j);
+                  j--;
+                }
+              }
+            }
+        }
+        if (instanim != NULL) {
+          if ((instanim->oscillate) != 0) {
+            AnimParams[i].sound_last_time = -instanim->ltime;
+          }
+          else {
+            AnimParams[i].sound_last_time = instanim->ltime;
+          }
+        }
+      }
+    }
+    localframecount_156 += (s32)dt;
+  }
+  return;
+}
+
+//NGC MATCH
 void edanimDetermineNearestAnim(float ndist) {
   s32 i;
   float dist;

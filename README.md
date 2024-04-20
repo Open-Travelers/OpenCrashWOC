@@ -17,12 +17,12 @@ This README will be more complete and detailed with instructions to contribute, 
 
 ### nulib compile
 - [ ] nu3dx function (98%)
-- [x] nucore function (90%)
+- [x] nucore function (99%)
 - [x] numath function (100%)
 - [x] nusound function (dummy)
 - [x] nuraster function (100%)
 - [ ] system function (90%) 
-- [ ] gamelib function (30%)
+- [ ] gamelib function (45%)
 
 ### nulib test
 - [ ] nu3dx validation test
