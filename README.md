@@ -41,17 +41,18 @@ This README will be more complete and detailed with instructions to contribute, 
 WIP..
 
 ## Contributing
-Check the function list on the issue section of this repository, those that have the percentage next to them have already started and are available on the decomp.me website, 
+Check the function list on the `issue section` of this repository, those that have the percentage next to them have already started and are available on the `decomp.me` website, 
 just search for the name in the search bar and then fork and you will have your scratch to work on.
-You can check for any DWARF info (variables name,types,global variables,etc..) by searching for the name of the function you want to work on in this repository's file
-code/src/dump_alphaNGCport_DWARF.txt
-which will provide the local variables types and names of the function and other information used in the alpha version, 
-which should match in most cases with the retail version (some variables may be missing or totally different sometimes).
+
+You can check for any `DWARF info` (variables name,types,global variables,etc..) by searching for the name of the function you want to work on in this repository's file
+`code/src/dump_alphaNGCport_DWARF.txt`
+
+Which will provide the local variables types and names of the function and other information used in the alpha version, it should match in most cases with the retail version (some variables may be missing or totally different sometimes).
 Once matched you can make a pull request or send a message on discord
 
 If want to help the project or have any troubles, reach out on the Discord server: https://discord.gg/W8khh4v4Gx  
 
 ## Warning
-currently there are problems with the compiler flags for branch prediction (+\-) , so some functions will not fully match. 
+Currently there are problems with the compiler flags for branch prediction (+\-) , so some functions will not fully match. 
 If that's the only difference, you can still share the completed function.
 
