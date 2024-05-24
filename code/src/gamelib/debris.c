@@ -822,3 +822,54 @@ float CameraEmitterDistance(struct nuvec_s *vec) {
   }
 }
 
+//NGC MATCH
+s32 DebrisCollisionCheck(struct nuvec_s *centre, float radius) {   
+    s32 i;
+    s32 j;
+    s32 k;
+    struct debinftype *dt;
+    float ttime;
+    float dtime;
+    float tt;
+    float tr;
+    float stime;
+    struct nuvec_s tvec;
+  
+    tr = 0.0f;
+    for (i = 0; i < 0x100; i++) {
+        if ((debkeydata[i].type == -1) || (debkeydata[i].type == 0)) {
+            continue;
+        }
+        dt = debtab[debkeydata[i].type];
+        if (dt->numspheres == 0) {
+            continue;
+        }
+        for (j = 0; j < dt->numspheres; j++) {
+            stime = debkeydata[i].spheres[j].t;
+            if (stime != -1.0f) {
+                tvec.x = debkeydata[i].spheres[j].emit.x * stime;
+                tvec.y = debkeydata[i].spheres[j].emit.y * stime;
+                tvec.z = debkeydata[i].spheres[j].emit.z * stime;
+                
+                tvec.y = (dt->grav * (stime * stime)) + tvec.y;
+                
+                tvec.x += debkeydata[i].x;
+                tvec.y += debkeydata[i].y;
+                tvec.z += debkeydata[i].z;              
+                
+                tt = stime / dt->etime;
+                for (k = 0; k < 7; k++) {
+                    if ((dt->sphereslot[k].t <= tt) && (dt->sphereslot[k + 1].t >= tt)) {
+                        break;
+                    }
+                }
+                tr = (((tt - dt->sphereslot[k].t) / (dt->sphereslot[k + 1].t - dt->sphereslot[k].t ))
+                * (dt->sphereslot[k + 1].r - dt->sphereslot[k].r) + dt->sphereslot[k].r);
+            }
+            if (NuVecDistSqr(centre, &tvec, NULL) < (radius + tr) * (radius + tr)) {
+                return i;
+            }
+        }
+    }
+    return -1;
+}

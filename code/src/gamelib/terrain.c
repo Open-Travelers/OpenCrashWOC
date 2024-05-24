@@ -1628,49 +1628,28 @@ void FullReflect(nuvec_s *N,nuvec_s *L,nuvec_s *R)
   return;
 }
 
-
-void TerrainMoveImpactData(void)		//need corrections
-
-{
-  hitdata *hit;
-  hitdata *TPolyInf;
-  int i;
-  short type;
-  
-  type = TerI->hittype;
-  if (type < 5) {
-    if (type < 1) {
-      return;
+//NGC MATCH
+void TerrainMoveImpactData() {
+    switch (TerI->hittype) 
+    {
+        case 0:
+        break;
+        
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 0x11:
+        case 0x12:
+        case 0x13:
+        case 0x14:
+        if (TerI->hitterrno != -1) {
+            TerrPolyInfo = *TerI->hitter;
+            TerrPoly = &TerrPolyInfo;
+            TerrPolyObj = TerI->hitterrno;
+        }
+        return;
     }
-  }
-  else {
-    if (0x14 < type) {
-      return;
-    }
-    if (type < 0x11) {
-      return;
-    }
-  }
-  if (TerI->hitterrno != -1) {
-    hit = TerI->hitter;
-    TPolyInf = &TerrPolyInfo;
-    i = 0x60;
-    do {
-      i = i + -0x18;
-      TPolyInf->minx = hit->minx;
-      TPolyInf->maxx = hit->maxx;
-      TPolyInf->miny = hit->miny;
-      TPolyInf->maxy = hit->maxy;
-      TPolyInf->minz = hit->minz;
-      TPolyInf->maxz = hit->maxz;
-      hit = (hitdata *)hit->pnts;
-      TPolyInf = (hitdata *)TPolyInf->pnts;
-    } while (i != 0);
-    ((nuvec_s *)TPolyInf)->x = ((nuvec_s *)hit)->x;
-    TerrPoly = &TerrPolyInfo;
-    TerrPolyObj = (int)TerI->hitterrno;
-  }
-  return;
 }
 
 void TerrainImpactNorm(void)

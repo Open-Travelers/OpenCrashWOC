@@ -1,5 +1,5 @@
 # OpenCrashWOC
-An open source, clean-room reverse engineered re-implementation of Crash Bandicoot: Wrath Of Cortex.
+An open source, reverse engineered of Crash Bandicoot: Wrath Of Cortex.
 
 ## Notice
 We love Crash Bandicoot! If you plan to play this, you must legally dump assets from your GameCube disk, and please buy one of the latest Crash games to show your support! OpenCrashWOC is a fan reverse-engineered version of CrashWOC without having any access or knowledge of the original game code. While the functions mostly match in utility, any identicality to the originals are pure coincidence. This is not a decompilation, but rather a complete rewrite from the ground up of the entire game. Not a single asset from the original game is present.
@@ -35,4 +35,23 @@ This README will be more complete and detailed with instructions to contribute, 
 
 ### game
 - [ ] gamecode (20%)
+
+## Building
+
+WIP..
+
+## Contributing
+Check the function list on the issue section of this repository, those that have the percentage next to them have already started and are available on the decomp.me website, 
+just search for the name in the search bar and then fork and you will have your scratch to work on.
+You can check for any DWARF info (variables name,types,global variables,etc..) by searching for the name of the function you want to work on in this repository's file
+code/src/dump_alphaNGCport_DWARF.txt
+which will provide the local variables types and names of the function and other information used in the alpha version, 
+which should match in most cases with the retail version (some variables may be missing or totally different sometimes).
+Once matched you can make a pull request or send a message on discord
+
+If want to help the project or have any troubles, reach out on the Discord server: https://discord.gg/W8khh4v4Gx  
+
+## Warning
+currently there are problems with the compiler flags for branch prediction (+\-) , so some functions will not fully match. 
+If that's the only difference, you can still share the completed function.
 

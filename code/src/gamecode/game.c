@@ -6,7 +6,7 @@ HubLevelSelect
 HubDrawItems
 InitVehicleToggles
 ResetVehicleControl
-ToggleVehicle
+ToggleVehicle 73%
 DrawMenu
 BonusTransporter
 DeathTransporter
@@ -764,17 +764,17 @@ void AddTempWumpa(float x,float y,float z,struct cratesarray_s *crate,s32 n) {
   return;
 }
 
-//98%
+//99% NGC
 s32 Draw3DObject(s32 object,struct nuvec_s *pos,u16 xrot,u16 yrot,u16 zrot,float scalex,
                 float scaley,float scalez,struct nugscn_s *scn,struct nuspecial_s *obj,s32 rot) {
   struct numtx_s m;
   struct nuvec_s s;
   s32 i;
   
-  if (((scn == NULL) || (obj == NULL)) || ((scalex == 0.0f && ((scaley == 0.0f && (scalez == 0.0f))) || Level != 0x25))) {
-          i = 0;
+  if (((scn == NULL) || (obj == NULL)) || (scalex == 0.0f && scaley == 0.0f && scalez == 0.0f)) {
+      i = 0;
   }
-  else {
+  else if (Level != 0x25) {
     s.x = scalex;
     s.y = scaley;
     s.z = scalez;
@@ -4652,7 +4652,7 @@ void CleanLetters(char *txt) {
   return;
 }
 
-//97% NGC (regswap)
+//NGC MATCH
 void DrawNameInputTable(struct cursor_s *cursor,float x0,float y0) {
   float size;
   float x;
@@ -4669,10 +4669,11 @@ void DrawNameInputTable(struct cursor_s *cursor,float x0,float y0) {
   else {
     tbuf[1] = '\0';
   }
+  
+  size = 0.7f; //size = 0.6f;
   y = y0 - (cursor->y_max - cursor->y_min) * MENUDY * 0.5f;
-  size = 0.6f;
   for (i = 0; i < 4; i++) {
-    x = x0 - (cursor->x_max - cursor->x_min) * (0.06f * size) * 0.5f; //size = 0.7f;
+    x = x0 - (float)(cursor->x_max - cursor->x_min) * (0.06f * size) * 0.5f;
     for (j = cursor->x_min; j <= cursor->x_max; j++) {
         *tbuf = NameInputTable[i][j];
         align = 1;
@@ -4688,7 +4689,7 @@ void DrawNameInputTable(struct cursor_s *cursor,float x0,float y0) {
         }
         Text3D(tbuf,x,y,1.0f,size,size,size,align,col);
         x += 0.060000002f;
-        size = 0.6f;
+        size = 0.7f;
       }
     y += MENUDY;
   }
@@ -4705,7 +4706,7 @@ void DrawNameInputTable(struct cursor_s *cursor,float x0,float y0) {
       col = 2;
     }
     Text3D(tDONE[Game.language],x0,y,1.0f,size,size,size,align,col);
-    size = 0.6f;
+    size = 0.7f;
     y += MENUDY;
   }
   if (cursor->y_max > 4) {
@@ -4728,6 +4729,7 @@ void DrawNameInputTable(struct cursor_s *cursor,float x0,float y0) {
   }
   return;
 }
+
 //NGC MATCH
 void DrawMenuEntry(struct cursor_s *cursor,char *txt,float *x,float *y,s32 *i) {
   s32 align;

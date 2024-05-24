@@ -771,12 +771,12 @@ void NuRndrParticleGroup(struct _sceDmaTag* data, struct PartHeader_testretail *
         switch (rdat->dmadata[0]) {
             case 0:
                 if (data2 != NULL) {
-                    //renderpsdma(0x20, rdat, setup, mtl, time, wm);
+                    renderpsdma(0x20, rdat, setup, mtl, time, wm);
                     rdat = (struct rdata_s *)data2;
                 }
                 break;
             case 1:
-                //renderpsdma(0x20, rdat, setup, mtl, time, wm);
+                renderpsdma(0x20, rdat, setup, mtl, time, wm);
                 instruction = 1;
                 break;
             default:
@@ -863,13 +863,13 @@ DWARF renderpsdma
     int numverts; //
     int size; //
     int numprims; //
+*/
 
-//88% NGC
+//NGC MATCH
 void* renderpsdma(s32 count, struct rdata_s* rdata, struct PartHeader_testretail* setup, struct numtl_s* mtl, float time, struct numtx_s* wm) {
-    s32 uVar1;
+    s32 index;
     s32 i;
     struct NuVec* pdatpt;
-    // struct rdata_s* rdat;
     float elapsed;
     struct NuVec pos1;
     struct NuVec pos2;
@@ -879,9 +879,10 @@ void* renderpsdma(s32 count, struct rdata_s* rdata, struct PartHeader_testretail
     float u1, v1, u2, v2;
     float grav = setup->grav;
     struct PartList_s* pdat;
+    struct PartList_s * hpdat; // r23
 
     grav /= gravdiv;
-    rdeb = (struct uv1deb*)&rdata->unpackdata[0];
+    rdeb = &rdata->debris[0];
     ResetShaders();
     GS_SetAlphaCompare(4, 0);
     NuTexSetTexture(0, mtl->tid);
@@ -903,32 +904,41 @@ void* renderpsdma(s32 count, struct rdata_s* rdata, struct PartHeader_testretail
     v2 = setup->v0;
     u2 = setup->u1;
     v1 = setup->v1;
+
+    hpdat = setup->Data;
     for (i = 0; i < 32; i++) {
-        // rdeb = &rdata->debris[i];
-        if (rdeb->etime < 0.0f) {
+        float zero = 0.0f;
+        float neg_one = -1.0f;
+        
+        if (rdeb->etime < zero) {
+            rdeb++;
+        } else {
             elapsed = (time - rdeb->time);
-            uVar1 = (rdeb->time * elapsed);
-            if (uVar1 > 0x3FU) {
-                rdeb->etime = -1.0f;
+            index = (rdeb->etime * elapsed);
+            if (index > 0x3FU) {
+                rdeb->etime = neg_one;
+                rdeb++;
             } else {
                 float f11 = grav * elapsed;
-                pdat = &setup->Data[uVar1];
+                pdat = &hpdat[index];
                 pdatpt = pdat->vt;
-                debmtx._30 = (rdeb->x + elapsed * rdeb->mx) + wm->_30;
-                debmtx._32 = (rdeb->z + elapsed * rdeb->mz) + wm->_32;
-                debmtx._31 = f11 * ((rdeb->my * elapsed + rdeb->y) + wm->_31) + elapsed;
+                debmtx._30 = (rdeb->mx * elapsed + rdeb->x) + wm->_30;
+                debmtx._32 = (rdeb->mz * elapsed + rdeb->z) + wm->_32;
+                debmtx._31 = f11 * elapsed + ((rdeb->my * elapsed + rdeb->y) + wm->_31);
                 rdeb++;
-                DebMtxTransform(&pos1, &pdatpt[0]);
+                DebMtxTransform(&pos1, pdatpt);
+                pdatpt++;
                 GS_SetQuadListRGBA(
                     pdat->colour >> 0x10 & 0xff, pdat->colour >> 8 & 0xff,
                     pdat->colour & 0xff, (pdat->colour >> 0x18) & 0xff
                 );
                 GS_DrawQuadListBeginBlock(4, 1);
                 GS_DrawQuadListSetVert((struct _GS_VECTOR3*)&pos1, u1, v1);
-                DebMtxTransform(&pos2, &pdatpt[1]);
-                GS_DrawQuadListSetVert((struct _GS_VECTOR3*)&pos2, u1, v2);
-                DebMtxTransform(&pos3, &pdatpt[2]);
-                GS_DrawQuadListSetVert((struct _GS_VECTOR3*)&pos3, u2, v2);
+                DebMtxTransform(&pos3, pdatpt);
+                pdatpt++;
+                GS_DrawQuadListSetVert((struct _GS_VECTOR3*)&pos3, u1, v2);
+                DebMtxTransform(&pos2, pdatpt);
+                GS_DrawQuadListSetVert((struct _GS_VECTOR3*)&pos2, u2, v2);
                 pos4.x = (pos2.x - pos3.x) + pos1.x;
                 pos4.y = (pos2.y - pos3.y) + pos1.y;
                 pos4.z = (pos2.z - pos3.z) + pos1.z;
@@ -936,13 +946,11 @@ void* renderpsdma(s32 count, struct rdata_s* rdata, struct PartHeader_testretail
                 GS_DrawQuadListEndBlock();
             }
         }
+        
     }
     GS_EnableLighting(1);
     return rdeb;
 }
-*/
-
-
 
 void GenericDebinfoDmaTypeUpdate(struct debtab *debinfo)
 {
