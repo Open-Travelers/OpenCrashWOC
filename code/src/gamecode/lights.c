@@ -631,43 +631,57 @@ void SetLights(struct nucolour3_s *vCOL0,struct nuvec_s *vDIR0,struct nucolour3_
 }
 
 //NGC MATCH
-void SetLevelLights(void) {
-  if ((((GameMode == 1) && (gamecut != 0)) && (gamecut != 6)) && ((gamecut != 0xb && (gamecut != 0x10)))) {
-    RotateDirectionalLight(lcutdir,((GameTimer.frame % 0x78) * 0x10000) / 0x78,((GameTimer.frame % 0x78) * 0x10000) / 0x78);
-    RotateDirectionalLight(lcutdir + 1,((GameTimer.frame % 0x78) * 0x10000) / 0x78,((GameTimer.frame % 0x78) * 0x10000) / 0x78);
-    RotateDirectionalLight(lcutdir + 2,((GameTimer.frame % 0x78) * 0x10000) / 0x78,((GameTimer.frame % 0x78) * 0x10000) / 0x78);
-    SetLights(lcutdircol,lcutdir,lcutdircol + 1,lcutdir + 1,lcutdircol + 2,lcutdir + 2,&lcutambcol );
-  }
-  else if (cutmovie == 0) {
-    RotateDirectionalLight(titledir,((GameTimer.frame % 0xf0) * 0x10000) / 0xf0,
-               ((GameTimer.frame % 0x186) * 0x10000) / 0x186 );
-    RotateDirectionalLight(titledir + 1,((GameTimer.frame % 0x14a) * 0x10000) / 0x14a,
-               ((GameTimer.frame % 0x1c2) * 0x10000) / 0x1c2);
-    RotateDirectionalLight(titledir + 2,((GameTimer.frame % 0x78) * 0x10000) / 0x78,
-               ((GameTimer.frame % 0x96) * 0x10000) / 0x96);
-    SetLights(&titlergb,titledir,&titlergb,titledir + 1,&titlergb2,titledir + 2,&titlergb);
-  }
-  else if ((Level == 0x2b) && (cutmovie == -1)) {
-    intensity = NuFabs(NuTrigTable[creditsang[0] & 0xffff]);
-    NuVecRotateY(creditsdir,&ZVec,(s32)(creditsang[0] / 40.0f));
-    creditsang[0] = creditsang[0] + 0x100;
-    creditsdircol[0].r = intensity;
-    intensity = NuFabs(NuTrigTable[creditsang[1] & 0xffff]);
-    NuVecRotateY(creditsdir + 1,&ZVec,(s32)(-creditsang[1] / 40.0f));
-    creditsdircol[1].r = intensity;
-    creditsang[1] = creditsang[1] + 0x100;
-    intensity = NuFabs(NuTrigTable[creditsang[2] & 0xffff]);
-    NuVecRotateX(creditsdir + 2,&ZVec,(s32)(creditsang[2] / 40.0f));
-    creditsang[2] = creditsang[2] + 0x100;
-    creditsdircol[2].r = intensity;
-    NuLightSetDirectionalLights(creditsdir,creditsdircol,creditsdir + 1,creditsdircol + 1,creditsdir + 2,
-               creditsdircol + 2);
-    NuLightSetAmbientLight(&creditsrgb);
-  }
-  else {
-    SetLights(lcol,ldir,lcol + 1,ldir + 1,lcol + 2,ldir + 2,&acol);
-  }
-  return;
+void SetLevelLights() 
+{
+    if ((GameMode == 1) && (gamecut != 0) && (gamecut != 6) && (gamecut != 11) && (gamecut != 16)) 
+    { 
+        RotateDirectionalLight(&lcutdir[0], ((GameTimer.frame % 120) * 65536) / 120, ((GameTimer.frame % 120) * 65536) / 120);
+        RotateDirectionalLight(&lcutdir[1], ((GameTimer.frame % 120) * 65536) / 120, ((GameTimer.frame % 120) * 65536) / 120);
+        RotateDirectionalLight(&lcutdir[2], ((GameTimer.frame % 120) * 65536) / 120, ((GameTimer.frame % 120) * 65536) / 120);
+        
+        SetLights(&lcutdircol[0], &lcutdir[0], &lcutdircol[1], &lcutdir[1], &lcutdircol[2], &lcutdir[2], &lcutambcol);
+    }
+    else if (cutmovie == 0) 
+    {
+        RotateDirectionalLight(&titledir[0], ((GameTimer.frame % 240) * 65536) / 240, ((GameTimer.frame % 390) * 65536) / 390);
+        RotateDirectionalLight(&titledir[1], ((GameTimer.frame % 330) * 65536) / 330, ((GameTimer.frame % 450) * 65536) / 450);
+        RotateDirectionalLight(&titledir[2], ((GameTimer.frame % 120) * 65536) / 120, ((GameTimer.frame % 150) * 65536) / 150);
+        
+        SetLights(&titlergb, &titledir[0], &titlergb, &titledir[1], &titlergb2, &titledir[2], (struct nuvec_s*)&titlergb);
+    }
+    else if ((Level == 43) && (cutmovie == -1)) 
+    {
+        intensity = NuFabs(NuTrigTable[creditsang[0] & 0xFFFF]);
+        
+        NuVecRotateY(&creditsdir[0], &ZVec, creditsang[0] / 40.0f);
+        
+        creditsang[0] += 256;
+        
+        creditsdircol[0].r = intensity;
+        
+        intensity = NuFabs(NuTrigTable[creditsang[1] & 0xFFFF]);
+        
+        NuVecRotateY(&creditsdir[1], &ZVec, -creditsang[1] / 40.0f);
+        
+        creditsdircol[1].r = intensity;
+        
+        creditsang[1] += 256;
+        
+        intensity = NuFabs(NuTrigTable[creditsang[2] & 0xFFFF]);
+        
+        NuVecRotateX(&creditsdir[2], &ZVec, creditsang[2] / 40.0f);
+        
+        creditsang[2] += 256;
+        
+        creditsdircol[2].r = intensity;
+        
+        NuLightSetDirectionalLights(&creditsdir[0], &creditsdircol[0], &creditsdir[1], &creditsdircol[1], &creditsdir[2], &creditsdircol[2]);
+        NuLightSetAmbientLight(&creditsrgb);
+    }
+    else 
+    {
+        SetLights(&lcol[0], &ldir[0], &lcol[1], &ldir[1], &lcol[2], &ldir[2], &acol);  
+    } 
 }
 
 //NGC MATCH
