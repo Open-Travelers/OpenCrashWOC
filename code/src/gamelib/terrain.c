@@ -196,20 +196,23 @@ void RotateVec(struct nuvec_s *in,struct nuvec_s *out) {
            in->x * NuTrigTable[(s32)(TerI->ay + 16384.0f) & 0xffff];
 }
 
-
-void DeRotateTerrain(hitdata *ter)
-
-{
-  float cosax;
-  float cosay;
+//NGC MATCH
+void DeRotateTerrain(struct scaleterrain_s *ter) {
   float sinax;
+  float cosax;
   float sinay;
+  float cosay;
   float tz;
+  float dist[8];
   
-  sinax = NuTrigTable[(int)-TerI->ax & 0xffff];
-  cosax = NuTrigTable[(int)(-TerI->ax + 16384.0) & 0xffff];
-  sinay = NuTrigTable[(int)-TerI->ay & 0xffff];
-  cosay = NuTrigTable[(int)(-TerI->ay + 16384.0) & 0xffff];
+  sinax = NuTrigTable[(s32)-TerI->ax & 0xffff];
+  cosax = NuTrigTable[(s32)(-TerI->ax + 16384.0f) & 0xffff];
+  sinay = NuTrigTable[(s32)-TerI->ay & 0xffff];
+  cosay = NuTrigTable[(s32)(-TerI->ay + 16384.0f) & 0xffff];
+    dist[0] = (f32) (((ter->pnts[0].x - TerI->csx) * (ter->pnts[0].x - TerI->csx)) + ((ter->pnts[0].y - TerI->csy) * (ter->pnts[0].y - TerI->csy)) + ((ter->pnts[0].z - TerI->csz) * (ter->pnts[0].z - TerI->csz)));
+    dist[1] = (f32) (((ter->pnts[1].x - TerI->csx) * (ter->pnts[1].x - TerI->csx)) + ((ter->pnts[1].y - TerI->csy) * (ter->pnts[1].y - TerI->csy)) + ((ter->pnts[1].z - TerI->csz) * (ter->pnts[1].z - TerI->csz)));
+    dist[2] = (f32) (((ter->pnts[2].x - TerI->csx) * (ter->pnts[2].x - TerI->csx)) + ((ter->pnts[2].y - TerI->csy) * (ter->pnts[2].y - TerI->csy)) + ((ter->pnts[2].z - TerI->csz) * (ter->pnts[2].z - TerI->csz)));
+    dist[3] = (f32) (((ter->pnts[3].x - TerI->csx) * (ter->pnts[3].x - TerI->csx)) + ((ter->pnts[3].y - TerI->csy) * (ter->pnts[3].y - TerI->csy)) + ((ter->pnts[3].z - TerI->csz) * (ter->pnts[3].z - TerI->csz)));
   tz = (ter->pnts[0].z - TerI->csz) * cosay - (ter->pnts[0].x - TerI->csx) * sinay;
   (TerI->rotter).pnts[0].x =
        (ter->pnts[0].z - TerI->csz) * sinay + (ter->pnts[0].x - TerI->csx) * cosay;
@@ -225,14 +228,17 @@ void DeRotateTerrain(hitdata *ter)
        (ter->pnts[2].z - TerI->csz) * sinay + (ter->pnts[2].x - TerI->csx) * cosay;
   (TerI->rotter).pnts[2].y = (ter->pnts[2].y - TerI->csy) * cosax - tz * sinax;
   (TerI->rotter).pnts[2].z = (ter->pnts[2].y - TerI->csy) * sinax + tz * cosax;
-  if (ter->norm[1].y < 65536.0) {
+  if (ter->norm[1].y < 65536.0f) {
     tz = (ter->pnts[3].z - TerI->csz) * cosay - (ter->pnts[3].x - TerI->csx) * sinay;
     (TerI->rotter).pnts[3].x =
          (ter->pnts[3].z - TerI->csz) * sinay + (ter->pnts[3].x - TerI->csx) * cosay;
     (TerI->rotter).pnts[3].y = (ter->pnts[3].y - TerI->csy) * cosax - tz * sinax;
     (TerI->rotter).pnts[3].z = (ter->pnts[3].y - TerI->csy) * sinax + tz * cosax;
   }
-  return;
+    dist[4] = (f32) ((TerI->rotter.pnts[0].x * TerI->rotter.pnts[0].x) + (TerI->rotter.pnts[0].y * TerI->rotter.pnts[0].y) + (TerI->rotter.pnts[0].z * TerI->rotter.pnts[0].z));
+    dist[5] = (f32) ((TerI->rotter.pnts[1].x * TerI->rotter.pnts[1].x) + (TerI->rotter.pnts[1].y * TerI->rotter.pnts[1].y) + (TerI->rotter.pnts[1].z * TerI->rotter.pnts[1].z));
+    dist[6] = (f32) ((TerI->rotter.pnts[2].x * TerI->rotter.pnts[2].x) + (TerI->rotter.pnts[2].y * TerI->rotter.pnts[2].y) + (TerI->rotter.pnts[2].z * TerI->rotter.pnts[2].z));
+    dist[7] = (f32) ((TerI->rotter.pnts[3].x * TerI->rotter.pnts[3].x) + (TerI->rotter.pnts[3].y * TerI->rotter.pnts[3].y) + (TerI->rotter.pnts[3].z * TerI->rotter.pnts[3].z));
 }
 
 //NGC MATCH
@@ -253,10 +259,13 @@ void DeRotatePoint(struct nuvec_s *pnt) {
   pnt->y = ((pnt->y + TerI->size) - (TerI->curpos).y) * cosax - tz * sinax;
 }
 
-short InsideLineF(float _x,float _z,float _x0,float _z0,float _x1,float _z1)
-
-{
-  return (short)(0.0 <= (_x - _x0) * (_z1 - _z0) + (_z - _z0) * (_x0 - _x1));
+//NGC MATCH
+short InsideLineF(float _x,float _z,float _x0,float _z0,float _x1,float _z1) {
+    if ((_x - _x0) * (_z1 - _z0) + (_z - _z0) * (_x0 - _x1) < 0.0f) {
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 short InsidePolLines(float x, float y, float z, float x0, float y0, float z0, float x1, float y1, float z1, nuvec_s* norm)
@@ -1727,27 +1736,23 @@ void PlatformConnect(char *flags,struct nuvec_s *vel,struct nuvec_s *ivel,s32 pl
     } 
 }
 
-
-void TerrainImpact(nuvec_s *vpos,nuvec_s *vvel,uchar *flags)
-
-{
-  short type;
-  
+//NGC MATCH
+void TerrainImpact(struct nuvec_s *vpos,struct nuvec_s *vvel,u8 *flags) {
   TerrainMoveImpactData();
-  type = TerI->hittype;
-  if (type < 5) {
-    if (type < 1) {
-      if (type == 0) {
-        *flags = '\0';
+  switch (TerI->hittype) {
+    case 0:
+        *flags = 0;
         vpos->x = (TerI->curpos).x + (TerI->curvel).x;
         vpos->y = ((TerI->curpos).y + (TerI->curvel).y) * TerI->yscale - TerI->size * TerI->yscale ;
         vpos->z = (TerI->curpos).z + (TerI->curvel).z;
-      }
-    }
-    else {
+    break;
+        case 1:
+        case 2:
+        case 3:
+    case 4:
       TerI->hittime = TerI->hittime - TerI->timeadj;
-      if (TerI->hittime < 0.0) {
-        TerI->hittime = 0.0;
+      if (TerI->hittime < 0.0f) {
+        TerI->hittime = 0.0f;
       }
       (TerI->curpos).x = (TerI->curpos).x + (TerI->curvel).x * TerI->hittime;
       (TerI->curpos).y = (TerI->curpos).y + (TerI->curvel).y * TerI->hittime;
@@ -1757,50 +1762,50 @@ void TerrainImpact(nuvec_s *vpos,nuvec_s *vvel,uchar *flags)
       (TerI->curvel).z = (TerI->curvel).z - (TerI->curvel).z * TerI->hittime;
       FullDeflect(&TerI->hitnorm,&TerI->curvel,&TerI->curvel);
       FullDeflect(&TerI->uhitnorm,vvel,vvel);
-      if (0.707 <= (TerI->uhitnorm).y) {
-        terrhitflags = terrhitflags | 2;
-        *flags = '\x01';
-        flags[1] = '\x01';
-        (TerI->curpos).y = (TerI->curpos).y + (TerI->hitnorm).y * 0.001;
+      if (0.707f > (TerI->uhitnorm).y) {
+        *flags = 0;
+        terrhitflags = terrhitflags | 1;
+        (TerI->curpos).x = (TerI->curpos).x + (TerI->hitnorm).x * 0.002f;
+        (TerI->curpos).z = (TerI->curpos).z + (TerI->hitnorm).z * 0.002f;
+        (TerI->curvel).x = (TerI->curvel).x + (TerI->hitnorm).x * 0.003f;
+        (TerI->curvel).z = (TerI->curvel).z + (TerI->hitnorm).z * 0.003f;
+        vvel->x = vvel->x + (TerI->hitnorm).x * 0.003f;
+        vvel->z = vvel->z + (TerI->hitnorm).z * 0.003f;
       }
       else {
-        *flags = '\0';
-        terrhitflags = terrhitflags | 1;
-        (TerI->curpos).x = (TerI->curpos).x + (TerI->hitnorm).x * 0.002;
-        (TerI->curpos).z = (TerI->curpos).z + (TerI->hitnorm).z * 0.002;
-        (TerI->curvel).x = (TerI->curvel).x + (TerI->hitnorm).x * 0.003;
-        (TerI->curvel).z = (TerI->curvel).z + (TerI->hitnorm).z * 0.003;
-        vvel->x = vvel->x + (TerI->hitnorm).x * 0.003;
-        vvel->z = vvel->z + (TerI->hitnorm).z * 0.003;
-      }
-    }
-  }
-  else if ((type < 0x15) && (0x10 < type)) {
-    FullDeflect(&TerI->hitnorm,&TerI->curvel,&TerI->curvel);
-    FullDeflect(&TerI->uhitnorm,vvel,vvel);
-    if (0.707 <= (TerI->uhitnorm).y) {
-      (TerI->curpos).y = (TerI->curpos).y + (TerI->hitnorm).y * 0.005;
-      (TerI->curvel).y = (TerI->curvel).y + (TerI->hitnorm).y * 0.01;
-    }
-    else {
-      (TerI->curpos).x = (TerI->curpos).x + (TerI->hitnorm).x * 0.005;
-      (TerI->curpos).y = (TerI->curpos).y + (TerI->hitnorm).y * 0.002;
-      (TerI->curpos).z = (TerI->curpos).z + (TerI->hitnorm).z * 0.005;
-      (TerI->curvel).x = (TerI->curvel).x + (TerI->hitnorm).x * 0.005;
-      (TerI->curvel).y = (TerI->curvel).y + (TerI->hitnorm).y * 0.002;
-      (TerI->curvel).z = (TerI->curvel).z + (TerI->hitnorm).z * 0.005;
-      *flags = '\x01';
-    }
-  }
-  if ((((TerI->hittype != 0) && (TerI->hittype < 0x10)) && (TerI->hitterrno != -1)) &&
-     ((CurTerr->terr[TerI->hitterrno].type == TERR_TYPE_PLATFORM && (0.707 < (TerI->uhitnorm).y))) )
-  {
-    PlatformConnect((char *)TerI->flags,&TerI->curvel,vvel,(int)CurTerr->terr[TerI->hitterrno].in fo)
-    ;
-  }
-  return;
-}
+        terrhitflags = terrhitflags | 2;
+        *flags = 1;
+        flags[1] = 1;
+        (TerI->curpos).y = (TerI->curpos).y + (TerI->hitnorm).y * 0.001f;
 
+      }
+    break;
+    case 17:
+    case 18:
+    case 19:
+    case 20:
+        FullDeflect(&TerI->hitnorm,&TerI->curvel,&TerI->curvel);
+        FullDeflect(&TerI->uhitnorm,vvel,vvel);
+        if (0.707f > (TerI->uhitnorm).y) {
+          (TerI->curpos).x = (TerI->curpos).x + (TerI->hitnorm).x * 0.005f;
+          (TerI->curpos).y = (TerI->curpos).y + (TerI->hitnorm).y * 0.002f;
+          (TerI->curpos).z = (TerI->curpos).z + (TerI->hitnorm).z * 0.005f;
+          (TerI->curvel).x = (TerI->curvel).x + (TerI->hitnorm).x * 0.005f;
+          (TerI->curvel).y = (TerI->curvel).y + (TerI->hitnorm).y * 0.002f;
+          (TerI->curvel).z = (TerI->curvel).z + (TerI->hitnorm).z * 0.005f;
+          *flags = 1;
+        } else {
+          (TerI->curpos).y = (TerI->curpos).y + (TerI->hitnorm).y * 0.005f;
+          (TerI->curvel).y = (TerI->curvel).y + (TerI->hitnorm).y * 0.01f; 
+        }
+        break;
+  }
+    if ((((TerI->hittype != 0) && (TerI->hittype < 0x10)) && (TerI->hitterrno != -1)) &&
+         ((CurTerr->terr[TerI->hitterrno].type == TERR_TYPE_PLATFORM && (0.707f < (TerI->uhitnorm).y))) )
+      {
+        PlatformConnect((char *)TerI->flags,&TerI->curvel,vvel,CurTerr->terr[TerI->hitterrno].info);
+    }
+}
 
 int TerrainImpactPlatform(uchar *flags)
 
@@ -1842,112 +1847,72 @@ int TerrainImpactPlatform(uchar *flags)
   return 1;
 }
 
-
-int TerrainPlatformMoveCheck (nuvec_s *dest,nuvec_s *norm,int platid,int calcimpact,int leaveoffonfail) //need corrections
-{
-  ushort uVar1;
-  float fVar2;
-  float fVar3;
-  float fVar4;
-  nuvec_s *hitnorm;
-  float fVar5;
-  float fVar6;
-  float fVar7;
-  float fVar8;
-  float fVar9;
-  float fVar10;
-  float fVar11;
-  float fVar12;
-  uint uVar13;
-  short *scanStart;
-  bool b;
-  short cnt;
+//NGC MATCH
+s32 TerrainPlatformMoveCheck(struct nuvec_s *dest,struct nuvec_s *norm,s32 platid,s32 calcimpact,s32 leaveoffonfail) {
+  short *CurData;
+  struct nuvec_s curvel; // 0x20(r31)
+  short hitcnt;
+  short hitterrno;
   short hittype;
   short plathit;
-  TerrI *ptrTI;
-  short terrno;
-  short terrnoI;
-  float time;
+  float hittime;
+  struct nuvec_s hitnorm; // 0x40(r31)
+  struct nuvec_s uhitnorm; // 0x50(r31)
+  s32 terrid;
   
-  terrno = CurTerr->platdat[platid].terrno;
-  for (scanStart = TerI->platScanStart; 0 < *scanStart;
-      scanStart = scanStart + ((uVar13 ^ (int)*scanStart) - uVar13) * 2 + 2) {
-    if (scanStart[1] == terrno) {
-      uVar1 = *scanStart >> 0xf;
-      *scanStart = -((uVar1 ^ *scanStart) - uVar1);
+  terrid = CurTerr->platdata[platid].terrno;
+  CurData = TerI->PlatScanStart;
+  while ( 0 < *CurData) {
+    if (CurData[1] == terrid) {
+        *CurData = (*CurData <= 0 ? *CurData  : -*CurData);
     }
-    uVar13 = (int)*scanStart >> 0x1f;
+      CurData += (*CurData >= 0 ? *CurData  : -*CurData) * 2 + 2;
   }
-  fVar2 = (TerI->curvel).x;
-  fVar9 = (TerI->curvel).y;
-  fVar5 = (TerI->curvel).z;
-  cnt = TerI->hitcnt;
-  terrnoI = TerI->hitterrno;
+  curvel = TerI->curvel;
+  hitcnt = TerI->hitcnt;
+  hitterrno = TerI->hitterrno;
   hittype = TerI->hittype;
   plathit = TerI->plathit;
-  time = TerI->hittime;
-  fVar3 = (TerI->hitnorm).x;
-  fVar10 = (TerI->hitnorm).y;
-  fVar6 = (TerI->hitnorm).z;
-  fVar4 = (TerI->uhitnorm).x;
-  fVar11 = (TerI->uhitnorm).y;
-  fVar7 = (TerI->uhitnorm).z;
+  hittime = TerI->hittime;
+  hitnorm = TerI->hitnorm;
+  uhitnorm = TerI->uhitnorm;
   (TerI->curvel).x = dest->x - (TerI->curpos).x;
   (TerI->curvel).y = dest->y - (TerI->curpos).y;
   (TerI->curvel).z = dest->z - (TerI->curpos).z;
-  hitnorm = dest;
   DerotateMovementVector();
-  HitTerrain(hitnorm);
+  HitTerrain();
   if ((calcimpact != 0) && (TerI->hittype != 0)) {
     TerrainImpactNorm();
     TerrainImpactPlatform(TerI->flags);
-    if (norm != (nuvec_s *)0x0) {
-      fVar12 = (TerI->hitnorm).y;
-      fVar8 = (TerI->hitnorm).z;
-      norm->x = (TerI->hitnorm).x;
-      norm->y = fVar12;
-      norm->z = fVar8;
+    if (norm != NULL) {
+      *norm = TerI->hitnorm;
     }
-    fVar12 = (TerI->curpos).y;
-    fVar8 = (TerI->curpos).z;
-    dest->x = (TerI->curpos).x;
-    dest->y = fVar12;
-    dest->z = fVar8;
+    *dest = TerI->curpos;
   }
-  ptrTI = TerI;
-  (TerI->curvel).x = fVar2;
-  (ptrTI->curvel).y = fVar9;
-  (ptrTI->curvel).z = fVar5;
-  TerI->hitcnt = cnt;
-  TerI->hitterrno = terrnoI;
+  (TerI->curvel) = curvel;
+  TerI->hitcnt = hitcnt;
+  TerI->hitterrno = hitterrno;
   TerI->plathit = plathit;
-  TerI->hittime = time;
-  ptrTI = TerI;
-  (TerI->hitnorm).x = fVar3;
-  (ptrTI->hitnorm).y = fVar10;
-  (ptrTI->hitnorm).z = fVar6;
-  ptrTI = TerI;
-  (TerI->uhitnorm).x = fVar4;
-  (ptrTI->uhitnorm).y = fVar11;
-  (ptrTI->uhitnorm).z = fVar7;
-  scanStart = TerI->platScanStart;
+  TerI->hittime = hittime;
+  TerI->hitnorm = hitnorm;
+  TerI->uhitnorm = uhitnorm;
+  CurData = TerI->PlatScanStart;
   if ((TerI->hittype < 0x10) || (leaveoffonfail == 0)) {
-    for (; *scanStart != 0; scanStart = scanStart + ((uVar13 ^ (int)*scanStart) - uVar13) * 2 + 2)  {
-      if (scanStart[1] == terrno) {
-        uVar1 = *scanStart >> 0xf;
-        *scanStart = (uVar1 ^ *scanStart) - uVar1;
+    while (*CurData != 0)  {
+      if (CurData[1] == terrid) {
+          *CurData = -(*CurData <= 0 ? *CurData  : -*CurData);
       }
-      uVar13 = (int)*scanStart >> 0x1f;
+      CurData += (*CurData >= 0 ? *CurData  : -*CurData) * 2 + 2;
     }
   }
-  b = TerI->hittype == 0;
-  if (b) {
+  if (TerI->hittype != 0) {
     TerI->hittype = hittype;
+    return 0;
   }
   else {
     TerI->hittype = hittype;
+    return 1;
   }
-  return (uint)b;
 }
 
 int TerrainPlatformEmbedded(nuvec_s* vvel)
