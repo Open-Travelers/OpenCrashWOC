@@ -2651,30 +2651,39 @@ void NewTerrainScaleY(nuvec_s *vpos,nuvec_s *vvel,uchar *flags,int terid,float s
   return;
 }
 
-void RayImpact(nuvec_s *vvel)
-
+//NGC MATCH
+void RayImpact(struct nuvec_s *vvel) 
 {
-  short type;
-  
-  TerrainMoveImpactData();
-  type = TerI->hittype;
-  if (type < 5) {
-    if (0 < type) {
-      TerI->hittime = TerI->hittime - TerI->timeadj;
-      if (TerI->hittime < 0.0) {
-        TerI->hittime = 0.0;
-      }
-      vvel->x = (TerI->curvel).x * TerI->hittime;
-      vvel->y = (TerI->curvel).y * TerI->hittime;
-      vvel->z = (TerI->curvel).z * TerI->hittime;
+    TerrainMoveImpactData();
+    
+    switch (TerI->hittype) 
+    {
+    case 0:
+        break;
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+        TerI->hittime -= TerI->timeadj;
+        
+        if (TerI->hittime < 0.0f) 
+        {
+            TerI->hittime = 0.0f;
+        }
+        
+        vvel->x = TerI->curvel.x * TerI->hittime;
+        vvel->y = TerI->curvel.y * TerI->hittime;
+        vvel->z = TerI->curvel.z * TerI->hittime;
+        break;
+    case 17:
+    case 18:
+    case 19:
+    case 20:
+        vvel->x = 0.0f;
+        vvel->y = 0.0f;
+        vvel->z = 0.0f;
+        break;
     }
-  }
-  else if ((type < 0x15) && (0x10 < type)) {
-    vvel->x = 0.0;
-    vvel->y = 0.0;
-    vvel->z = 0.0;
-  }
-  return;
 }
 
 //NGC MATCH
