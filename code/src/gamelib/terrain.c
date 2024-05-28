@@ -1807,44 +1807,59 @@ void TerrainImpact(struct nuvec_s *vpos,struct nuvec_s *vvel,u8 *flags) {
     }
 }
 
-int TerrainImpactPlatform(uchar *flags)
-
+//NGC MATCH
+int TerrainImpactPlatform(unsigned char *flags)
 {
-  short sVar1;
-  
-  TerrainMoveImpactData();
-  sVar1 = TerI->hittype;
-  if (sVar1 < 5) {
-    if (0 < sVar1) {
-      TerI->hittime = TerI->hittime - TerI->timeadj;
-      if (TerI->hittime < 0.0) {
-        TerI->hittime = 0.0;
-      }
-      (TerI->curpos).x = (TerI->curpos).x + (TerI->curvel).x * TerI->hittime;
-      (TerI->curpos).y = (TerI->curpos).y + (TerI->curvel).y * TerI->hittime;
-      (TerI->curpos).z = (TerI->curpos).z + (TerI->curvel).z * TerI->hittime;
-      if (0.707 <= (TerI->uhitnorm).y) {
-        *flags = '\x01';
-        flags[1] = '\x01';
-        (TerI->curpos).y = (TerI->curpos).y + (TerI->hitnorm).y * 0.002;
-      }
-      else {
-        *flags = '\0';
-      }
-      return 0;
+    TerrainMoveImpactData();
+    
+    switch (TerI->hittype) 
+    {
+    case 0:
+        flags[0] = 0;
+        
+        TerI->curpos.x += TerI->curvel.x;
+        TerI->curpos.y += TerI->curvel.y;
+        TerI->curpos.z += TerI->curvel.z;
+        return 0;
+        break;
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+        TerI->hittime -= TerI->timeadj;
+        
+        if (TerI->hittime < 0.0f) 
+        {
+            TerI->hittime = 0.0f;
+        }
+        
+        TerI->curpos.x += TerI->curvel.x * TerI->hittime;
+        TerI->curpos.y += TerI->curvel.y * TerI->hittime;
+        TerI->curpos.z += TerI->curvel.z * TerI->hittime;
+        
+        if (0.707f > TerI->uhitnorm.y) 
+        {
+            flags[0] = 0;
+        } 
+        else 
+        {
+            flags[0] = 1;
+            flags[1] = 1;
+            
+            TerI->curpos.y += TerI->hitnorm.y * 0.002f;
+        }
+        
+        return 0;
+        break;
+    case 17:
+    case 18:
+    case 19:
+    case 20: 
+        return 1;
+        break;
     }
-    if (sVar1 == 0) {
-      *flags = '\0';
-      (TerI->curpos).x = (TerI->curpos).x + (TerI->curvel).x;
-      (TerI->curpos).y = (TerI->curpos).y + (TerI->curvel).y;
-      (TerI->curpos).z = (TerI->curpos).z + (TerI->curvel).z;
-      return 0;
-    }
-  }
-  else if ((sVar1 < 0x15) && (0x10 < sVar1)) {
+
     return 1;
-  }
-  return 1;
 }
 
 //NGC MATCH
