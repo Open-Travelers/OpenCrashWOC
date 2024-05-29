@@ -1,138 +1,160 @@
-//82% NGC
-s32 RemapAccentedCharacter(char* arg0) {
+//NGC MATCH
+s32 RemapAccentedCharacter(char* c) {
     s32 accent;
 
-    switch (*arg0) {
+    switch (*c) {
         default:
-            return -1;
+            accent = -1;
+            break;
         case -0x1F:
-            *arg0 = '\0';
-            return 6;
+            *c = '\0';
+            accent = 6;
+            break;
         case -0x79:
         case -0x80:
-            *arg0 = 'C';
-            return 0;
-        
+            *c = 'C';
+            accent = 0;
+            break;
+
+        // 1
         case -0x24:
         case -0x66:
         case -0x7F:
-            accent = 'U';
-            *arg0 = accent;
-            return 1;
+            *c = 'U';
+            accent = 1;
+            break;
         case -0x3c:
         case -0x72:
         case -0x7C:
-            accent = 'A';
-            *arg0 = accent;
-            return 1;
+            *c = 'A';
+            accent = 1;
+            break;
         case -0x77:
-            accent = 'E';
-            *arg0 = accent;
-            return 1;
-        
+        case -0x2D:
+            *c = 'E';
+            accent = 1;
+            break;
         case -0x28:
         case -0x75:
-            accent = 'I';
-            *arg0 = accent;
-            return 1;
+            *c = 'I';
+            accent = 1;
+            break;
         case -0x67:
         case -0x6C:
-            accent = 0x4F;
-            *arg0 = accent;
-            return 1;
+            *c = 'O';
+            accent = 1;
+            break;
         
+        // 2
         case -0x2F:
-            accent = 0x4E;
-            *arg0 = accent;
-            return 2;
-        case -0x6D:
-            accent = 0x4F;
-            *arg0 = accent;
-            return 2;
+        case -0x5B:
+        case -0x5C:
+            *c = 'N';
+            accent = 2;
+            break;
+        case -0x39:
+        case -0x3A:
+            *c = 'A';
+            accent = 2;
+            break;
+        case -0x1B:
+        case -0x1C:
+            *c = 'O';
+            accent = 2;
+            break;
 
-        case -0x74:
-            accent = 'I';
-            *arg0 = accent;
-            return 3;
-        case -0x4a:
+        // 3
+        case -0x4A:
         case -0x7D:
-            accent = 'A';
-            *arg0 = accent;
-            return 3;
-        case -0x70:
-        case -0x7E:
-            accent = 'E';
-            *arg0 = accent;
-            return 4;
+            *c = 'A';
+            accent = 3;
+            break;
         case -0x2E:
         case -0x36:
-        // case -0x78:
-            accent = 'E';
-            *arg0 = accent;
-            return 3;
-
+        case -0x78:
+            *c = 'E';
+            accent = 3;
+            break;
+        case -0x29:
+        case -0x74:
+            *c = 'I';
+            accent = 3;
+            break;
+        case -0x1E:
+        case -0x6D:
+            *c = 'O';
+            accent = 3;
+            break;
         case -0x16:
         case -0x6A:
-            accent = 'U';
-            *arg0 = accent;
-            return 3;
+            *c = 'U';
+            accent = 3;
+            break;
         
+        // 4
+        case -0x37:
+        case -0x70:
+        case -0x7E:
+            *c = 'E';
+            accent = 4;
+            break;
         case -0x3F:
         case -0x4B:
         case -0x60:
-            accent = 'A';
-            *arg0 = accent;
-            return 4;
+            *c = 'A';
+            accent = 4;
+            break;
         case -0x20:
         case -0x5E:
-            accent = 0x4F;
-            *arg0 = accent;
-            return 4;
+            *c = 'O';
+            accent = 4;
+            break;
         case -0x17:
         case -0x5D:
-            accent = 'U';
-            *arg0 = accent;
-            return 4;
-
+            *c = 'U';
+            accent = 4;
+            break;
         case -0x2A:
         case -0x5F:
-        case -0x29:
-            accent = 'I';
-            *arg0 = accent;
-            return 4;
+            *c = 'I';
+            accent = 4;
+            break;
+        case -0x13:
         case -0x14:
-            accent = 0x59;
-            *arg0 = accent;
-            return 4;
+            *c = 'Y';
+            accent = 4;
+            break;
         
-        case -0x49:
+        // 5
         case -0x40:
+        case -0x49:
         case -0x7B:
-            accent = 'A';
-            *arg0 = accent;
-            return 5;
+            *c = 'A';
+            accent = 5;
+            break;
         case -0x38:
         case -0x2C:
         case -0x76:
-            accent = 'E';
-            *arg0 = accent;
-            return 5;
+            *c = 'E';
+            accent = 5;
+            break;
         case -0x22:
         case -0x73:
-            accent = 'I';
-            *arg0 = accent;
-            return 5;
+            *c = 'I';
+            accent = 5;
+            break;
         case -0x6B:
         case -0x1D:
-            accent = 0x4F;
-            *arg0 = accent;
-            return 5;
+            *c = 'O';
+            accent = 5;
+            break;
         case -0x69:
         case -0x15:
-            accent = 'U';
-            *arg0 = accent;
-            return 5;
+            *c = 'U';
+            accent = 5;
+            break;
     }
+    return accent;
 }
 
 //NGC MATCH

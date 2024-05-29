@@ -1682,22 +1682,32 @@ u16 SeekRot(u16 a0,u16 a1,s32 shift) {
   return a0 + (d >> shift);
 }
 
-//91%
-u16 TurnRot(u16 a0,u16 a1,s32 rate) {
-  s32 d;
-  
-  if (a1 != a0) {
+//NGC MATCH
+u16 TurnRot(u16 a0, u16 a1, s32 rate) 
+{
+    s32 d;
+
+    if (a1 == a0) 
+    {
+        return a1;
+    }
+    
     d = RotDiff(a0,a1);
-    if (d > 0) {
-      if (d > rate) {
-       return a0 + rate & 0xffff;
+    
+    if (d > 0)
+    {
+      if (d > rate) 
+      {
+       a1 = (a0 + rate) & 0xffff;
+       return a1;
       }
     }
-    if (d < -rate) {
-        return a0 - rate & 0xffff;
+    else if (d < -rate) 
+    {
+        a1 = (a0 - rate) & 0xffff; 
+        return a1; 
     }
-  }
-  return a1;
+    return a1;
 }
 
 //NGC MATCH
