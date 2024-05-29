@@ -59,3 +59,4 @@ Makefile
 OpenCrashWOC.code-workspace
 
 cmake_install.cmake
+.vscode/
