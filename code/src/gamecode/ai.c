@@ -1,96 +1,54 @@
-int FindAIType(char *name,int points)
-
-{
-  int cmp;
-  char *nametmp;
-  short *pnts;
-  int i;
+//NGC MATCH
+s32 FindAIType(char *name,s32 points) {
+  s32 i;
   
-  nametmp = AIType[0].name;
-  i = 0;
-  pnts = &AIType[0].points;
-  while (((cmp = strcmp(name,nametmp), cmp != 0 || (points != *pnts)) || (8 < points))) {
-    i = i + 1;
-    pnts = pnts + 0xe;
-    nametmp = nametmp + 0x1c;
-    if (0x6a < i) {
-      return -1;
-    }
+  for (i = 0; i < 0x6b; i++) {
+      if ((strcmp(name,AIType[i].name) == 0 && (points == AIType[i].points)) && (points < 9)) {
+          return i;
+      }
   }
-  return i;
+  return -1;
 }
 
-
-void LoadAI(void)		//WIP
-
-{
-  int fsize;
-  filehandle fh;
-  char points;
-  int type;
-  int k;
-  int i;
-  int count;
-  int j;
-  byte in_cr0;
-  byte in_cr1;
-  byte in_cr2;
-  byte in_cr3;
-  byte unaff_cr4;
-  byte in_cr5;
-  byte in_cr6;
-  byte in_cr7;
-  float fVar1;
-  char name [16];
-  uint local_38;
-  AITab *tab;
+//NGC MATCH
+void LoadAI(void) {
+  s32 fh;
+  s32 i;
+  s32 j;
+  s32 k;
+  s32 count;
+  s32 points;
+  s32 type;
+  char name[16];
+  void* fbuff;
+  s32 fsize;
   
-  local_38 = (uint)(in_cr0 & 0xf) << 0x1c | (uint)(in_cr1 & 0xf) << 0x18 |
-             (uint)(in_cr2 & 0xf) << 0x14 | (uint)(in_cr3 & 0xf) << 0x10 |
-             (uint)(unaff_cr4 & 0xf) << 0xc | (uint)(in_cr5 & 0xf) << 8 | (uint)(in_cr6 & 0xf) <<  4
-             | (uint)(in_cr7 & 0xf);
-
   sprintf(tbuf,"%s.ai",LevelFileName);
-  fsize = NuFileExists(tbuf);
-  if (fsize != 0) {
-    fsize = NuFileLoadBuffer(tbuf,Chase,0x7fffffff);
-    fh = NuMemFileOpen(Chase,fsize,NUFILE_READ);
+  if (NuFileExists(tbuf) != 0) {
+    fbuff = Chase;
+    fsize = NuFileLoadBuffer(tbuf,fbuff,0x7fffffff);
+    fh = NuMemFileOpen(fbuff,fsize,NUFILE_READ);
     if (fh != 0) {
-      fsize = NuFileReadInt(fh);
-      k = 0;
-      if (0 < fsize) {
-        do {
-          k = k + 1;
-          count = 0;
-          do {
-            points = NuFileReadChar(fh);
-            name[count] = points;
-            count = count + 1;
-          } while (count < 0x10);
-          j = 0;
+      points = NuFileReadInt(fh);
+      for(i = 0; i < points; i++) {
+          for(j = 0; j < 0x10; j++) {
+            name[j] = NuFileReadChar(fh);
+          }
           count = NuFileReadInt(fh);
           type = FindAIType(name,count);
-          if (0 < count) {
-            do {
-              i = 0;
+          for(j = 0; j < count; j++) {
+              k = 0;
               if (type != -1) {
-                i = j;
+                k = j;
               }
-              fVar1 = NuFileReadFloat(fh);
-              j = j + 1;
-              AITab[LEVELAICOUNT].pos[i].x = fVar1;
-              fVar1 = NuFileReadFloat(fh);
-              AITab[LEVELAICOUNT].pos[i].y = fVar1;
-              fVar1 = NuFileReadFloat(fh);
-              AITab[LEVELAICOUNT].pos[i].z = fVar1;
-            } while (j < count);
+              AITab[LEVELAICOUNT].pos[k].x = NuFileReadFloat(fh);
+              AITab[LEVELAICOUNT].pos[k].y = NuFileReadFloat(fh);
+              AITab[LEVELAICOUNT].pos[k].z = NuFileReadFloat(fh);
           }
           if (type != -1) {
-            tab = AITab + LEVELAICOUNT;
-            LEVELAICOUNT = LEVELAICOUNT + 1;
-            tab->ai_type = (char)type;
+            AITab[LEVELAICOUNT].ai_type = (char)type;
+            LEVELAICOUNT++;
           }
-        } while (k < fsize);
       }
       NuFileClose(fh);
     }
@@ -98,29 +56,16 @@ void LoadAI(void)		//WIP
   return;
 }
 
-
-void InitAI(void)
-
-{
-  uchar LevAI;
-  AIType *type;
-  int i;
-  short *chrt;
+//NGC MATCH
+void InitAI(void) {
+  s32 i;
   
   LEVELAITYPES = 0;
-  i = 0x6b;
-  type = AIType;
-  LevAI = '\0';
-  do {
-    chrt = &type->character;
-    type = type + 1;
-    if (CRemap[*chrt] != -1) {
-      LevelAIType[LEVELAITYPES] = LevAI;
-      LEVELAITYPES = LEVELAITYPES + 1;
+  for(i = 0; i < 0x6b; i++) {
+    if (CRemap[AIType[i].character] != -1) {
+      LevelAIType[LEVELAITYPES++] = i;
     }
-    LevAI = LevAI + 1;
-    i = i + -1;
-  } while (i != 0);
+  }
   LEVELAICOUNT = 0;
   if (Level != 0x28) {
     LoadAI();

@@ -75,31 +75,24 @@ int InBugArea(int iRAIL,int iALONG,float fALONG)
   return -1;
 }
 
-
-void ResetBug(void)
-
-{
-  int i;
+//NGC MATCH
+void ResetBug(void) {
+  s32 i;
   
   ResetAnimPacket(&BugAnim,0x22);
-  bug_fade = 0.0;
+  bug_fade = 0.0f;
   i = NearestSplinePoint(&(player->obj).pos,SplTab[70].spl);
-  if (i == -1) {
-    bug_splratio = 0.0;
+  if (i != -1) {
+    bug_splratio = ((float)i / (float)(s32)(SplTab[70].spl->len - 1U));
   }
   else {
-    bug_splratio = (float)((double)CONCAT44(0x43300000,i ^ 0x80000000) - 4503601774854144.0) /
-                   (float)((double)CONCAT44(0x43300000,(int)(SplTab[70].spl)->len - 1U ^ 0x8000000 0)
-                          - 4503601774854144.0);
+    bug_splratio = 0.0f;
   }
-  PointAlongSpline(SplTab[70].spl,bug_splratio,&bug_splpos,(ushort *)0x0,(ushort *)0x0);
-  bug_splpos.x = bug_pos.x;
-  bug_splpos.z = bug_pos.z;
-  bug_splpos.y = bug_pos.y;
+  PointAlongSpline(SplTab[70].spl,bug_splratio,&bug_splpos,NULL,NULL);
+  bug_splpos = bug_pos;
   buglight_enable = 0;
   return;
 }
-
 
 
 void UpdateBugLight(creature_s *c)		//TODO
@@ -299,9 +292,7 @@ void DrawBug(void)
   return;
 }
 
-
-nuvec_s * GetBugPosition(void)
-
-{
+//NGC MATCH
+struct nuvec_s * GetBugPosition(void) {
   return &bug_pos;
 }
