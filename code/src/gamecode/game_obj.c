@@ -223,6 +223,61 @@ void OldTopBot(struct obj_s *obj) {
 }
 
 //NGC MATCH
+float CreatureTopBelow(struct nuvec_s *pos, u32 obj_flags) {
+    struct obj_s *obj;
+    struct nuvec_s obj_pos;
+    float top;
+    float shadow;
+    float dz;
+    float dx;
+    s32 i;
+    
+    shadow = 2000000.0f;
+    for(i = 0; i < GAMEOBJECTCOUNT; i++) {
+        obj = pObj[i];
+        if (((obj != NULL) && (obj->invisible == 0)) && ((obj->flags & obj_flags) != 0)) {
+            if ((obj->flags & 0x2000) != 0) {
+                if (obj->draw_frame == 0) {
+                    continue;
+                }
+                if ((obj->pLOCATOR != NULL) && (obj->model->pLOCATOR[0] != NULL)) {
+                    obj_pos.x = obj->pLOCATOR->_30;
+                    obj_pos.y = obj->pLOCATOR->_31;
+                    obj_pos.z = obj->pLOCATOR->_32;
+                } else {
+                    goto here;
+                }
+            }
+            else
+            {
+                here:
+                obj_pos = obj->pos;
+            }
+            if ((obj->flags & 0x8000) != 0) {
+                if (CylinderCuboidOverlapXZ(pos, 0.0f, obj, &obj_pos) == 0) {
+                    continue;
+                }
+            }
+            else {
+                dx = pos->x - obj_pos.x;
+                dz = pos->z - obj_pos.z;
+                dx *= dx;
+                dz *= dz;
+                if ((dx + dz) > (obj->RADIUS * obj->RADIUS)) {
+                    continue;
+                }
+            }
+            
+            top = (obj->top * obj->SCALE + obj->pos.y);
+            if ((shadow == 2000000.0f) || (top > shadow)) {
+                shadow = top;
+            }
+        }
+    }
+    return shadow;
+}
+
+//NGC MATCH
 s32 WumpaCollisions(struct obj_s *obj) {
     struct wumpa_s *wumpa;
     struct winfo_s* info;
@@ -551,6 +606,79 @@ s32 WipeCreatures(struct RPos_s *rpos) {
       }
   }
   return 0;
+}
+
+//NGC MATCH
+s32 CreatureRayCast(struct nuvec_s *p0,struct nuvec_s *p1) {
+    struct nuvec_s v0;
+    struct nuvec_s v1;
+    struct nuvec_s obj_pos;
+    struct nuvec_s min;
+    struct nuvec_s max;
+    struct obj_s *obj;
+    s32 i;
+    s32 face;
+    float ratio;
+    
+    ratio = 1.0f;
+    for(i = 0; i < GAMEOBJECTCOUNT; i++) {
+        obj = pObj[i];
+        if ((obj != NULL) && (obj->invisible == 0) && (obj->flags & 0x14) != 0) {
+            if ((obj->flags & 0x2000) != 0) {
+                if (obj->draw_frame == 0) {
+                    continue;
+                }
+                if ((obj->pLOCATOR != NULL) && (obj->model->pLOCATOR[0] != NULL)) {
+                    obj_pos.x = obj->pLOCATOR->_30;
+                    obj_pos.y = obj->pLOCATOR->_31;
+                    obj_pos.z = obj->pLOCATOR->_32;
+                } else {
+                    goto here;
+                }
+            } else {
+                here:
+                obj_pos = obj->pos;
+            }
+            if ((obj->flags & 0x8000) != 0) {
+                NuVecSub(&v0,p0,&obj_pos);
+                NuVecSub(&v1,p1,&obj_pos);
+                NuVecRotateY(&v0,&v0,-(u32)obj->hdg);
+                NuVecRotateY(&v1,&v1,-(u32)obj->hdg);
+                min.x = (obj->min).x * obj->SCALE;
+                min.y = (obj->min).y * obj->SCALE;
+                min.z = (obj->min).z * obj->SCALE;
+                max.x = (obj->max).x * obj->SCALE;
+                max.y = (obj->max).y * obj->SCALE;
+                max.z = (obj->max).z * obj->SCALE;
+                if ((RayIntersectCuboid(&v0,&v1,&min,&max) != 0) && (temp_ratio < ratio)) {
+                    face = temp_face;
+                    ratio = temp_ratio;
+                }
+            }
+            else {
+                NuVecSub(&v0,p0,&obj_pos);
+                NuVecSub(&v1,p1,&obj_pos);
+                NuVecRotateY(&v0,&v0,-(u32)obj->hdg);
+                NuVecRotateY(&v1,&v1,-(u32)obj->hdg);
+                min.x = -obj->RADIUS;
+                min.y = (obj->min).y * obj->SCALE;
+                min.z = -obj->RADIUS;
+                max.x = obj->RADIUS;
+                max.y = (obj->max).y * obj->SCALE;
+                max.z = obj->RADIUS;
+                if ((RayIntersectCuboid(&v0,&v1,&min,&max) != 0) && (temp_ratio < ratio)) {
+                    face = temp_face;
+                    ratio = temp_ratio;
+                }
+            }
+        }
+    }
+    temp_face = face;
+    temp_ratio = ratio;
+    if (ratio < 1.0f) {
+        return 1;
+    }
+    return 0;
 }
 
 //NGC MATCH

@@ -1128,35 +1128,7 @@ struct NUHGOBJ_s* NuGHGRead(union variptr_u *buff, char *name)
 }
 
 
-//80.95%
-
-// Size: 0xE0
-struct nutextest_s //0xe0
-{
-    u32 unk0;
-    s32 unk4;
-    s32 unk8;
-    s32 unkc;
-    s32 unk10;
-    s32 unk14;
-    u64 unk18;
-    s32 unk20;
-    s32 unk24;
-    s32 unk28;
-    s32 unk2c;
-    s8 unk30[0x10];
-    s8 unk40[0x10];
-    s8 unk50[0x10];
-    s8 unk60[0x10];
-    s8 unk70[0x10];
-    s8 unk80[0x10];
-    s8 unk90[0x10];
-    s8 unka0[0x10];
-    s8 unkb0[0x10];
-    s8 unkc0[0x10];
-    s8 unkd0[0xc];
-    s32 unkdc; //0xe0
-};
+//73.54%
 
 struct nuparamtest_s
 {
@@ -1177,48 +1149,67 @@ struct nuparamtest_s
     s16 unk20;
 };
 
-struct numembertest_s
-{
-    s32 unk0;
-    s32 unk4;
-    u16 unk8;
-    u16 unka;
-    u16 unkc;
-    u16 unke;
-    s16 unk10;
-    s16 unk12;
-    s32 unk14;
-    s32 unk18;
-    s32 unk1c;
-    s8 unk20[0x10];
-    s8 unk30[0x10];
-    s8 unk40[0x10];
-    s8 unk50[0x10];
-    s8 unk60[0x10];
-    s8 unk70[0x10];
-    s8 unk80[0x10];
-    s8 unk90;
-    s8 unk91;
-    s8 unk92;
-    s8 unk93;
-    s8 unk94;
-    s8 unk95;
-    s8 unk96;
-    s8 unk97;
-    s32 unk98;
-    s32 unk9c;
-    s8 unka0;
-    s8 unka1;
-    s16 unka2;
-    s16 unka4;
-    s16 unka6;
-    s16 unka8;
-    s16 unkaa;
-    s32 unkac;
+struct ps2tex_s { // 0xb0
+	/* 0x00 */ struct ps2tex_s *succ;
+	/* 0x04 */ struct ps2tex_s *prev;
+	/* 0x08 */ short unsigned int lowaddr;
+	/* 0x0a */ short unsigned int highaddr;
+	/* 0x0c */ short unsigned int req;
+	/* 0x0e:0 */ short unsigned int housed : 1;
+	/* 0x10 */ short unsigned int p2w;
+	/* 0x12 */ short unsigned int p2h;
+	/* 0x14 */ struct sceDmaTag *dt_load[7];
+	/* 0x30 */ unsigned int loadsize[7];
+	/* 0x4c */ unsigned int offset[7];
+	/* 0x68 */ short unsigned int loadaddr[7];
+	/* 0x76 */ short unsigned int loadwidth[7];
+	/* 0x84 */ short unsigned int bltwidth[7];
+	/* 0x92 */ unsigned char nummm;
+	/* 0x93 */ unsigned char psm;
+	/* 0x94 */ unsigned char bltpsm;
+	/* 0x95 */ unsigned char tcc;
+	/* 0x96 */ unsigned char texa;
+	/* 0x97 */ unsigned char tfx;
+	/* 0x98 */ struct sceDmaTag *clut_load;
+	/* 0x9c */ struct sceDmaTag *clut_alt;
+	/* 0xa0 */ short unsigned int clut_addr;
+	/* 0xa2 */ short unsigned int clut_width;
+	/* 0xa4 */ short unsigned int clut_psm;
+	/* 0xa6 */ short unsigned int clut_offset;
+	/* 0xa8 */ short unsigned int clut_loadsize;
+	/* 0xac */ unsigned int tmpaddr;
 };
 
-extern struct nutextest_s * tinfo;
+struct nutex_s { // 0x1c
+	/* 0x00 */ enum nutextype_e type;
+	/* 0x04 */ s32 width;
+	/* 0x08 */ s32 height;
+	/* 0x0c */ s32 mmcnt;
+	/* 0x10 */ void *bits;
+	/* 0x14 */ s32 *pal;
+};
+
+struct nusystex_s { // 0xe0
+	/* 0x00 */ struct nutex_s tex;
+	/* 0x18 */ short int ref;
+	/* 0x1a:0 */ short int used : 1;
+	/* 0x1a:1 */ short int xdef : 1;
+	/* 0x20 */ struct ps2tex_s ps2tex;
+};
+
+extern struct nusystex_s * tinfo;
 extern s32 tpid;
+
+/*
+int NuTexCreateNative( void *data) {
+	 int id;
+	VARIPTR ptr;
+	 NUTEX *tex;
+	 PS2TEX *ptex;
+	 int n;
+	 int id;
+}
+*/
 
 s32 NuTexCreateNative(struct nuparamtest_s *param_1)
 {
@@ -1230,15 +1221,14 @@ s32 NuTexCreateNative(struct nuparamtest_s *param_1)
     s32 iVar6;
     s32 *piVar7;
     s32 *pnVar10;
-    struct nutristream_s *__s;
-    struct numembertest_s *mem;
-    struct nutextest_s *tex;
+    struct ps2tex_s *mem;
+    struct nusystex_s *tex;
     s32 *pnVar8;
     s32 tids;
     
     iVar6 = tpid;
     tids = tpid;
-    while ((tinfo[tpid].unk18 & 0x10000) != 0) {
+    while ((tinfo[tpid].ref & 0x10000) != 0) {
         tpid = tids + 1;
         if (iVar6 == tpid) {
             tids = -1;
@@ -1258,36 +1248,36 @@ s32 NuTexCreateNative(struct nuparamtest_s *param_1)
         if (param_1->unk2 == 0) {
             piVar7 = &param_1->unk10;
             tex = &tinfo[tpid];
-            // pnVar8 = (int *)(tinfo + tids * 8);
-            mem = &tex->unk20;
-            // tex->unk18 |= 0x30000;
-            tex->unk18 |= 0x1;
-            tex->unk18 |= 0x2;
-            tex->unk0 = param_1->unkc;
-            tex->unk4 = *(s32*)param_1;
-            tex->unk8 = ((s32*)param_1)[1];
-            tex->unkc = param_1->unke - 1;
-            tex->unk10 = 0;
-            tex->unk14 = 0;
-            memset(mem, 0, sizeof(struct nutristream_s));
+            // pnVar8 = (int *)(tinfo + tids);
+            mem = &tex->ps2tex;
+            // tex->ref |= 0x30000;
+            tex->ref |= 0x1;
+            tex->ref |= 0x2;
+           // tex->tex = (struct ps2tex_s*)param_1->unkc;
+            tex->tex.width = *(s32*)param_1;
+            tex->tex.height = ((s32*)param_1)[1];
+            tex->tex.mmcnt = param_1->unke - 1;
+            tex->tex.bits = 0;
+            tex->tex.pal = 0;
+            memset(mem, 0, sizeof(struct ps2tex_s));
             
-            mem->unk92 = param_1->unke;
-            mem->unk93 = param_1->unkd;
-            mem->unk94 = param_1->unkd;
-            mem->unk95 = param_1->unkf;
-            mem->unkc = param_1->unk8;
+            mem->nummm = param_1->unke;
+            mem->psm = param_1->unkd;
+            mem->bltpsm = param_1->unkd;
+            mem->tcc = param_1->unkf;
+            mem->req = param_1->unk8;
             
-            if (tex->unk0 - 4 < 4) {
-                mem->unk98 = &param_1->unk20;
-                mem->unka6 = *(u16 *)((s32)piVar7 + 4);
-                mem->unka2 = *(u16 *)((s32)piVar7 + 8);
-                mem->unka4 = *(u16 *)((s32)piVar7 + 12);
-                mem->unka8 = *(u16 *)(&param_1->unk10) - 0x10;
+            if (tex->tex.type < 4) {
+                mem->clut_load = &param_1->unk20;
+                mem->clut_offset = *(u16 *)((s32)piVar7 + 4);
+                mem->clut_width = *(u16 *)((s32)piVar7 + 8);
+                mem->clut_psm = *(u16 *)((s32)piVar7 + 12);
+                mem->clut_loadsize = *(u16 *)(&param_1->unk10) - 0x10;
                 piVar7 = (int)piVar7 + param_1->unk10;
             }
 
-            piVar5 = (s32)tex + 0xA4;
-            piVar4 = (s32)tex + 0x50;
+            piVar5 = tex->ps2tex.bltwidth[2];
+            piVar4 = tex->ps2tex.loadsize[1];
             for (iVar6 = 0; iVar6 < param_1->unke; iVar6++) {
                 // do {
                     // iVar6 = iVar6 + 1;
@@ -1303,16 +1293,16 @@ s32 NuTexCreateNative(struct nuparamtest_s *param_1)
             }
             
             sVar3 = 0;
-            for (iVar6 = tex->unk4; 1 < iVar6; iVar6 = iVar6 >> 1) {
+            for (iVar6 = tex->tex.width; 1 < iVar6; iVar6 = iVar6 >> 1) {
                 sVar3 = sVar3 + 1;
             }
             
-            mem->unk10 = sVar3;
+            mem->p2w = sVar3;
             sVar3 = 0;
-            for (iVar6 = tex->unk8; 1 < iVar6; iVar6 = iVar6 >> 1) {
+            for (iVar6 = tex->tex.height; 1 < iVar6; iVar6 = iVar6 >> 1) {
                 sVar3 = sVar3 + 1;
             }
-            mem->unk12 = sVar3;
+            mem->p2h = sVar3;
         }
         else {
             if (param_1->unk2 != 1) {
@@ -1320,31 +1310,31 @@ s32 NuTexCreateNative(struct nuparamtest_s *param_1)
             }
             tex = &tinfo[tpid];
             piVar7 = &param_1->unk10;
-            // pnVar8 = (int *)(tinfo + tids * 8);
-            mem = &tex->unk20;
-            // tex->unk18 |= 0x30000;
-            tex->unk18 |= 0x2;
-            tex->unk18 |= 0x1;
-            tex->unk0 = param_1->unkc;
-            tex->unk4 = (u16)param_1->unk0;
-            tex->unk8 = ((u16*)param_1)[2];
-            tex->unkc = (param_1->unkf & 0x7F) - 1;
-            tex->unk14 = 0;
-            tex->unk10 = 0;
-            memset(mem, 0, sizeof(struct nutristream_s));
+            // pnVar8 = (int *)(tinfo + tids);
+            mem = (void*)&tex->ps2tex;
+            // tex->ref |= 0x30000;
+            tex->ref |= 0x2;
+            tex->ref |= 0x1;
+            tex->tex.type = param_1->unkc;
+            tex->tex.width = (u16)param_1->unk0;
+            tex->tex.height = ((u16*)param_1)[2];
+            tex->tex.mmcnt = (param_1->unkf & 0x7F) - 1;
+            tex->tex.pal = 0;
+            tex->tex.bits = 0;
+            memset(mem, 0, sizeof(struct ps2tex_s));
             
-            mem->unk92 = (param_1->unkf & 0x7F);
-            mem->unk93 = param_1->unkd;
-            mem->unk94 = param_1->unke;
-            mem->unk95 = ((u32*)param_1)[3] >> 0x1f;
-            mem->unkc = param_1->unk8;
+            mem->nummm = (param_1->unkf & 0x7F);
+            mem->psm = param_1->unkd;
+            mem->bltpsm = param_1->unke;
+            mem->tcc = ((u32*)param_1)[3] >> 0x1f;
+            mem->req = param_1->unk8;
 
-            if (tex->unk0 - 4 < 4) {
-                mem->unk98 = &param_1->unk20;
-                mem->unka6 = *(u16 *)((s32)piVar7 + 4);
-                mem->unka2 = *(u16 *)((s32)piVar7 + 8);
-                mem->unka4 = *(u16 *)((s32)piVar7 + 12);
-                mem->unka8 = *(u16 *)((s32)piVar7 + 16) - 0x10;
+            if (tex->tex.type < 4) {
+                mem->clut_load = &param_1->unk20;
+                mem->clut_offset = *(u16 *)((s32)piVar7 + 4);
+                mem->clut_width = *(u16 *)((s32)piVar7 + 8);
+                mem->clut_psm = *(u16 *)((s32)piVar7 + 12);
+                mem->clut_loadsize = *(u16 *)((s32)piVar7 + 16) - 0x10;
                 piVar7 = (int)piVar7 + param_1->unk10;
             }
             
@@ -1365,18 +1355,157 @@ s32 NuTexCreateNative(struct nuparamtest_s *param_1)
             }
             
             sVar3 = 0;
-            for (iVar6 = tex->unk4; 1 < iVar6; iVar6 = iVar6 >> 1) {
+            for (iVar6 = tex->tex.width; 1 < iVar6; iVar6 = iVar6 >> 1) {
                 sVar3 = sVar3 + 1;
             }
             
-            mem->unk10 = sVar3;
+            mem->p2w = sVar3;
             sVar3 = 0;
-            for (iVar6 = tex->unk8; 1 < iVar6; iVar6 = iVar6 >> 1) {
+            for (iVar6 = tex->tex.height; 1 < iVar6; iVar6 = iVar6 >> 1) {
                 sVar3 = sVar3 + 1;
             }
-            mem->unk12 = sVar3;
+            mem->p2h = sVar3;
         }
         return tids + 1;
     }
     return 0;
+}
+
+s32 NuPs2CreateRenderTarget(struct nutex_s * tex, struct ps2tex_s * ptex);
+s32 GenPaletteLoad(struct nutex_s * tex, struct ps2tex_s * ptex);
+s32 GenTextureLoad(struct nutex_s * tex, struct ps2tex_s * ptex);
+void QuantizeTexture(struct nutex_s *tex);          /* extern */
+extern s32 numtl_force_mipmap;
+extern s32 nutex_force_quantisation;
+extern s32 palcnt;
+s32 palette[256];
+extern void* txbuff;
+
+/*
+	// struct nutex_s *ttex;
+	// s32 n;
+*/
+
+static inline int NuMiscNextPow2Exp(int v) {
+  s32 i;
+  s32 rv;
+  
+  rv = 0;
+  if (1 < v) {
+    for (i = v; i > 1; i++) {
+        rv++;
+    }
+  }
+  if ((v & (1 << (rv)) - 1U) != 0) {
+    rv++;
+  }
+  return rv;
+}
+
+s32 NuPs2TxCreate(struct nutex_s *tex, struct ps2tex_s *ptex) 
+{
+  s32 n;
+  struct nutex_s local_60;
+  
+  switch(tex->type) {
+  case NUTEX_RGB16:
+  case NUTEX_RGBA16:
+  case NUTEX_RGB24:
+  case NUTEX_RGBA32:
+  case NUTEX_PAL4:
+  case NUTEX_PAL8:
+  case NUTEX_PAL4_S:
+  case NUTEX_PAL8_S:
+    break;
+  case NUTEX_RT8:
+  case NUTEX_RTT8:
+  case NUTEX_RT8H:
+  case NUTEX_RT32:
+  case NUTEX_RT24:
+  case NUTEX_RT16:
+  case NUTEX_RTT32:
+  case NUTEX_RTT24:
+  case NUTEX_RTT16:
+  case NUTEX_RZT32:
+  case NUTEX_RZT24:
+  case NUTEX_RZT16:
+  //case NUTEX_RTT8H:
+  //case NUTEX_RTT16S:
+    return NuPs2CreateRenderTarget(tex,ptex);
+  default:
+    NuErrorProlog("..\\nu2.ps2\\nups2\\ps2txtr.c",0x63d)("unsupported texture format");
+    return 0;
+  }
+  memset(ptex,0,0xb0);
+  palcnt = 0;
+  if (nutex_force_quantisation != 0) {
+    QuantizeTexture(tex);
+  }
+  if (palcnt != 0) {
+    tex->type = NUTEX_PAL8;
+      local_60 = *(struct nutex_s *)tex;
+    local_60.type = NUTEX_PAL8;
+    local_60.pal = &palette;
+    local_60.bits = txbuff;
+    //local_60 = uVar16;
+    NuDebugMsgProlog("..\\nu2.ps2\\nups2\\ps2txtr.c",0x650)("Quantized - %d colours",palcnt);
+    tex = &local_60;
+  }
+    
+  ptex->p2w = (short unsigned int)NuMiscNextPow2Exp(tex->width);
+  ptex->p2h = (short unsigned int)NuMiscNextPow2Exp(tex->height);
+    
+  if (tex->width == 0) {
+    n = tex->height;
+  }
+  else {
+    if (1 << ((u16)ptex->p2w ) != tex->width) {
+      NuDebugMsgProlog("..\\nu2.ps2\\nups2\\ps2txtr.c",0x659)("\r\n*********************************************\r\nTexture width MUST be a power  of two, not %d\r\n*********************************************",tex->width);
+    }
+    n = tex->height;
+  }
+  if ((n != 0) && (1 << ((u16)ptex->p2h ) != n)) {
+    NuDebugMsgProlog("..\\nu2.ps2\\nups2\\ps2txtr.c",0x65c)("\r\n*********************************************\r\nTexture height MUST be a power of two, not %d\r\n*********************************************"
+              ,tex->height);
+  }
+  ptex->req = 0;
+  if (tex->bits != NULL) {
+    GenTextureLoad(tex,ptex);
+    if (tex->mmcnt == 0) {
+        if(numtl_force_mipmap != 0) {
+          for (n = 1; n < 0; n++) {
+            GenTextureLoad(tex,ptex);
+          } 
+        }
+    }
+    for(n = 1; n < tex->mmcnt; n++) {
+        GenTextureLoad(tex,ptex);
+    }
+  }
+  GenTextureLoad(tex,ptex);
+  GenPaletteLoad(tex,ptex);
+    switch (tex->type) {
+        case NUTEX_PAL4_S:
+        tex->width = tex->width << 1;
+        tex->height = tex->height << 2;
+        break;
+        case NUTEX_PAL8_S:
+        tex->width = tex->width << 1;
+        tex->height = tex->height << 1;
+        break;
+    }
+  if (ptex->p2w < 0x201) {
+    if (0x200 < (u16)ptex->p2h) {
+        ptex->p2h = ptex->p2h >> 1;
+    }
+  }
+  else {
+    do {
+      do {
+        ptex->p2w = (ptex->p2w >> 1);
+        ptex->p2h = ptex->p2h >> 1;
+      } while(ptex->p2w > 0x200); 
+    } while(ptex->p2h > 0x200);
+  } 
+  return 1;
 }
