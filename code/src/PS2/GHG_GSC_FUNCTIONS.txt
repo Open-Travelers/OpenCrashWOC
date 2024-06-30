@@ -1128,7 +1128,7 @@ struct NUHGOBJ_s* NuGHGRead(union variptr_u *buff, char *name)
 }
 
 
-//73.54%
+//85.65%
 
 struct nuparamtest_s
 {
@@ -1158,7 +1158,7 @@ struct ps2tex_s { // 0xb0
 	/* 0x0e:0 */ short unsigned int housed : 1;
 	/* 0x10 */ short unsigned int p2w;
 	/* 0x12 */ short unsigned int p2h;
-	/* 0x14 */ struct sceDmaTag *dt_load[7];
+	/* 0x14 */ struct _sceDmaTag *dt_load[7];
 	/* 0x30 */ unsigned int loadsize[7];
 	/* 0x4c */ unsigned int offset[7];
 	/* 0x68 */ short unsigned int loadaddr[7];
@@ -1194,11 +1194,16 @@ struct nusystex_s { // 0xe0
 	/* 0x18 */ short int ref;
 	/* 0x1a:0 */ short int used : 1;
 	/* 0x1a:1 */ short int xdef : 1;
+	/* 0x1a:1 */ short int xdef1;
 	/* 0x20 */ struct ps2tex_s ps2tex;
+    s32 pad[4];
 };
 
 extern struct nusystex_s * tinfo;
 extern s32 tpid;
+
+typedef u32 uintptr_t;
+#define READ_AT(type, x, pos) ( *(type*)( ((uintptr_t)x) + pos) )
 
 /*
 int NuTexCreateNative( void *data) {
@@ -1211,165 +1216,168 @@ int NuTexCreateNative( void *data) {
 }
 */
 
-s32 NuTexCreateNative(struct nuparamtest_s *param_1)
-{
-    char bVar1;
-    u64 uVar2;
-    s32 sVar3;
-    s32 *piVar4;
-    s32 *piVar5;
-    s32 iVar6;
-    s32 *piVar7;
-    s32 *pnVar10;
-    struct ps2tex_s *mem;
-    struct nusystex_s *tex;
-    s32 *pnVar8;
-    s32 tids;
-    
-    iVar6 = tpid;
-    tids = tpid;
-    while ((tinfo[tpid].ref & 0x10000) != 0) {
-        tpid = tids + 1;
-        if (iVar6 == tpid) {
-            tids = -1;
-            goto LAB_0011dde0;
+static inline int getPow2(int v) {
+    int i;
+    for (i = 0; 1 < v; i++) 
+    {
+        v >>= 1;
+    }
+    return i;
+}
+
+static inline int check_alloc() {
+    int id;
+    int iVar6;
+    id = tpid;
+    while (tinfo[tpid].used) {
+        tpid++;
+        if (id == tpid) {
+            return -1;
         }
         if (tex_allocmax <= tpid) {
             tpid = 0;
         }
-        tids = tpid;
     }
-    nutex_alloc_cnt = nutex_alloc_cnt + 1;
-    tids = tpid;
-    LAB_0011dde0:
+    nutex_alloc_cnt++;
+    return tpid;
+}
+
+
+int NuTexCreateNative(void *data)
+{
+    int *piVar4;
+    int *piVar5;
+    int iVar6;
+    int *piVar7;
+    struct nusystex_s *tex;
+    struct ps2tex_s *ptex;
+    int n;
+    int id;
+    struct nuparamtest_s *param_1;
+    char pad[8]; // stack padding, remove if stack pointer differs 
+    int var_a2;
+    int var_t0;
+    s32 tids;
+    s32 i;
+
+    // var_a2 = tpid;
+
+    param_1 = data; 
+    id = check_alloc();
     
-    if(tids >= 0)
+    if (id >= 0)
     {
         if (param_1->unk2 == 0) {
             piVar7 = &param_1->unk10;
-            tex = &tinfo[tpid];
-            // pnVar8 = (int *)(tinfo + tids);
-            mem = &tex->ps2tex;
-            // tex->ref |= 0x30000;
-            tex->ref |= 0x1;
-            tex->ref |= 0x2;
+            tex = &tinfo[id];
+            // pnVar8 = (int *)(tinfo + id);
+            tex->used = 1;
+            tex->xdef = 1;
+            ptex = &tex->ps2tex;
+            // tex->ref = id;
            // tex->tex = (struct ps2tex_s*)param_1->unkc;
+            tex->tex.type = param_1->unkc;
             tex->tex.width = *(s32*)param_1;
             tex->tex.height = ((s32*)param_1)[1];
             tex->tex.mmcnt = param_1->unke - 1;
             tex->tex.bits = 0;
             tex->tex.pal = 0;
-            memset(mem, 0, sizeof(struct ps2tex_s));
+            memset(ptex, 0, sizeof(struct ps2tex_s));
             
-            mem->nummm = param_1->unke;
-            mem->psm = param_1->unkd;
-            mem->bltpsm = param_1->unkd;
-            mem->tcc = param_1->unkf;
-            mem->req = param_1->unk8;
-            
-            if (tex->tex.type < 4) {
-                mem->clut_load = &param_1->unk20;
-                mem->clut_offset = *(u16 *)((s32)piVar7 + 4);
-                mem->clut_width = *(u16 *)((s32)piVar7 + 8);
-                mem->clut_psm = *(u16 *)((s32)piVar7 + 12);
-                mem->clut_loadsize = *(u16 *)(&param_1->unk10) - 0x10;
+            ptex->nummm = param_1->unke;
+            ptex->psm = param_1->unkd;
+            ptex->bltpsm = param_1->unkd;
+            ptex->tcc = param_1->unkf;
+            ptex->req = param_1->unk8;
+
+            if (
+                (tex->tex.type == NUTEX_PAL4) 
+                || (tex->tex.type == NUTEX_PAL8)
+                || (tex->tex.type == NUTEX_PAL4_S)
+                || (tex->tex.type == NUTEX_PAL8_S)
+            ) {
+                ptex->clut_load = &param_1->unk20;
+                ptex->clut_offset = READ_AT(u16, piVar7, 4);
+                ptex->clut_width = READ_AT(u16, piVar7, 8);
+                ptex->clut_psm = READ_AT(u16, piVar7, 12);
+                ptex->clut_loadsize = READ_AT(u16, param_1, 0x10) - 0x10;
                 piVar7 = (int)piVar7 + param_1->unk10;
             }
 
-            piVar5 = tex->ps2tex.bltwidth[2];
-            piVar4 = tex->ps2tex.loadsize[1];
-            for (iVar6 = 0; iVar6 < param_1->unke; iVar6++) {
-                // do {
-                    // iVar6 = iVar6 + 1;
-                    piVar4[-7] = (int)piVar7 + piVar7[3] + 0x10;
-                    piVar4[7] = piVar7[1];
-                    *(u16 *)((int)piVar5 + -0xe) = *(u16 *)(piVar7 + 2);
-                    *(u16 *)piVar5 = *(u16 *)(piVar7 + 2);
-                    piVar5 = (int *)((int)piVar5 + 2);
-                    *piVar4 = *piVar7 + -0x10;
-                    piVar4 = piVar4 + 1;
-                    piVar7 = (int *)((int)piVar7 + *piVar7 + piVar7[3]);
-                // } while (iVar6 < (int)(uint)*(u8 *)((int)param_1 + 0xe));
+            for (i = 0; i < param_1->unke; i++) {
+                tex->ps2tex.dt_load[i] = (uintptr_t)piVar7 + 0x10 + READ_AT(s32, piVar7, 0xC);
+                tex->ps2tex.offset[i] = READ_AT(s32, piVar7, 0x4);
+            
+                tex->ps2tex.loadwidth[i] = READ_AT(u16, piVar7, 8);
+                tex->ps2tex.bltwidth[i] = READ_AT(u16, piVar7, 8);
+            
+                tex->ps2tex.loadsize[i] = READ_AT(s32, piVar7, 0) - 0x10;
+                piVar7 = (int *)((int)piVar7 + (READ_AT(s32, piVar7, 0) + READ_AT(s32, piVar7, 0xC)));
             }
             
-            sVar3 = 0;
-            for (iVar6 = tex->tex.width; 1 < iVar6; iVar6 = iVar6 >> 1) {
-                sVar3 = sVar3 + 1;
-            }
-            
-            mem->p2w = sVar3;
-            sVar3 = 0;
-            for (iVar6 = tex->tex.height; 1 < iVar6; iVar6 = iVar6 >> 1) {
-                sVar3 = sVar3 + 1;
-            }
-            mem->p2h = sVar3;
+            ptex->p2w = getPow2(tex->tex.width);
+            ptex->p2h = getPow2(tex->tex.height);
         }
-        else {
-            if (param_1->unk2 != 1) {
-                return 0;
-            }
-            tex = &tinfo[tpid];
+        else if (param_1->unk2 == 1) {
+            tex = &tinfo[id];
             piVar7 = &param_1->unk10;
-            // pnVar8 = (int *)(tinfo + tids);
-            mem = (void*)&tex->ps2tex;
-            // tex->ref |= 0x30000;
-            tex->ref |= 0x2;
-            tex->ref |= 0x1;
-            tex->tex.type = param_1->unkc;
-            tex->tex.width = (u16)param_1->unk0;
-            tex->tex.height = ((u16*)param_1)[2];
-            tex->tex.mmcnt = (param_1->unkf & 0x7F) - 1;
-            tex->tex.pal = 0;
-            tex->tex.bits = 0;
-            memset(mem, 0, sizeof(struct ps2tex_s));
+            tex->used = 1;
+            tex->xdef = 1;
+            ptex = &tex->ps2tex;
             
-            mem->nummm = (param_1->unkf & 0x7F);
-            mem->psm = param_1->unkd;
-            mem->bltpsm = param_1->unke;
-            mem->tcc = ((u32*)param_1)[3] >> 0x1f;
-            mem->req = param_1->unk8;
+            tex->tex.type = param_1->unkc;
+            tex->tex.width = READ_AT(u16, param_1, 0);
+            tex->tex.height = READ_AT(u16, param_1, 4);
+            tex->tex.mmcnt = (param_1->unkf & 0x7F) - 1;
+            tex->tex.bits = 0;
+            tex->tex.pal = 0;
+            memset(ptex, 0, sizeof(struct ps2tex_s));
+            
+            ptex->nummm = (param_1->unkf & 0x7F);
+            ptex->psm = param_1->unkd;
+            ptex->bltpsm = param_1->unke;
+            ptex->tcc = ((u32*)param_1)[3] >> 0x1f;
+            ptex->req = param_1->unk8;
 
-            if (tex->tex.type < 4) {
-                mem->clut_load = &param_1->unk20;
-                mem->clut_offset = *(u16 *)((s32)piVar7 + 4);
-                mem->clut_width = *(u16 *)((s32)piVar7 + 8);
-                mem->clut_psm = *(u16 *)((s32)piVar7 + 12);
-                mem->clut_loadsize = *(u16 *)((s32)piVar7 + 16) - 0x10;
+            if (
+                (tex->tex.type == NUTEX_PAL4) 
+                || (tex->tex.type == NUTEX_PAL8)
+                || (tex->tex.type == NUTEX_PAL4_S)
+                || (tex->tex.type == NUTEX_PAL8_S)
+            ) {
+                ptex->clut_load = &param_1->unk20;
+                ptex->clut_offset = READ_AT(u16, piVar7, 4);
+                ptex->clut_width = READ_AT(u16, piVar7, 8);
+                ptex->clut_psm = READ_AT(u16, piVar7, 12);
+                ptex->clut_loadsize = READ_AT(u16, param_1, 0x10) - 0x10;
                 piVar7 = (int)piVar7 + param_1->unk10;
             }
             
-            piVar5 = (s32)tex + 0xA4;
-            piVar4 = (s32)tex + 0x50;
-            for (iVar6 = 0; iVar6 < param_1->unke; iVar6++) {
-                // do {
-                    // iVar6 = iVar6 + 1;
-                    piVar4[-7] = (int)piVar7 + piVar7[3] + 0x10;
-                    piVar4[7] = piVar7[1];
-                    *(u16 *)((int)piVar5 + -0xe) = *(u16 *)(piVar7 + 2);
-                    *(u16 *)piVar5 = *(u16 *)(piVar7 + 2);
-                    piVar5 = (int *)((int)piVar5 + 2);
-                    *piVar4 = *piVar7 + -0x14;
-                    piVar4 = piVar4 + 1;
-                    piVar7 = (int *)((int)piVar7 + *piVar7 + piVar7[3]);
-                // } while (iVar6 < (int)(uint)*(u8 *)((int)param_1 + 0xe));
+            for (i = 0; i < (param_1->unkf & 0x7F); i++) 
+            {
+                tex->ps2tex.dt_load[i] = (uintptr_t)piVar7 + 0x14 + READ_AT(s32, piVar7, 0x10);
+                tex->ps2tex.offset[i] = READ_AT(s32, piVar7, 0x4);
+            
+                tex->ps2tex.loadwidth[i] = READ_AT(u16, piVar7, 8);
+                tex->ps2tex.bltwidth[i] = READ_AT(u16, piVar7, 0xC);
+            
+                tex->ps2tex.loadsize[i] = READ_AT(s32, piVar7, 0) - 0x14;
+                piVar7 = (int *)((uintptr_t)piVar7 + (READ_AT(s32, piVar7, 0) + READ_AT(s32, piVar7, 0x10)));
             }
             
-            sVar3 = 0;
-            for (iVar6 = tex->tex.width; 1 < iVar6; iVar6 = iVar6 >> 1) {
-                sVar3 = sVar3 + 1;
-            }
-            
-            mem->p2w = sVar3;
-            sVar3 = 0;
-            for (iVar6 = tex->tex.height; 1 < iVar6; iVar6 = iVar6 >> 1) {
-                sVar3 = sVar3 + 1;
-            }
-            mem->p2h = sVar3;
+            ptex->p2w = getPow2(tex->tex.width);
+            ptex->p2h = getPow2(tex->tex.height);
+        } else {
+            return 0;
         }
-        return tids + 1;
+        
+        return id + 1;
     }
+    
     return 0;
 }
+
+//95.25%
 
 s32 NuPs2CreateRenderTarget(struct nutex_s * tex, struct ps2tex_s * ptex);
 s32 GenPaletteLoad(struct nutex_s * tex, struct ps2tex_s * ptex);
@@ -1387,125 +1395,206 @@ extern void* txbuff;
 */
 
 static inline int NuMiscNextPow2Exp(int v) {
-  s32 i;
-  s32 rv;
-  
-  rv = 0;
-  if (1 < v) {
-    for (i = v; i > 1; i++) {
+    s32 rv;
+    s32 t;
+    
+    t = v;
+    for (rv = 0; v >= 2; v >>= 1) {
         rv++;
     }
-  }
-  if ((v & (1 << (rv)) - 1U) != 0) {
-    rv++;
-  }
-  return rv;
+    
+    if (t & ((1 << rv) - 1)) {
+        rv++;
+    }
+    return rv;
 }
 
 s32 NuPs2TxCreate(struct nutex_s *tex, struct ps2tex_s *ptex) 
 {
-  s32 n;
-  struct nutex_s local_60;
-  
-  switch(tex->type) {
-  case NUTEX_RGB16:
-  case NUTEX_RGBA16:
-  case NUTEX_RGB24:
-  case NUTEX_RGBA32:
-  case NUTEX_PAL4:
-  case NUTEX_PAL8:
-  case NUTEX_PAL4_S:
-  case NUTEX_PAL8_S:
-    break;
-  case NUTEX_RT8:
-  case NUTEX_RTT8:
-  case NUTEX_RT8H:
-  case NUTEX_RT32:
-  case NUTEX_RT24:
-  case NUTEX_RT16:
-  case NUTEX_RTT32:
-  case NUTEX_RTT24:
-  case NUTEX_RTT16:
-  case NUTEX_RZT32:
-  case NUTEX_RZT24:
-  case NUTEX_RZT16:
-  //case NUTEX_RTT8H:
-  //case NUTEX_RTT16S:
-    return NuPs2CreateRenderTarget(tex,ptex);
-  default:
-    NuErrorProlog("..\\nu2.ps2\\nups2\\ps2txtr.c",0x63d)("unsupported texture format");
-    return 0;
-  }
-  memset(ptex,0,0xb0);
-  palcnt = 0;
-  if (nutex_force_quantisation != 0) {
-    QuantizeTexture(tex);
-  }
-  if (palcnt != 0) {
-    tex->type = NUTEX_PAL8;
-      local_60 = *(struct nutex_s *)tex;
-    local_60.type = NUTEX_PAL8;
-    local_60.pal = &palette;
-    local_60.bits = txbuff;
-    //local_60 = uVar16;
-    NuDebugMsgProlog("..\\nu2.ps2\\nups2\\ps2txtr.c",0x650)("Quantized - %d colours",palcnt);
-    tex = &local_60;
-  }
+    s32 n;
     
-  ptex->p2w = (short unsigned int)NuMiscNextPow2Exp(tex->width);
-  ptex->p2h = (short unsigned int)NuMiscNextPow2Exp(tex->height);
+    struct nutex_s ttex;
     
-  if (tex->width == 0) {
-    n = tex->height;
-  }
-  else {
-    if (1 << ((u16)ptex->p2w ) != tex->width) {
-      NuDebugMsgProlog("..\\nu2.ps2\\nups2\\ps2txtr.c",0x659)("\r\n*********************************************\r\nTexture width MUST be a power  of two, not %d\r\n*********************************************",tex->width);
+    switch(tex->type) {
+        case NUTEX_RGB16:
+        case NUTEX_RGBA16:
+        case NUTEX_RGB24:
+        case NUTEX_RGBA32:
+        case NUTEX_PAL4:
+        case NUTEX_PAL8:
+        case NUTEX_PAL4_S:
+        case NUTEX_PAL8_S:
+        break;
+        
+        case NUTEX_RT8:
+        case NUTEX_RTT8:
+        case NUTEX_RT8H:
+        case NUTEX_RT32:
+        case NUTEX_RT24:
+        case NUTEX_RT16:
+        case NUTEX_RTT32:
+        case NUTEX_RTT24:
+        case NUTEX_RTT16:
+        case NUTEX_RZT32:
+        case NUTEX_RZT24:
+        case NUTEX_RZT16:
+        //case NUTEX_RTT8H:
+        //case NUTEX_RTT16S:
+            return NuPs2CreateRenderTarget(tex, ptex);
+        default:
+            NuErrorProlog("..\\nu2.ps2\\nups2\\ps2txtr.c", 0x63d)("unsupported texture format");
+            return 0;
     }
-    n = tex->height;
-  }
-  if ((n != 0) && (1 << ((u16)ptex->p2h ) != n)) {
-    NuDebugMsgProlog("..\\nu2.ps2\\nups2\\ps2txtr.c",0x65c)("\r\n*********************************************\r\nTexture height MUST be a power of two, not %d\r\n*********************************************"
-              ,tex->height);
-  }
-  ptex->req = 0;
-  if (tex->bits != NULL) {
-    GenTextureLoad(tex,ptex);
-    if (tex->mmcnt == 0) {
-        if(numtl_force_mipmap != 0) {
-          for (n = 1; n < 0; n++) {
-            GenTextureLoad(tex,ptex);
-          } 
+    
+    memset(ptex, 0, sizeof(struct ps2tex_s));
+    
+    palcnt = 0;
+    if (nutex_force_quantisation != 0) {
+        QuantizeTexture(tex);
+    }
+    
+    if (palcnt != 0) {
+        tex->type = NUTEX_PAL8;
+        ttex = *(struct nutex_s *)tex;
+        ttex.type = NUTEX_PAL8;
+        ttex.bits = txbuff;
+        ttex.pal = &palette;
+        tex = &ttex;
+        NuDebugMsgProlog("..\\nu2.ps2\\nups2\\ps2txtr.c", 0x650)("Quantized - %d colours", palcnt);
+    }
+
+    ptex->p2w = NuMiscNextPow2Exp(tex->width);
+    ptex->p2h = NuMiscNextPow2Exp(tex->height);
+
+    
+    if ((tex->width != 0) && (1 << ((u16)ptex->p2w ) != tex->width)) {
+        NuDebugMsgProlog("..\\nu2.ps2\\nups2\\ps2txtr.c", 0x659)
+            ("\r\n*********************************************\r\nTexture width MUST be a power  of two, not %d\r\n*********************************************", tex->width);
+    }
+    
+    if ((tex->height != 0) && (1 << ((u16)ptex->p2h ) != tex->height)) {
+        NuDebugMsgProlog("..\\nu2.ps2\\nups2\\ps2txtr.c", 0x65c)
+            ("\r\n*********************************************\r\nTexture height MUST be a power of two, not %d\r\n*********************************************", tex->height);
+    }
+    
+    ptex->req = 0;
+    if (tex->bits != NULL) {
+        GenTextureLoad(tex, ptex);
+        if (tex->mmcnt != 0) {
+            for(n = 1; n < tex->mmcnt; n++) {
+                GenTextureLoad(tex, ptex);
+            }
+        }
+        else if(numtl_force_mipmap != 0) {
+            while (GenTextureLoad(tex, ptex)) {
+                // empty
+            } 
         }
     }
-    for(n = 1; n < tex->mmcnt; n++) {
-        GenTextureLoad(tex,ptex);
-    }
-  }
-  GenTextureLoad(tex,ptex);
-  GenPaletteLoad(tex,ptex);
+    
+    GenPaletteLoad(tex, ptex);
     switch (tex->type) {
         case NUTEX_PAL4_S:
-        tex->width = tex->width << 1;
-        tex->height = tex->height << 2;
+            tex->width <<= 1;
+            tex->height <<= 2;
         break;
         case NUTEX_PAL8_S:
-        tex->width = tex->width << 1;
-        tex->height = tex->height << 1;
+            tex->width <<= 1;
+            tex->height <<= 1;
         break;
     }
-  if (ptex->p2w < 0x201) {
-    if (0x200 < (u16)ptex->p2h) {
-        ptex->p2h = ptex->p2h >> 1;
-    }
-  }
-  else {
-    do {
-      do {
+
+    while ((ptex->p2w > 0x200) || (ptex->p2h > 0x200)) {
         ptex->p2w = (ptex->p2w >> 1);
         ptex->p2h = ptex->p2h >> 1;
-      } while(ptex->p2w > 0x200); 
-    } while(ptex->p2h > 0x200);
-  } 
-  return 1;
+    }
+    
+    return 1;
+}
+
+int Conv4to32 (int width, int height, unsigned char *p_input, unsigned char *p_output);
+int Conv8to32(int width, int height, unsigned char *p_input, unsigned char *p_output);
+void *NuMemAllocFn (int size, char * file, int line);
+void NuMemFreeFn( void *addr, char *file, int line);
+
+//92%
+void NuTexSwizzelBits(struct nutex_s *tex) {
+  unsigned char *bits;
+  unsigned char *ptr;
+  //unsigned char *tmp_ptr;
+  int size;
+  int i;
+  int j;
+  int w;
+  int h;
+  int uVar6;
+  int mmcnt;
+  
+  mmcnt = tex->mmcnt;
+  if (mmcnt < 2) {
+    if (mmcnt != 0) {
+      uVar6 = mmcnt - 1;
+    } else {
+      uVar6 = 0;
+    }
+    switch(tex->type) {
+        case NUTEX_PAL4:
+          if (0x7f < tex->width >> (uVar6)) {
+           // if (-1 < (int)uVar6) {
+              bits = (unsigned char *)tex->bits;
+              for(i = 0; i <= uVar6; i++) {
+                w = tex->width >> (i);
+                h = tex->height >> (i);
+                size = w * h >> 1;
+                //tmp_ptr = bits;
+                for(j = 0; j < size; j++) {
+                    bits[j] = bits[j] >> 4 | bits[j] << 4;
+                }
+                ptr = NuMemAllocFn(size,"..\\nu2.ps2\\nu3d\\bitconv.c",0x2dd);
+                Conv4to32(w,h,bits,ptr);
+                memcpy(bits,ptr,size);
+                NuMemFreeFn(ptr,"..\\nu2.ps2\\nu3d\\bitconv.c",0x2e1);
+                //if (uVar6 < i) break;
+                //w = tex->width;
+                bits = bits + size;
+              }
+            //}
+            //w = tex->height;
+            
+            if (-1 < tex->height) {
+              size = tex->height;
+            } else {
+              size = tex->height + 3;
+            }
+            tex->height = size >> 2;
+            tex->type = NUTEX_PAL4_S;
+            tex->width = tex->width / 2;
+          }
+        break;
+        case NUTEX_PAL8:
+            if(0x7f < tex->width >> (uVar6 & 0x1f)) {
+              //i = 0;
+              //if (-1 < (int)uVar6) {
+                bits = (unsigned char *)tex->bits;
+                for(i = 0; i <= uVar6; i++) {
+                  w = tex->width >> (i);
+                  h = tex->height >> (i);
+                  size = w * h;
+                  ptr = (unsigned char *)NuMemAllocFn(size,"..\\nu2.ps2\\nu3d\\bitconv.c",0x2f0);
+                  Conv8to32(w,h,bits,ptr);
+                  memcpy(bits,ptr,size);
+                  NuMemFreeFn(ptr,"..\\nu2.ps2\\nu3d\\bitconv.c",0x2f4);
+                  //if ((int)uVar6 < (int)i) break;
+                  //w = tex->width;
+                  bits = bits + size;
+                }
+              //}
+              tex->type = NUTEX_PAL8_S;
+              tex->width = tex->width / 2;
+              tex->height = tex->height / 2;
+            }
+        break;
+    }
+  }
+  return;
 }
