@@ -245,6 +245,89 @@ void DrawWorldToPanelWumpa(void) {
   return;
 }
 
+//NGC MATCH
+void DrawGameMessage(char* txt, s32 message_frame, float ys) {
+    s32 i;
+    s32 j;
+    s32 temp;
+    s32 frame;
+    s32 frames[4];
+    float xs;
+    float size;
+    float sx;
+    char msg[5];
+    char* p;
+    s32 x;
+
+    if (Game.language == LANGUAGE_JAPANESE) {
+        temp = JStrLen(txt);
+    } else {
+        temp = strlen(txt);
+    }
+
+    frame = (temp - 1) * 0x14;
+    frames[0] = frame;
+    frames[1] = frame + 0x1E;
+    frames[2] = frame + 0x4B;
+    frames[3] = frame + 0x87;
+
+    x = (frames[2] + message_frame) - (((frames[2] + message_frame) / frames[3]) * frames[3]);
+
+    i = -1;
+    if (x < frames[0]) {
+        if (x % 0x14 < 0xd) {
+            i = x / 0x14 + 1;
+        }
+    } else {
+        if (x < frames[1]) {
+            if ((x - frames[0]) < 0x16) {
+                i = temp;
+            }
+        } else if (x < frames[2]) {
+            if ((x - frames[1]) < 0x25) {
+                i = temp;
+            }
+        } else if (((x - frames[2]) % 0x3c) < 0x34) {
+            i = temp;
+        }
+    }
+
+    if (i != -1) {
+        size = 1.0f;
+        if ((strcmp(txt, tLOADING[Game.language]) == 0) && (Game.language == 3)) {
+            size = 0.8f;
+        }
+
+        xs = -((((temp - 1) * 0.1f) * size) * 0.5f);
+        sx = (Game.language != LANGUAGE_JAPANESE) ? 1.0f : FONT3D_JSCALEX;
+        p = txt;
+        for (j = 0; j < i; j++) {
+            if (Game.language == LANGUAGE_JAPANESE) {
+                msg[0] = *p++;
+                msg[1] = *p++;
+                if ((p[0] == 0x42)
+                    && ((
+                        (p[1] == 0x44 && (CombinationCharacterBD(msg[0], msg[1]) != 0))
+                        || ((p[1] == 0x43 && (CombinationCharacterBC(msg[0], msg[1]) != 0)))
+                    )))
+                {
+                    msg[2] = *p++;
+                    msg[3] = *p++;
+                    msg[4] = 0;
+                } else {
+                    msg[2] = 0;
+                }
+            } else {
+                msg[0] = *p++;
+                msg[1] = 0;
+            }
+            Text3D(&msg[0], xs, ys, 1.0f, (size * sx), 1.0f, 1.0f, 1, 4);
+            xs = (size * 0.1f + xs);
+        }
+    }
+    return;
+}
+
 //87% NGC
 void DrawPanel(void) {
     s32 bVar1;

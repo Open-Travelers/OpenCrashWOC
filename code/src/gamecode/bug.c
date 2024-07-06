@@ -1,76 +1,53 @@
-void InitBugAreas(void)		//TODO
-
-{
-  uint uVar1;
-  BugArea_s *bArea;
-  uint j;
-  int i;
-  float TfAlong;
+//NGC MATCH
+void InitBugAreas(void) {
+  s32 index;
+  s32 i;
+  struct nuvec_s *vec;
   
-  i = 4;
-  bArea = BugArea;
-  do {
-    bArea->in_iRAIL = -1;
-    bArea->out_iRAIL = -1;
-    bArea = bArea + 1;
-    i = i + -1;
-  } while (i != 0);
-  if ((SplTab[67].spl != (nugspline_s *)0x0) && (j = 0, 0 < (SplTab[67].spl)->len)) {
-    do {
-      GetALONG((nuvec_s *)((SplTab[67].spl)->pts + j * (int)(SplTab[67].spl)->ptsize),(RPos_s *)0x 0,
-               -1,-1,1);
-      TfAlong = temp_fALONG;
-      if ((temp_iRAIL != -1) && (Rail[temp_iRAIL].type == '\0')) {
-        if ((j & 1) == 0) {
-          uVar1 = (j - ((int)j >> 0x1f)) * 8 & 0xfffffff0;
-          *(undefined2 *)((int)&BugArea[0].in_iALONG + uVar1) = temp_iALONG._2_2_;
-          (&BugArea[0].in_iRAIL)[uVar1] = (char)temp_iRAIL;
-          *(float *)((int)&BugArea[0].in_fALONG + uVar1) = TfAlong;
+  for(i = 0; i < 4; i++) {
+    BugArea[i].in_iRAIL = -1;
+    BugArea[i].out_iRAIL = -1;
+  }
+  if ((SplTab[67].spl != NULL)) {
+    for(i = 0; i < (SplTab[67].spl)->len; i++) {
+      vec = (struct nuvec_s *)(SplTab[67].spl->pts + (i * (s32)(SplTab[67].spl)->ptsize));
+      GetALONG(vec,NULL,-1,-1,1);
+      if ((temp_iRAIL != -1) && (Rail[temp_iRAIL].type == 0)) {
+        if ((i & 1) != 0) {
+          index = ((i + ((u32)i >> 0x1f)) & 0xFFFFFFFE) >> 1;
+          BugArea[index].out_iRAIL = temp_iRAIL;
+          BugArea[index].out_iALONG = temp_iALONG;
+          BugArea[index].out_fALONG = temp_fALONG;
         }
         else {
-          uVar1 = (j - ((int)j >> 0x1f)) * 8 & 0xfffffff0;
-          *(undefined2 *)((int)&BugArea[0].out_iALONG + uVar1) = temp_iALONG._2_2_;
-          (&BugArea[0].out_iRAIL)[uVar1] = (char)temp_iRAIL;
-          *(float *)((int)&BugArea[0].out_fALONG + uVar1) = TfAlong;
+          index = ((i + ((u32)i >> 0x1f)) & 0xFFFFFFFE) >> 1;
+          BugArea[index].in_iRAIL = temp_iRAIL;
+          BugArea[index].in_iALONG = temp_iALONG;
+          BugArea[index].in_fALONG = temp_fALONG;
         }
       }
-      j = j + 1;
-    } while ((int)j < (int)(SplTab[67].spl)->len);
+    }
   }
-  bug_splratio = 0.0;
+  bug_splratio = 0.0f;
   return;
 }
 
-
-
-int InBugArea(int iRAIL,int iALONG,float fALONG)
-
-{
-  int tmp;
-  int i;
-  BugArea_s *bArea;
-  double dVar1;
+//NGC MATCH
+s32 InBugArea(s32 iRAIL,s32 iALONG,float fALONG) {
+  s32 i;
   
-  dVar1 = (double)fALONG;
-  if ((iRAIL != -1) && (Rail[iRAIL].type == '\0')) {
-    i = 0;
-    bArea = BugArea;
-    do {
-      if ((bArea->in_iRAIL != -1) &&
-         (tmp = FurtherALONG(iRAIL,iALONG,(float)dVar1,(int)bArea->in_iRAIL,(int)bArea->in_iALONG ,
-                             bArea->in_fALONG), tmp != 0)) {
-        if (bArea->out_iRAIL == -1) {
+  if ((iRAIL != -1) && (Rail[iRAIL].type == 0)) {
+    for(i = 0; i < 4; i++) {
+      if ((BugArea[i].in_iRAIL != -1) &&
+         (FurtherALONG(iRAIL,iALONG,fALONG,BugArea[i].in_iRAIL,BugArea[i].in_iALONG,BugArea[i].in_fALONG) != 0)) {
+        if (BugArea[i].out_iRAIL == -1) {
           return i;
         }
-        tmp = FurtherBEHIND(iRAIL,iALONG,(float)dVar1,(int)bArea->out_iRAIL,(int)bArea->out_iALONG ,
-                            bArea->out_fALONG);
-        if (tmp != 0) {
+        if (FurtherBEHIND(iRAIL,iALONG,fALONG,BugArea[i].out_iRAIL,BugArea[i].out_iALONG,BugArea[i].out_fALONG) != 0) {
           return i;
         }
       }
-      i = i + 1;
-      bArea = bArea + 1;
-    } while (i < 4);
+    }
   }
   return -1;
 }
@@ -264,17 +241,16 @@ LAB_800097dc:
   return;
 }
 
-
-void AddBugLight(void)
-
-{
-  if (bug_fade <= 0.0) {
-    buglight_enable = 0;
+//NGC MATCH
+void AddBugLight(void) {
+  if (bug_fade > 0.0f) {
+    if (FRAME == FRAMES - 1) {
+        NuLightAddSpotXSpanFade(&bug_pos,bug_scale,bug_fade);
+        buglight_enable = 1;
+    }
+    return;
   }
-  else if (FRAME == FRAMES + -1) {
-    NuLightAddSpotXSpanFade(&bug_pos,bug_scale,bug_fade);
-    buglight_enable = 1;
-  }
+  buglight_enable = 0;
   return;
 }
 

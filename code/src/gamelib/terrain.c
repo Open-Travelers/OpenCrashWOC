@@ -134,6 +134,30 @@ void TerrainSetCur(void *curterr) {
 }
 
 //NGC MATCH
+void TerrainPlatformOldUpdate(void) {
+  s32 i;
+
+  if (CurTerr == NULL) {
+      return;
+  }
+    asm("nop");
+    for (i = 0; i < 0x80; i++) { 
+      if (CurTerr->platdata[i].curmtx != NULL) {
+          CurTerr->platdata[i].oldmtx = *CurTerr->platdata[i].curmtx;
+      }
+    }
+    asm("nop");
+    for (i = 0; i < 4; i++) {
+      if (CurTerr->TrackInfo[i].ptrid != NULL) {
+        CurTerr->TrackInfo[i].timer--;
+        if(CurTerr->TrackInfo[i].timer < 1) {
+          CurTerr->TrackInfo[i].ptrid = NULL;
+        }
+      }
+    }
+}
+
+//NGC MATCH
 void TerrainPlatformNewUpdate(void) {
   s32 b;
   short *ttemp;
@@ -829,99 +853,91 @@ int HitWallSpline(void)		//CHECK
   return lp;
 }
 
-
-
-int HitTerrain(nuvec_s *v)		//CHECK
-
-{
-  hitdata *ptr;
-  uint check;
-  nuvec_s *extraout_r4;
-  nuvec_s *hitpos;
-  float fVar1;
-  hitdata **terr;
-  hitdata **currter;
-  nuvec_s pos;
+//NGC MATCH
+s32 HitTerrain() {
+  short *CurData;
+  struct scaleterrain_s **currter;
+  struct scaleterrain_s *ter;
+  struct nuvec_s pos;
   float ps;
   float pe;
   float ps2;
   float pe2;
   float size;
-  int i;
-  int hit;
-  int lp;
+  s32 lp;
+  s32 check;
+  s32 hit;
   
-  terr = TerI->hitdat;
+  CurData = TerI->hitdata;
   size = TerI->size;
-  lp = 0;
+  hit = 0;
   TerI->hittype = 0;
-  TerI->hittime = 999.9;
+  TerI->hittime = 999.9f;
   HitWallSpline();
-  hitpos = extraout_r4;
-  fVar1 = NuFsqrt((TerI->curvel).x * (TerI->curvel).x + (TerI->curvel).z * (TerI->curvel).z);
-  TerI->vellen = fVar1;
-  while( true ) {
-    while (0 < *(short *)terr) {
-      TerI->csx = (TerI->curpos).x - CurTerr->terr[*(short *)((int)terr + 2)].Location.x;
-      TerI->csy = (TerI->curpos).y - CurTerr->terr[*(short *)((int)terr + 2)].Location.y;
-      TerI->csz = (TerI->curpos).z - CurTerr->terr[*(short *)((int)terr + 2)].Location.z;
+  TerI->vellen = NuFsqrt((TerI->curvel).x * (TerI->curvel).x + (TerI->curvel).z * (TerI->curvel).z);
+loop1: 
+asm("nop");
+    while (0 < *CurData) {
+      TerI->csx = (TerI->curpos).x - CurTerr->terr[*(CurData + 1)].Location.x;
+      TerI->csy = (TerI->curpos).y - CurTerr->terr[*(CurData + 1)].Location.y;
+      TerI->csz = (TerI->curpos).z - CurTerr->terr[*(CurData + 1)].Location.z;
       TerI->cex = ((TerI->curpos).x + (TerI->curvel).x) -
-                  CurTerr->terr[*(short *)((int)terr + 2)].Location.x;
+                  CurTerr->terr[*(CurData + 1)].Location.x;
       TerI->cey = ((TerI->curpos).y + (TerI->curvel).y) -
-                  CurTerr->terr[*(short *)((int)terr + 2)].Location.y;
+                  CurTerr->terr[*(CurData + 1)].Location.y;
       TerI->cez = ((TerI->curpos).z + (TerI->curvel).z) -
-                  CurTerr->terr[*(short *)((int)terr + 2)].Location.z;
-      currter = terr;
-      for (i = (int)*(short *)terr; currter = currter + 1, 0 < i; i = i + -1) {
-        ptr = *currter;
-        hit = 0;
-        pe = (((TerI->cex - ptr->pnts[0].x) * ptr->norm[0].x +
-               (TerI->cey - ptr->pnts[0].y) * ptr->norm[0].y +
-              (TerI->cez - ptr->pnts[0].z) * ptr->norm[0].z) - size) - TerI->impactadj;
-        if ((pe < 0.0) &&
-           (ps = ((TerI->csx - ptr->pnts[0].x) * ptr->norm[0].x +
-                  (TerI->csy - ptr->pnts[0].y) * ptr->norm[0].y +
-                 (TerI->csz - ptr->pnts[0].z) * ptr->norm[0].z) - size, -size < ps)) {
-          hit = 1;
+                  CurTerr->terr[*(CurData + 1)].Location.z;
+      currter = (struct scaleterrain_s **)CurData + 1;
+      for (lp = *CurData; lp > 0; lp--, currter++) {
+        ter = *currter;
+        check = 0;
+        pe = ((ter->norm[0].x * (TerI->cex - ter->pnts[0].x) +
+               ter->norm[0].y * (TerI->cey - ter->pnts[0].y) +
+              ter->norm[0].z * (TerI->cez - ter->pnts[0].z)) - size) - TerI->impactadj;
+        if (pe < 0.0f) {
+            ps = (ter->norm[0].x * (TerI->csx - ter->pnts[0].x) + ter->norm[0].y * (TerI->csy - ter->pnts[0].y) +
+                    ter->norm[0].z * (TerI->csz - ter->pnts[0].z)) - size;
+            if (ps > -size) {
+              check = 1;
+            }
         }
-        if (((ptr->norm[1].y < 65536.0) &&
-            (pe2 = (((TerI->cex - ptr->pnts[3].x) * ptr->norm[1].x +
-                     (TerI->cey - ptr->pnts[3].y) * ptr->norm[1].y +
-                    (TerI->cez - ptr->pnts[3].z) * ptr->norm[1].z) - size) - TerI->impactadj,
-            pe2 < 0.0)) &&
-           (ps2 = ((TerI->csx - ptr->pnts[3].x) * ptr->norm[1].x +
-                   (TerI->csy - ptr->pnts[3].y) * ptr->norm[1].y +
-                  (TerI->csz - ptr->pnts[3].z) * ptr->norm[1].z) - size, -size < ps2)) {
-          hit = 1;
+        if (((ter->norm[1].y < 65536.0f) &&
+            (pe2 = ((ter->norm[1].x * (TerI->cex - ter->pnts[3].x) +
+                    ter->norm[1].y * (TerI->cey - ter->pnts[3].y) +
+                   ter->norm[1].z * (TerI->cez - ter->pnts[3].z)) - size) - TerI->impactadj,
+            pe2 < 0.0f)) &&
+           (ps2 = (ter->norm[1].x * (TerI->csx - ter->pnts[3].x) +
+                  ter->norm[1].y * (TerI->csy - ter->pnts[3].y) +
+                 ter->norm[1].z * (TerI->csz - ter->pnts[3].z)) - size, ps2 > -size)) {
+          check = 1;
         }
-        if ((hit != 0) && (check = HitPoly(ps,pe,ps2,pe2,ptr,hitpos), check != 0)) {
-          TerI->hitterrno = *(short *)((int)terr + 2);
-          lp = 1;
+        if ((check != 0) && (HitPoly(ps,pe,ps2,pe2,ter) != 0)) {
+          TerI->hitterrno = *(CurData + 1);
+          hit = 1;
           if ((TerI->hitter->info[2] & 0x80) != 0) {
             PlatCrush = TerI->hitter->info[0] + 1;
           }
         }
+      } 
+      CurData = currter;
+    }
+    if (*CurData < 0) {
+      while (*CurData < 0) {
+         CurData += ((*CurData >= 0) ? *CurData  : -*CurData) * 2 + 2; //correct??
       }
-      terr = currter;
-    }
-    if (-1 < *(short *)terr) break;
-    for (; *(short *)terr < 0; terr = terr + ((check ^ (int)*(short *)terr) - check) + 1) {
-      check = (int)*(short *)terr >> 0x1f;
-    }
-  }
-  for (i = 0; i < curSphereter; i = i + 1) {
-    pos.x = SphereData[i].pos.x;
-    pos.y = SphereData[i].pos.y;
-    pos.z = SphereData[i].pos.z;
+        goto loop1; //check
+    } 
+        asm("nop");
+  for (lp = 0; lp < curSphereter; lp++) {
+    pos = SphereData[lp].pos;
     DeRotatePoint(&pos);
-    check = CheckSphereTer(&pos,SphereData[i].radius);
-    lp = lp | check;
+    hit = hit | CheckSphereTer(&pos,SphereData[lp].radius);
   }
   if (((TerI->hittype != 0) && (TerI->hitterrno != -1)) &&
      (CurTerr->terr[TerI->hitterrno].type == TERR_TYPE_PLATFORM)) {
-    plathitid = (int)CurTerr->terr[TerI->hitterrno].info;
+    plathitid = CurTerr->terr[TerI->hitterrno].info;
   }
-  return lp;
+  return hit;
 }
 
 //NGC MATCH
@@ -2437,73 +2453,72 @@ void TerrainSideClamp(struct nuvec_s *slide,struct nuvec_s *pos) {
   (TerrShape->offset).z = dotp * slide->z - dotq * slide->x;
 }
 
-int TerrShapeSideStep(nuvec_s *vpos,nuvec_s *vvel,uchar *flags)
-
-{
-  int doslide;
-  nuvec_s slide;
-  nuvec_s temp;
+//NGC MATCH
+s32 TerrShapeSideStep(struct nuvec_s *vpos,struct nuvec_s *vvel,u8 *flags) {
+  struct nuvec_s slide;
+  struct nuvec_s temp;
   float dotp;
-  uint check;
-  uchar tflags [2];
-  short hittype;
-  
-  hittype = TerI->hittype;
-  if (hittype == 0) {
-    doslide = 1;
-  }
-  else {
-    if (((hittype < 0) || (3 < hittype)) || (hittype < 2)) {
-      if ((0.707 < (TerI->uhitnorm).y) || ((TerI->uhitnorm).y < -0.8)) {
+  s32 doslide;
+  u8 tflags [2];
+
+    switch (TerI->hittype) {
+        case 0:
         return 1;
-      }
-      check = 0;
+        default:
+        if ((0.707f < (TerI->uhitnorm).y) || ((TerI->uhitnorm).y < -0.8f)) {
+        return 1;
+        }
+        doslide = 0;
+        break;
+        case 2:
+        case 3:
+        if ((0.5f > (TerI->uhitnorm).y)) {
+        doslide = 0;
+        } else {
+        doslide = 1;
+        }
+        break;
     }
-    else {
-      check = (uint)(0.5 <= (TerI->uhitnorm).y);
-    }
-    slide.x = NuTrigTable[(int)(TerrShape->ang + 16384.0) & 0xffff];
-    slide.y = 0.0;
-    slide.z = -NuTrigTable[(int)TerrShape->ang & 0xffff];
+    slide.x = NuTrigTable[(s32)(TerrShape->ang + 16384.0f) & 0xffff];
+    slide.y = 0.0f;
+    slide.z = -NuTrigTable[(s32)TerrShape->ang & 0xffff];
     (TerI->origpos).x = (TerI->curpos).x;
     (TerI->origpos).y = (TerI->curpos).y;
     (TerI->origpos).z = (TerI->curpos).z;
     (TerI->origvel).x = (TerI->curvel).x;
     (TerI->origvel).y = (TerI->curvel).y;
     (TerI->origvel).z = (TerI->curvel).z;
-    (TerI->curvel).y = 0.0;
-    if (check == 1) {
-      (TerI->curvel).x = (TerI->hitnorm).x * TerrShape->size * 0.15;
-      (TerI->curvel).z = (TerI->hitnorm).z * TerrShape->size * 0.15;
-      (TerrShape->offset).x = (TerrShape->offset).x + (TerI->hitnorm).x * TerrShape->size * 0.05;
-      (TerrShape->offset).z = (TerrShape->offset).z + (TerI->hitnorm).z * TerrShape->size * 0.05;
+    (TerI->curvel).y = 0.0f;
+    if (doslide == 1) {
+      (TerI->curvel).x = (TerI->hitnorm).x * TerrShape->size * 0.15f;
+      (TerI->curvel).z = (TerI->hitnorm).z * TerrShape->size * 0.15f;
+      (TerrShape->offset).x = (TerrShape->offset).x + (TerI->hitnorm).x * TerrShape->size * 0.05f;
+      (TerrShape->offset).z = (TerrShape->offset).z + (TerI->hitnorm).z * TerrShape->size * 0.05f;
     }
     else {
       dotp = slide.x * (TerI->uhitnorm).x + slide.z * (TerI->uhitnorm).z;
-      if ((dotp == 0.0) &&
+      if ((dotp == 0.0f) &&
          (dotp = ((TerrShape->offset).x * slide.x + (TerrShape->offset).z * slide.z) /
-                 TerrShape->size, dotp == 0.0)) {
+                 TerrShape->size, dotp == 0.0f)) {
         return 1;
       }
-      if (0.0 <= dotp) {
-        dotp = NuFsqrt(dotp);
+      if (0.0f > dotp) {
+        dotp = -NuFsqrt(-dotp);
       }
       else {
-        dotp = NuFsqrt(-dotp);
-        dotp = -dotp;
+        dotp = NuFsqrt(dotp);
       }
       (TerI->curvel).x = dotp * slide.x * TerrShape->size + (TerrShape->offset).x;
       (TerI->curvel).z = dotp * slide.z * TerrShape->size + (TerrShape->offset).z;
     }
+    asm("nop");
     do {
       DerotateMovementVector();
-      HitTerrain(vpos);
+      HitTerrain();
       TerrainImpactNorm();
-      vpos = &temp;
-      TerrainImpact(vpos,&temp,tflags);
-      TerrShapeAdjCnt = TerrShapeAdjCnt + -1;
-      if (TerrShapeAdjCnt < 1) break;
-    } while (TerI->hittype != 0);
+      TerrainImpact(&temp,&temp,tflags);
+      TerrShapeAdjCnt--;
+    } while(TerrShapeAdjCnt > 0 && TerI->hittype != 0);
     if (TerI->hittype == 0) {
       (TerI->curpos).x = (TerI->curpos).x + (TerI->curvel).x;
       (TerI->curpos).y = (TerI->curpos).y + (TerI->curvel).y;
@@ -2516,11 +2531,8 @@ int TerrShapeSideStep(nuvec_s *vpos,nuvec_s *vvel,uchar *flags)
     (TerI->curvel).y = (TerI->origvel).y;
     (TerI->curvel).z = (TerI->origvel).z;
     TerrainSideClamp(&slide,&TerI->curpos);
-    doslide = 0;
-  }
-  return doslide;
+  return 0;
 }
-
 
 void CubeImpact(numtx_s *mat,numtx_s *nmat,nuvec_s *norm,float size,nuvec_s *impact)
 {

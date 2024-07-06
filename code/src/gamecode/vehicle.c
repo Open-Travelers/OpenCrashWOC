@@ -1,3 +1,5 @@
+s32 jonfirst = 0;
+struct VEHMASK VehicleMask[2];
 
 //NGC MATCH
 void VehicleSetup(void) {
@@ -159,5 +161,216 @@ void BossBar(float x,float y,float z,float xs,float ys,s32 i,s32 j) {
   }
   DrawPanel3DObject(0xb9,x,y,z,xs,ys,0.1f,0,0,0,ObjTab[185].obj.scene,ObjTab[185].obj.special,1);
   DrawPanel3DObject(0xbb,x,y,z,(xs * HealthScale),ys,0.1f,0,0,0,ObjTab[187].obj.scene,ObjTab[187].obj.special,1);
+  return;
+}
+
+s32 GetCurrentRumbleObjectives(void) {
+  return EarthBoss.HitPoints;
+}
+
+s32 GetRumblePlayerHealthPercentage(struct creature_s *Cre) {
+  return PlayerAtlas.HitPoints;
+}
+
+//NGC MATCH
+void DrawAtlas(struct creature_s *Cre) {
+  struct ATLASSTRUCT *Atlas;
+  struct numtx_s Matrix;
+  s32 i;
+  
+  Atlas = (struct ATLASSTRUCT *)Cre->Buggy;
+  NuQuatToMtx(&Atlas->Quat,&Matrix);
+  NuMtxTranslate(&Matrix,&Atlas->Position);
+  i = CRemap[83];
+  if (i != -1) {
+    NuHGobjRndr(CModel[i].hobj,&Matrix,1,NULL);
+  }
+  return;
+}
+
+//NGC MATCH
+void InitAtlas(struct ATLASSTRUCT *Atlas,struct nuvec_s *Pos,float Radius,s32 Type) {
+  struct creature_s *Cre;
+  struct creature_s *Cre2;
+  struct cdata_s* cdata;
+  
+  Cre = Atlas->Cre;
+  memset(Atlas,0,900);
+  Atlas->Type = Type;
+  Atlas->Cre = Cre;
+  Atlas->Position = *Pos;
+  Atlas->OldPosition = Atlas->Position;
+  Atlas->Radius = Radius;
+  Atlas->AngleY = 90.0f;
+  Atlas->Quat = SetNuQuat(0.0f,0.0f,0.0f,1.0f);
+  Atlas->FrameQuat[0] = Atlas->Quat;
+  Atlas->FrameQuat[1] = Atlas->Quat;
+  Atlas->FrameQuat[2] = Atlas->Quat;
+  Atlas->FrameQuat[3] = Atlas->Quat;
+  Atlas->LastQuat = Atlas->Quat;
+  Atlas->LastNormal = SetNuVec(0.0f,1.0f,0.0f);
+  Atlas->PlatformId = -1;
+  if (Cre != NULL) {
+    InitTrail();
+    Cre2 = Atlas->Cre;
+    (Cre2->obj).SCALE = 1.0f;
+    (Cre2->obj).scale = 1.0f;
+    cdata = &CData[83];
+    (Atlas->Cre->obj).bot = cdata->min.y;
+    (Atlas->Cre->obj).top = cdata->max.y;
+    (Atlas->Cre->obj).vehicle = 0x53;
+  }
+  return;
+}
+
+//NGC MATCH
+void ResetAtlas(struct creature_s *Cre) {
+  struct ATLASSTRUCT *Atlas;
+  struct nuvec_s Pos;
+  
+  Atlas = (struct ATLASSTRUCT *)Cre->Buggy;
+  if (Atlas == NULL) {
+    Cre->Buggy = (struct NEWBUGGY *)&PlayerAtlas;
+    Atlas = &PlayerAtlas;
+    memset(&PlayerAtlas,0,900);
+    PlayerAtlas.Cre = Cre;
+  }
+  AtlasFrame = -1;
+  AtlasEmbeddedFrame = 0;
+  Pos.x = (Cre->obj).pos.x;
+  Pos.y = (Cre->obj).pos.y + 1.0f;
+  Pos.z = (Cre->obj).pos.z;
+  AtlasWhackValue = 0.0f;
+  ResetAtlasCamera = 1;
+  AtlasWhackTimer = 0.0f;
+  RumbleCamTween = 1.0f;
+  RumbleCamTweenDest = 1.0f;
+  RumbleCamVal = 0;
+  InitAtlas(Atlas,&Pos,0.65f,1);
+  Atlas->HitPoints = 100;
+  Atlas->DestHitPoints = 100;
+  return;
+}
+
+//NGC MATCH
+void KillAtlasphere(struct ATLASSTRUCT *Atlas) {
+  if (Atlas->Cre != NULL) {
+    Atlas->Dead = 1;
+    Atlas->Cre->obj.invincible = 0;
+    Atlas->Velocity = v000;
+    if ((Atlas->Cre->obj).dead == 0) {
+      KillGameObject(&Atlas->Cre->obj,0xb);
+    }
+  }
+  return;
+}
+
+struct nuvec_s lbl_80118DA8 = {0.0f, -2.35f, 7.98f};
+
+//NGC MATCH
+void InitEarthBoss(void) {
+  struct nuvec_s Start;
+  
+  Start = lbl_80118DA8;
+  InitAtlas(&EarthBoss,&Start,1.0f,2);
+  EarthBoss.HitPoints = 3;
+  MyInitModelNew(&EarthBoss.Shell,0xad,0x1f,0,NULL,&EarthBoss.Position);
+  MyInitModelNew(&EarthBoss.Crunch,0x7f,0x22,0,NULL,&EarthBoss.Position);
+  ShootRockSound = 0;
+  EarthBoss.LastAction = -1;
+  EarthBoss.Action = 0;
+  return;
+}
+
+void InitRumblePanel(void) {
+  NumRockPanel = 0;
+  return;
+}
+
+void DrawEarthBossLevelExtra(void) {
+  DrawEarthBoss();
+  DrawJeepRocks();
+  DrawVehMasks();
+  return;
+}
+
+void ProcessEarthBossVortex(void) {
+  if (EarthBossVortexOpen != 0) {
+    CheckAtlasVortex(&EarthBoss);
+    CheckAtlasVortex(&PlayerAtlas);
+  }
+  return;
+}
+
+//NGC MATCH
+void LoadVehicleStuff(void) {
+  switch(Level) {
+      case 3:
+          LoadWesternArenaData();
+      break;
+      case 0xd:
+          jonfirst = 0;
+      break;
+  }
+  return;
+}
+
+//NGC MATCH
+void InitVehMasks(void) {
+    memset(VehicleMask,0,0x2e8);
+}
+
+//NGC MATCH
+void InitVehMask(s32 Indx,s32 Id) {
+  struct VEHMASK* Mask;
+  
+  memset(&VehicleMask[Indx],0,0x174);
+  Mask = &VehicleMask[Indx];
+  if (MyInitModelNew(&Mask->MainDraw,Id,0x22,0,NULL,&Mask->Position) != 0) {
+    Mask->Id = Id;
+  }
+  return;
+}
+
+//NGC MATCH
+void SetNewMaskStuff(s32 Indx,struct nuvec_s *Centre,struct nuvec_s *Off,float Rad,float AngInc,float TweenInc,
+                        s32 FixedNUVEC,s32 KillAtEnd,float Scale,float TiltX) {
+  struct VEHMASK* Mask;
+
+  Mask = &VehicleMask[Indx];
+  Mask->KillAtEnd = KillAtEnd;
+  if (Mask->Active != 0) {
+    Mask->Tween = 1.0f;
+    Mask->TweenInc = TweenInc * 0.01666667f;
+    Mask->Offset[1] = Mask->Offset[0];
+    Mask->AngInc[1] = Mask->AngInc[0];
+    Mask->Rad[1] = Mask->Rad[0];
+    Mask->Scale[1] = Mask->Scale[0];
+    Mask->TiltX[1] = Mask->TiltX[0];
+    if (Mask->Point[0] == &Mask->Store[0]) {
+      Mask->Point[1] = &Mask->Store[1];
+      Mask->Store[1] = *Mask->Point[0];
+    }
+    else {
+      Mask->Point[1] = Mask->Point[0];
+    }
+  }
+  else {
+    Mask->Tween = 0.0f;
+    Mask->Active = 1;
+    Mask->Point[1] = &v000;
+  }
+  if (FixedNUVEC != 0) {
+    Mask->Store[0] = *Centre;
+    Mask->Point[0] = &Mask->Store[0];
+  }
+  else {
+    Mask->Point[0] = Centre;
+  }
+  Mask->Offset[0] = *Off;
+  Mask->AngInc[0] = AngInc * 0.01666667f;
+  Mask->Rad[0] = Rad;
+  Mask->Scale[0] = Scale;
+  Mask->TiltX[0] = TiltX;
   return;
 }
