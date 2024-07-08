@@ -374,3 +374,54 @@ void SetNewMaskStuff(s32 Indx,struct nuvec_s *Centre,struct nuvec_s *Off,float R
   Mask->TiltX[0] = TiltX;
   return;
 }
+
+//NGC MATCH
+void DrawVehMasks(void) {
+    struct VEHMASK* Mask;
+    s32 d;
+    s32 i;
+    s32 iVar2;
+    struct nuvec_s vec;
+
+    Mask = VehicleMask;
+    
+    for (i = 0; i < 2; i++, Mask++) {
+        if (Mask->Active != 0) {
+            if (Level == 0x17) {
+                NuMtxSetRotationY(
+                    &mTEMP, NuAtan2D(GameCam[0].pos.x - Mask->Position.x, GameCam[0].pos.z - Mask->Position.z) + 0x8000
+                );
+            } else {
+                NuMtxSetRotationY(&mTEMP, (s32)(Mask->DrawAngY * 182.04445f));
+            }
+            NuMtxScale(&mTEMP, SetNuVecPntr(Mask->DrawScale, Mask->DrawScale, Mask->DrawScale));
+            NuMtxTranslate(&mTEMP, &Mask->Position);
+            d = MyDrawModelNew(&Mask->MainDraw, &mTEMP, NULL);
+            
+            Mask->Seen = d;
+            vec = Mask->Position;
+            vec.y += 0.2f;
+            
+            iVar2 = 0x7e;
+            switch (Mask->Id) {
+                case 0x57:
+                    iVar2 = 0x7f;
+                    break;
+                case 0x56:
+                    iVar2 = 0x80;
+                    break;
+                case 0x58:
+                    iVar2 = 0x81;
+                    break;
+                case 3:
+                    iVar2 = 0xa3;
+                    break;
+            }
+            
+            if (Paused == 0) {
+                AddVariableShotDebrisEffect(GDeb[iVar2].i, &vec, 1, 0, 0);
+            }
+        }
+    }
+    return;
+}

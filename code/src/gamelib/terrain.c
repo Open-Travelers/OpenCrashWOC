@@ -1,110 +1,106 @@
 #include "../nu.h"
 
-
+#define FLOAT_INTMAX 2147483647.0f
 #define POW2(x) ((x) * (x))
 
+//NGC MATCH
+s32 ReadTerrain(u8* name2, s32 situ, short** store, struct tempterr_s* Tempterr) {
+    struct sceneptr_s* sceneptr;
+    s32 lp;
+    s32 count;
+    char LevName[100];
+    short* ts;
+    struct wallspl_s* wallspl;
+    float minx;
+    float maxx;
+    float minz;
+    float maxz;
+    s32 a;
+    s32 b;
+    s32 fsize;
 
-int ReadTerrain(uchar *name2,int situ,short **store,TempTerr *Tempterr)
+    strcpy(LevName, name2);
+    strcat(LevName, ".ter");
+    fsize = NuFileLoadBuffer(LevName, *store, 0x7fffffff);
+    if (fsize == 0) {
+        return -1;
+    }
 
-{
-  int size;
-  sceneptr *scnptr;
-  int i;
-  int c;
-  int count;
-  char LevName [108];
-  WallSpl *wallspl;
-  float x;
-  float x2;
-  float z;
-  float z2;
-  int c2;
-  int k;
-  int cnt;
-  short type;
-  
-  strcpy(LevName,(char *)name2);
-  strcat(LevName,".ter");
-  size = NuFileLoadBuffer(LevName,*store,0x7fffffff);
-  if (size == 0) {
-    count = -1;
-  }
-  else {
-    scnptr = (sceneptr *)((int)*store + *(int *)*store * 2);
-    scnptr->count = scnptr->count & 0xffff;
-    *store = *store + 2;
+    ts = *store;
+    sceneptr = (struct sceneptr_s*)(ts + ((s32*)ts)[0]);
+    sceneptr->count &= 0xffff;
+    *store += 2;
     count = 0;
-    Tempterr->wallinfo = (void *)0x0;
-    crashdata = (void *)0x0;
-    i = situ;
-    for (c = 0; c < scnptr->count; c = c + 1) {
-      type = scnptr->offlist[c].type;
-      if (type < 2) {
-        if (-1 < type) {
-          Tempterr->terr[i].id = scnptr->offlist[c].id;
-          Tempterr->terr[i].type = (int)scnptr->offlist[c].type;
-          Tempterr->terr[i].info = scnptr->offlist[c].info;
-          Tempterr->terr[i].Location.x = scnptr->offlist[c].translation.x;
-          Tempterr->terr[i].Location.y = scnptr->offlist[c].translation.y;
-          Tempterr->terr[i].Location.z = scnptr->offlist[c].translation.z;
-          Tempterr->terr[i].model = *store;
-          Tempterr->terr[i].flags.rot = scnptr->offlist[c].flags.rot;
-          count = count + 1;
-          i = i + 1;
+    Tempterr->wallinfo = NULL;
+    crashdata = NULL;
+    for (lp = 0; lp < sceneptr->count; lp++) {
+
+        switch (sceneptr->offlist[lp].type) {
+            case -1:
+                break;
+            case 0:
+            case 1:
+                Tempterr->terr[situ].id = sceneptr->offlist[lp].id;
+                Tempterr->terr[situ].type = sceneptr->offlist[lp].type;
+                Tempterr->terr[situ].info = sceneptr->offlist[lp].info;
+                Tempterr->terr[situ].Location.x = sceneptr->offlist[lp].translation.x;
+                Tempterr->terr[situ].Location.y = sceneptr->offlist[lp].translation.y;
+                Tempterr->terr[situ].Location.z = sceneptr->offlist[lp].translation.z;
+                Tempterr->terr[situ].model = *store;
+                Tempterr->terr[situ].flags = sceneptr->offlist[lp].flags;
+                count++;
+                situ++;
+                break;
+            case 2:
+                if (*(s32*)*store == 0x12345678) {
+                    *(void**)*store = Tempterr->wallinfo;
+                    Tempterr->wallinfo = *store + 2;
+                    *(s16*)Tempterr->wallinfo = *(s16*)Tempterr->wallinfo - 1;
+                }
+                break;
+            case 3:
+                crashdata = *store;
+                break;
         }
-      }
-      else if (type == 2) {
-        if (*(int *)*store == 0x12345678) {
-          *(void **)*store = Tempterr->wallinfo;
-          Tempterr->wallinfo = *store + 2;
-                    /* WARNING: Load size is inaccurate */
-          *(short *)Tempterr->wallinfo = *Tempterr->wallinfo + -1;
-        }
-      }
-      else if (type == 3) {
-        crashdata = *store;
-      }
-      *store = *store + scnptr->offlist[c].offset;
+        *store = *store + sceneptr->offlist[lp].offset;
     }
-    for (wallspl = (WallSpl *)Tempterr->wallinfo; wallspl != (WallSpl *)0x0;
-        wallspl = (WallSpl *)wallspl[-1].spl[0xfff].z) {
-      for (c2 = 0; c2 < (int)(uint)wallspl->count; c2 = c2 + 0x10) {
-        if (wallspl->spl[c2].y != 2.147484e+09) {
-          if (c2 + 0xf < (int)(uint)wallspl->count) {
-            x = wallspl->spl[c2].x;
-            z = wallspl->spl[c2].z;
-            x2 = x;
-            z2 = z;
-            size = c2;
-            while (cnt = size, k = cnt + 1, k <= c2 + 0x10) {
-              if (wallspl->spl[cnt + 1].x < x) {
-                x = wallspl->spl[cnt + 1].x;
-              }
-              if (x2 < wallspl->spl[cnt + 1].x) {
-                x2 = wallspl->spl[cnt + 1].x;
-              }
-              if (wallspl->spl[cnt + 1].z < z) {
-                z = wallspl->spl[cnt + 1].z;
-              }
-              size = k;
-              if (z2 < wallspl->spl[cnt + 1].z) {
-                z2 = wallspl->spl[cnt + 1].z;
-                size = k;
-              }
+    for (wallspl = (struct wallspl_s*)Tempterr->wallinfo; wallspl != NULL; wallspl = ((struct wallspl_s**)wallspl)[-1])
+    {
+        for (a = 0; a < wallspl->count; a = a + 0x10) {
+            if (wallspl->spl[a].y != FLOAT_INTMAX) {
+                if (a + 0xf < wallspl->count) {
+                    minx = maxx = wallspl->spl[a].x;
+                    minz = maxz = wallspl->spl[a].z;
+
+                    for (b = a + 1; b <= a + 0x10; b++) {
+                        if (wallspl->spl[b].x < minx) {
+                            minx = wallspl->spl[b].x;
+                        }
+
+                        if (wallspl->spl[b].x > maxx) {
+                            maxx = wallspl->spl[b].x;
+                        }
+
+                        if (wallspl->spl[b].z < minz) {
+                            minz = wallspl->spl[b].z;
+                        }
+
+                        if (wallspl->spl[b].z > maxz) {
+                            maxz = wallspl->spl[b].z;
+                        }
+                    }
+                    wallspl->spl[a].y = minx;
+                    wallspl->spl[a + 1].y = maxx;
+                    wallspl->spl[a + 2].y = minz;
+                    wallspl->spl[a + 3].y = maxz;
+                } else {
+                    wallspl->spl[a].y = FLOAT_INTMAX;
+                }
             }
-            wallspl->spl[c2].y = x;
-            wallspl->spl[c2 + 1].y = x2;
-            wallspl->spl[c2 + 2].y = z;
-            wallspl->spl[c2 + 3].y = z2;
-          }
-          else {
-            wallspl->spl[c2].y = 2.147484e+09;
-          }
         }
-      }
     }
-  }
-  return count;
+
+    return count;
 }
 
 //NGC MATCH
@@ -326,133 +322,120 @@ void NewScan(nuvec_s* ppos, int extramask, int platscan)
 
 void NewScanRot(nuvec_s* ppos, int extramask)
 
-int CheckCylinder(int p1,int p2,int *spherechecks,int mask)	//TODO
-{
-  float fVar1;
-  float fVar2;
-  int ret;
-  float fVar3;
-  float fVar4;
-  float fVar5;
-  float local_54;
-  nuvec_s tmp;
-  float local_28;
-  float local_24;
-  float local_20;
-  nuvec_s D;
+//NGC MATCH
+s32 CheckCylinder(s32 p1,s32 p2,s32 *spherechecks,s32 mask) {
+  float a;
+  float b;
+  float dist;
+  float t;
+  float s;
+  float len;
+  struct nuvec_s D;
+  struct nuvec_s A;
+  struct nuvec_s O;
+  struct nuvec_s tmp;
   
-  if ((((((TerI->size < (TerI->rotter).pnts[p1].x) && (TerI->size < (TerI->rotter).pnts[p2].x)) ||
-        (((TerI->rotter).pnts[p1].x < -TerI->size && ((TerI->rotter).pnts[p2].x < -TerI->size))))  ||
-       ((TerI->size < (TerI->rotter).pnts[p1].y && (TerI->size < (TerI->rotter).pnts[p2].y)))) ||
-      (((TerI->rotter).pnts[p1].y < -TerI->size && ((TerI->rotter).pnts[p2].y < -TerI->size)))) ||
-     ((((TerI->rotter).pnts[p1].z < -TerI->size && ((TerI->rotter).pnts[p2].z < -TerI->size)) ||
-      ((TerI->size + TerI->len < (TerI->rotter).pnts[p1].z &&
-       (TerI->size + TerI->len < (TerI->rotter).pnts[p2].z)))))) {
+  if ((((((TerI->rotter.pnts[p1].x > TerI->size ) && (TerI->rotter.pnts[p2].x > TerI->size)) ||
+        ((TerI->rotter.pnts[p1].x < -TerI->size && (TerI->rotter.pnts[p2].x < -TerI->size)))) ||
+       ((TerI->rotter.pnts[p1].y > TerI->size && (TerI->rotter.pnts[p2].y > TerI->size)))) ||
+      ((TerI->rotter.pnts[p1].y < -TerI->size && (TerI->rotter.pnts[p2].y < -TerI->size)))) ||
+     (((TerI->rotter.pnts[p1].z < -TerI->size && (TerI->rotter.pnts[p2].z < -TerI->size)) ||
+      ((TerI->rotter.pnts[p1].z > TerI->size + TerI->len &&
+       (TerI->rotter.pnts[p2].z > TerI->size + TerI->len)))))) {
     *spherechecks = *spherechecks & mask;
-    ret = 0;
+    return 0;
   }
-  else {
-    tmp.x = (TerI->rotter).pnts[p2].x - (TerI->rotter).pnts[p1].x;
-    tmp.y = (TerI->rotter).pnts[p2].y - (TerI->rotter).pnts[p1].y;
-    fVar3 = tmp.x * tmp.x + tmp.y * tmp.y;
-    if (1e-12 <= fVar3) {
-      fVar1 = (TerI->rotter).pnts[p1].x * tmp.y - (TerI->rotter).pnts[p1].y * tmp.x;
-      if (fVar1 * fVar1 <= TerI->sizesq * fVar3) {
-        tmp.z = (TerI->rotter).pnts[p2].z - (TerI->rotter).pnts[p1].z;
-        fVar4 = NuFsqrt(tmp.x * tmp.x + tmp.y * tmp.y + tmp.z * tmp.z);
-        fVar5 = 1.0 / fVar4;
-        fVar2 = tmp.x * fVar5;
-        tmp.y = tmp.y * fVar5;
-        tmp.z = tmp.z * fVar5;
-        fVar5 = -tmp.y;
-        D.x = -(TerI->rotter).pnts[p1].x;
-        D.y = -(TerI->rotter).pnts[p1].y;
-        D.z = -(TerI->rotter).pnts[p1].z;
-        tmp.x = fVar2;
-        NuVecCross(&D,&D,&tmp);
-        local_54 = -(D.x * fVar5 + D.y * fVar2) / (fVar5 * fVar5 + fVar2 * fVar2);
-        local_28 = fVar2 * tmp.z;
-        local_24 = -(fVar5 * tmp.z);
-        local_20 = fVar5 * tmp.y - fVar2 * tmp.x;
-        fVar5 = NuFsqrt(local_28 * local_28 + local_24 * local_24 + local_20 * local_20);
-        local_20 = local_20 / fVar5;
-        fVar3 = NuFsqrt(TerI->sizesq - (fVar1 * fVar1) / fVar3);
-        fVar3 = fVar3 / local_20;
-        if (0.0 <= fVar3) {
-          local_54 = local_54 - fVar3;
+    A.x = TerI->rotter.pnts[p2].x - TerI->rotter.pnts[p1].x;
+    A.y = TerI->rotter.pnts[p2].y - TerI->rotter.pnts[p1].y;
+    a = A.x * A.x + A.y * A.y;
+    if (a < 1e-12f) {
+        if ((((TerI->rotter.pnts[p1].z <= 0.0f) && (TerI->rotter.pnts[p2].z >= 0.0f)) ||
+                     ((TerI->rotter.pnts[p1].z >= 0.0f && (TerI->rotter.pnts[p2].z <= 0.0f)))) &&
+                    (a = TerI->rotter.pnts[p2].x * TerI->rotter.pnts[p2].x +
+                             TerI->rotter.pnts[p2].y * TerI->rotter.pnts[p2].y, a <= TerI->sizesq))  {
+              a = 1.0f / NuFsqrt(a);
+              TerI->hittype = 0x12;
+              TerI->hittime = 0.0f;
+              (TerI->hitnorm).x = -TerI->rotter.pnts[p2].x * (a);
+              (TerI->hitnorm).y = -TerI->rotter.pnts[p2].y * (a);
+              (TerI->hitnorm).z = 0.0f;
+              return 1;
         }
+
+        return 0;
+    }
+    b = (TerI->rotter.pnts[p1].x * A.y - TerI->rotter.pnts[p1].y * A.x);
+    if (b * b > TerI->sizesq * a) {
+            *spherechecks = *spherechecks & mask;
+            return 0;
+    }
+        dist = b * b / a;
+        A.z = TerI->rotter.pnts[p2].z - TerI->rotter.pnts[p1].z;
+        len = NuFsqrt(A.x * A.x + A.y * A.y + A.z * A.z);
+        a = 1.0f / len;
+        A.x = A.x * a;
+        A.y = A.y * a;
+        A.z = A.z * a;
+        D.x = -A.y;
+        D.y = A.x;
+        b = D.x * D.x + D.y * D.y;
+        tmp.x = -TerI->rotter.pnts[p1].x;
+        tmp.y = -TerI->rotter.pnts[p1].y;
+        tmp.z = -TerI->rotter.pnts[p1].z;
+        NuVecCross(&tmp,&tmp,&A);
+        t = -(tmp.x * D.x + tmp.y * D.y) / (b);
+        O.x = D.y * A.z;
+        O.y = -(D.x * A.z);
+        O.z = D.x * A.y - D.y * A.x;
+        b = NuFsqrt(O.x * O.x + O.y * O.y + O.z * O.z);
+        O.z = O.z / b;
+        s = NuFsqrt(TerI->sizesq - dist) / O.z;
+        if (s < 0.0f) {
+           t = t + s;
+         }
         else {
-          local_54 = local_54 + fVar3;
+           t = t - s;
         }
-        if ((((local_54 < 0.0) || (TerI->len < local_54)) ||
-            (fVar3 = -(TerI->rotter).pnts[p1].x * tmp.x + -(TerI->rotter).pnts[p1].y * tmp.y +
-                     (local_54 - (TerI->rotter).pnts[p1].z) * tmp.z, fVar3 <= 0.0)) ||
-           (fVar4 < fVar3)) {
-          if (((-TerI->size <= (TerI->rotter).pnts[p1].z) ||
-              (-TerI->size <= (TerI->rotter).pnts[p2].z)) &&
-             (((TerI->rotter).pnts[p1].z <= TerI->size || ((TerI->rotter).pnts[p2].z <= TerI->size ))
-             )) {
-            fVar3 = (-tmp.x * (TerI->rotter).pnts[p1].x - tmp.y * (TerI->rotter).pnts[p1].y) -
-                    tmp.z * (TerI->rotter).pnts[p1].z;
-            if ((fVar3 < 0.0) ||
-               (((TerI->rotter).pnts[p2].x - (TerI->rotter).pnts[p1].x) * tmp.x +
-                ((TerI->rotter).pnts[p2].y - (TerI->rotter).pnts[p1].y) * tmp.y +
-                ((TerI->rotter).pnts[p2].z - (TerI->rotter).pnts[p1].z) * tmp.z < fVar3)) {
+        if ((((t >= 0.0f) && (t <= TerI->len)) &&
+             (b = -TerI->rotter.pnts[p1].x * A.x + -TerI->rotter.pnts[p1].y * A.y +
+                      (t - TerI->rotter.pnts[p1].z) * A.z, b > 0.0f)) && (b <= len)) {
+            if (t / TerI->len < TerI->hittime) {
+              TerI->hittype = 2;
+              TerI->hittime = t / TerI->len;
+              (TerI->hitnorm).x = -(TerI->rotter.pnts[p1].x + A.x * b);
+              (TerI->hitnorm).y = -(TerI->rotter.pnts[p1].y + A.y * b);
+              (TerI->hitnorm).z = t - (TerI->rotter.pnts[p1].z + A.z * b);
+              *spherechecks = *spherechecks & mask;
+               return 1;
+             }
+             *spherechecks = *spherechecks & mask;
+            return 0;
+        }
+        if (((TerI->rotter.pnts[p1].z >= -TerI->size) || (TerI->rotter.pnts[p2].z >= -TerI->size)) &&
+             ((TerI->rotter.pnts[p1].z <= TerI->size || (TerI->rotter.pnts[p2].z <= TerI->size)))) {
+            a = (-A.x * TerI->rotter.pnts[p1].x - A.y * TerI->rotter.pnts[p1].y) -
+                    A.z * TerI->rotter.pnts[p1].z;
+            b = (TerI->rotter.pnts[p2].x - TerI->rotter.pnts[p1].x) * A.x +
+                (TerI->rotter.pnts[p2].y - TerI->rotter.pnts[p1].y) * A.y +
+                (TerI->rotter.pnts[p2].z - TerI->rotter.pnts[p1].z) * A.z;
+            if ((a < 0.0f) || (a > b)) {
               return 0;
             }
-            tmp.x = tmp.x * fVar3 + (TerI->rotter).pnts[p1].x;
-            tmp.y = tmp.y * fVar3 + (TerI->rotter).pnts[p1].y;
-            tmp.z = tmp.z * fVar3 + (TerI->rotter).pnts[p1].z;
-            fVar3 = tmp.x * tmp.x + tmp.y * tmp.y + tmp.z * tmp.z;
-            if (fVar3 < TerI->sizesq) {
-              fVar3 = NuFsqrt(fVar3);
-              fVar3 = 1.0 / fVar3;
+            A.x = A.x * a + TerI->rotter.pnts[p1].x;
+             A.y = A.y * a + TerI->rotter.pnts[p1].y;
+            A.z = A.z * a + TerI->rotter.pnts[p1].z;
+            a = A.x * A.x + A.y * A.y + A.z * A.z;
+            if (a < TerI->sizesq) {
+              a = 1.0f / NuFsqrt(a);
               TerI->hittype = 0x12;
-              TerI->hittime = 0.0;
-              (TerI->hitnorm).x = -tmp.x * fVar3;
-              (TerI->hitnorm).y = -tmp.y * fVar3;
-              (TerI->hitnorm).z = -tmp.z * fVar3;
-              return 1;
+              TerI->hittime = 0.0f;
+              (TerI->hitnorm).x = -A.x * a;
+               (TerI->hitnorm).y = -A.y * a;
+               (TerI->hitnorm).z = -A.z * a;
+               return 1;
             }
-          }
-          ret = 0;
         }
-        else if (TerI->hittime <= local_54 / TerI->len) {
-          *spherechecks = *spherechecks & mask;
-          ret = 0;
-        }
-        else {
-          TerI->hittype = 2;
-          TerI->hittime = local_54 / TerI->len;
-          (TerI->hitnorm).x = -(tmp.x * fVar3 + (TerI->rotter).pnts[p1].x);
-          (TerI->hitnorm).y = -(tmp.y * fVar3 + (TerI->rotter).pnts[p1].y);
-          (TerI->hitnorm).z = local_54 - (tmp.z * fVar3 + (TerI->rotter).pnts[p1].z);
-          *spherechecks = *spherechecks & mask;
-          ret = 1;
-        }
-      }
-      else {
-        *spherechecks = *spherechecks & mask;
-        ret = 0;
-      }
-    }
-    else if ((((0.0 < (TerI->rotter).pnts[p1].z) || ((TerI->rotter).pnts[p2].z < 0.0)) &&
-             (((TerI->rotter).pnts[p1].z < 0.0 || (0.0 < (TerI->rotter).pnts[p2].z)))) ||
-            (fVar3 = (TerI->rotter).pnts[p2].x * (TerI->rotter).pnts[p2].x +
-                     (TerI->rotter).pnts[p2].y * (TerI->rotter).pnts[p2].y, TerI->sizesq < fVar3))  {
-      ret = 0;
-    }
-    else {
-      fVar3 = NuFsqrt(fVar3);
-      TerI->hittype = 0x12;
-      TerI->hittime = 0.0;
-      (TerI->hitnorm).x = -(TerI->rotter).pnts[p2].x * (1.0 / fVar3);
-      (TerI->hitnorm).y = -(TerI->rotter).pnts[p2].y * (1.0 / fVar3);
-      (TerI->hitnorm).z = 0.0;
-      ret = 1;
-    }
-  }
-  return ret;
+    return 0;
 }
 
 //NGC MATCH

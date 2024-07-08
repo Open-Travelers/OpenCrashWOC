@@ -15,6 +15,62 @@ struct nugspline_s * NuSplineFindPartial(struct nugscn_s *scene,char *name,char 
 }
 
 //NGC MATCH
+void UpdateCrateBallsOfFireDoors(void) {
+    struct nuhspecial_s obj[8];
+    char txt[9];
+    s32 i;
+
+    if ((best_cRPos != NULL) && (Rail[best_cRPos->iRAIL].type == 0)) {
+        NuSpecialFind(world_scene[0], obj + 0, "door1");
+        NuSpecialFind(world_scene[0], obj + 1, "door2");
+        NuSpecialFind(world_scene[0], obj + 2, "door3");
+        NuSpecialFind(world_scene[0], obj + 3, "door4");
+        NuSpecialFind(world_scene[0], obj + 4, "door25");
+        NuSpecialFind(world_scene[0], obj + 5, "door26");
+        NuSpecialFind(world_scene[0], obj + 6, "door27");
+        NuSpecialFind(world_scene[0], obj + 7, "door28");
+
+        if (FurtherBEHIND(best_cRPos->iRAIL, best_cRPos->iALONG, best_cRPos->fALONG, 2, 0x14, 0.5f) != 0) {
+            strcpy(txt, "00000000");
+        } else if (FurtherBEHIND(best_cRPos->iRAIL, best_cRPos->iALONG, best_cRPos->fALONG, 2, 0x21, 0.5f) != 0) {
+            strcpy(txt, "00001111");
+        } else {
+            strcpy(txt, "11110000");
+        }
+
+        for (i = 0; i < 8; i++) {
+            if (obj[i].special != NULL) {
+                obj[i].special->instance->flags.visible = txt[i] == '1';
+            }
+        }
+
+        NuSpecialFind(world_scene[0], obj + 0, "door5");
+        NuSpecialFind(world_scene[0], obj + 1, "door6");
+        NuSpecialFind(world_scene[0], obj + 2, "door7");
+        NuSpecialFind(world_scene[0], obj + 3, "door8");
+        NuSpecialFind(world_scene[0], obj + 4, "door29");
+        NuSpecialFind(world_scene[0], obj + 5, "door30");
+        NuSpecialFind(world_scene[0], obj + 6, "door31");
+        NuSpecialFind(world_scene[0], obj + 7, "door32");
+
+        if (FurtherBEHIND(best_cRPos->iRAIL, best_cRPos->iALONG, best_cRPos->fALONG, 2, 0x38, 0.5f) != 0) {
+            strcpy(txt, "00000000");
+        } else if (FurtherBEHIND(best_cRPos->iRAIL, best_cRPos->iALONG, best_cRPos->fALONG, 2, 0x41, 0.5f) != 0) {
+            strcpy(txt, "11110000");
+        } else {
+            strcpy(txt, "00001111");
+        }
+
+        for (i = 0; i < 8; i++) {
+            if (obj[i].special != NULL) {
+                obj[i].special->instance->flags.visible = txt[i] == '1';
+            }
+        }
+    }
+    return;
+}
+
+//NGC MATCH
 s32 ChaseActive(void) {
   s32 i;
 

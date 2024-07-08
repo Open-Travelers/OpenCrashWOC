@@ -7,10 +7,10 @@ s32 gamecut; //cut.c
 	ManageCreatures 88%
 	LoadCharacterModel 95%
 	LoadCharacterModels 92%
-	NewCharacterIdle 92%
-	MovePlayer 29%
+	NewCharacterIdle 92%*
+	MovePlayer 29%**
 	DrawCharacterModel 96%
-	UpdateAnimPacket 99%
+	UpdateAnimPacket 99%*
 	DrawCreatures 89%
 	
 */

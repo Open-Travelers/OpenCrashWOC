@@ -6,6 +6,15 @@ s32 screendump;
 s32 save_paused;
 s32 editor_active;
 
+/*
+	DrawWorldToPanelWumpa 57%**
+	Draw3DCheckpointLetters 50%**
+	UpdatePanelDebris 97%*
+	DrawPanel 87%
+	UpdatePlayerStats 86%
+	DrawTimeTrialTimes 61% 
+*/
+
 //NGC MATCH
 void MaxVP(void) {
   NuVpSetSize(MAXVPSIZEX,MAXVPSIZEY);

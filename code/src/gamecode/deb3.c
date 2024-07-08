@@ -32,6 +32,16 @@ s32 water2;
 s32 wdir;
 s32 wtimer;
 
+/*
+	RBodySetCubiodClass  95%
+	AddDeb3Ang     73%
+	AddDeb3           65%
+	JonExtraDraw    87%
+	LaunchObjects  67%
+	ProcDeb3 TODO
+	DrawDeb3      99%
+*/
+
 //NGC MATCH
 void InitRandSFX(void) {
   rsfxcount = 0;

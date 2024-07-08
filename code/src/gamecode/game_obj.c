@@ -1,5 +1,16 @@
 //#include "gamecode/game_obj.h"
 
+/* TODO
+	ObjectCylinderCollision
+	PlayerCreatureCollisions
+	CrateCollisions
+	ObjectRotation
+	KillGameObject
+	AddProjectile
+	UpdateProjectiles
+	DrawProjectiles
+*/
+
 //NGC MATCH
 void ClearGameObjects(void) {
   s32 i;

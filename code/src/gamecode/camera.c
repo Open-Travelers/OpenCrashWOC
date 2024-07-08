@@ -1,5 +1,14 @@
 #include "gamecode/camera.h"
 
+/*
+	InitRails	    97% ??
+	BestRailPosition    86%*
+	MoveRailPosition    79%
+	RailInfo	    70%
+	InSplineArea 	    57%*
+	MoveGameCamera	    22%*
+*/
+
 //MATCH NGC
 void ResetGameCameras(struct cammtx_s *Gamecam,s32 n) {
        while (n > 0) {
@@ -641,21 +650,18 @@ s32 FurtherBEHIND(s32 iRAIL0,s32 iALONG0,float fALONG0,s32 iRAIL1,s32 iALONG1,fl
   return 1;
 }
 
-/*
-void InitCameraTargetMaterial(void)
+//NGC MATCH
+void InitCameraTargetMaterial() {
+  ctmtl = NuMtlCreate(1);
+  //mtl->attrib = (numtlattrib_s)((uint)attrib & 0x3fc3ffff | 0x200000);
+  ctmtl->attrib.cull = 2;
+  ctmtl->attrib.zmode = 0;
+  ctmtl->diffuse.r = 0.5f;
+  ctmtl->diffuse.g = 0.5f;
+  ctmtl->diffuse.b = 0.5f;
+  ctmtl->alpha = 1.0f;
+  ctmtl->attrib.alpha = 0; 
 
-{
-  numtlattrib_s attrib;
-  numtl_s *mtl;
-
-  mtl = NuMtlCreate(1);
-  attrib = mtl->attrib;
-  ctmtl = mtl;
-  (mtl->diffuse).b = 0.5;
-  mtl->alpha = 1.0;
-  mtl->attrib = (numtlattrib_s)((uint)attrib & 0x3fc3ffff | 0x200000);
-  (mtl->diffuse).r = 0.5;
-  (mtl->diffuse).g = 0.5;
-  NuMtlUpdate(mtl);
+  NuMtlUpdate(ctmtl);
   return;
-}*/
+}

@@ -7,10 +7,24 @@ HubDrawItems
 InitVehicleToggles
 ResetVehicleControl
 ToggleVehicle 73%
-DrawMenu
 BonusTransporter
 DeathTransporter
 GemPathTransporter
+
+
+JonProbe  98%
+AddAward 99%
+DrawAwards 98%
+ResetWumpa 93%*
+UpdateWumpa 87%**
+UpdateMask  95%
+ProcMenu 99%
+DrawMenu 19%**
+GameTiming 99%
+NewLevelTime 87%**
+BonusTiming 98%
+DrawProbeFX  95%
+DrawMenu 19%
 
 */
 

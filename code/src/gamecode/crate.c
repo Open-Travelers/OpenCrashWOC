@@ -56,6 +56,58 @@ void CloseCrates(void) {
 }
 
 //NGC MATCH
+s32 NewCrateAnimation(CrateCube* crate, s32 type, s32 action, s32 random) {
+    struct CharacterModel* model;
+    s32 i;
+    s32 character;
+
+    if ((u32)type > 0x14) {
+        return 0;
+    }
+    
+    character = crate_list[type].character;
+    crate->character = -1;
+    crate->action = -1;
+    
+    if (((u32)character > 0xbe) || ((u32)action > 0x75)) {
+        return 0;
+    }
+
+    i = CRemap[character];
+    if (i == -1) {
+        return 0;
+    }
+    
+    model = &CModel[i];
+    if (model->anmdata[action] != NULL) {
+        i = 1;
+        crate->anim_duration = model->anmdata[action]->time;
+        crate->anim_cycle = model->animlist[action]->flags & 1;
+        crate->anim_speed = model->animlist[action]->speed;
+    } else if (model->fanmdata[action] != NULL) {
+        i = 1;
+        crate->anim_duration = model->fanmdata[action]->time;
+        crate->anim_cycle = model->fanimlist[action]->flags & 1;
+        crate->anim_speed = model->fanimlist[action]->speed;
+    } else {
+        i = 0;
+    }
+
+    if (i != 0) {
+        crate->anim_time = 1.0f;
+        if (random != 0) {
+            crate->anim_time = (s32)qrand() * 0.000015259022f * (crate->anim_duration - 1.0f) + crate->anim_time;
+            if (crate->anim_time >= crate->anim_duration) {
+                crate->anim_time = 1.0f;
+            }
+        }
+        crate->character = character;
+        crate->action = action;
+    }
+    return i;
+}
+
+//NGC MATCH
 void OpenPreviousCheckpoints(s32 iRAIL,s32 iALONG,float fALONG) {
   CrateCubeGroup *group;
   CrateCube *crate;
