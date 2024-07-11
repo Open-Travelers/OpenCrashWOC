@@ -1,3 +1,5 @@
+#define LANGUAGE_JAPANESE 0x63
+
 s32 MAXVPSIZEX;
 s32 MINVPSIZEX;
 s32 MAXVPSIZEY;
@@ -11,8 +13,7 @@ s32 editor_active;
 	Draw3DCheckpointLetters 50%**
 	UpdatePanelDebris 97%*
 	DrawPanel 87%
-	UpdatePlayerStats 86%
-	DrawTimeTrialTimes 61% 
+	UpdatePlayerStats PS2 MATCH / 93% (mtctr and mfctr missing, lines 65-69)
 */
 
 //NGC MATCH
@@ -332,6 +333,157 @@ void DrawGameMessage(char* txt, s32 message_frame, float ys) {
             }
             Text3D(&msg[0], xs, ys, 1.0f, (size * sx), 1.0f, 1.0f, 1, 4);
             xs = (size * 0.1f + xs);
+        }
+    }
+    return;
+}
+
+//NGC MATCH
+void DrawTimeTrialTimes(int level, float x, float y, float z) {
+    float dy;
+    s32 i;
+    s32 j;
+    s32 t;
+    float fVar1;
+    char* txt;
+
+    disable_safearea_clamp = 1;
+    i = -1;
+    if ((Game.level[level].flags & 8) != 0 || (HubFromLevel(level) == 5)) {
+        if ((Game.level[level].flags & 1) == 0) {
+            t = LData[level].time[0];
+            i = 3;
+        } else if ((Game.level[level].flags & 2) == 0) {
+            t = LData[level].time[1];
+            i = 2;
+        } else {
+            if ((Game.level[level].flags & 4) == 0) {
+                t = LData[level].time[2];
+                i = 1;
+            }
+        }
+    }
+
+    if (Level == 0x25) {
+        DrawPanel3DObject(
+            0x81, x, (y - 0.03f), (z + 0.01f), 0.15f, 0.13f, (i != -1) ? 0.11f : 0.08f, 0xc000, 0, 0,
+            ObjTab[129].obj.scene, ObjTab[129].obj.special, 0
+        );
+    }
+    
+    dy = -0.125f;
+    y -= dy;
+    if (i != -1) {
+        if (Game.language == LANGUAGE_JAPANESE) {
+            tbuf[0] = tbuf[1] =tbuf[2] = tbuf[3] = ' ';
+            tbuf[4] = ObjTab[i].font3d_letter;
+            tbuf[5] =tbuf[6] = tbuf[7] = ' ';
+        } else {
+            tbuf[0] = ' ';
+            tbuf[1] = ' ';
+            tbuf[2] = ObjTab[i].font3d_letter;
+            tbuf[3] = ' ';
+        }
+        
+        y -= (dy * 1.25f) * 0.5f;
+        
+        if (Game.language == LANGUAGE_JAPANESE) {
+            txt = tbuf + 8;
+        } else {
+            txt = tbuf + 4;
+        }
+        
+        MakeTimeI(t, 0, txt);
+        
+        if (Game.language == LANGUAGE_JAPANESE) {
+            fVar1 = 0.55f;
+        } else {
+            fVar1 = 0.6f;
+        }
+        Text3D(tbuf, x, y, z, fVar1, 0.6f, 0.6f, 1, 3);
+        y += (dy * 1.25f);
+    }
+
+    for (j = 0; j < 3; j++) {
+        MakeLevelTimeString(&Game.level[level].time[j], tbuf);
+        Text3D(tbuf, x, y, z, 0.6f, 0.6f, 0.6f, 1, 0);
+        y += dy;
+    }
+    
+    disable_safearea_clamp = 0;
+    return;
+}
+
+//PS2 MATCH
+void UpdatePlayerStats(struct creature_s* plr) {
+    CrateCube* crate;
+    s32 i;
+    s32 dead;
+    s32 x;
+
+    crates_destroyed = 0;
+    bonus_crates_destroyed = 0;
+    crate = Crate;
+    for (i = 0; i < CRATECOUNT; i++, crate++) {
+        if (((crate->flags & 0x10) != 0)
+            && ((crate->on == 0 || ((crate->newtype == 0xf && (crate->metal_count != 0))))))
+        {
+            if ((crate->flags & 0x40) != 0) {
+                bonus_crates_destroyed++;
+            } else {
+                crates_destroyed++;
+            }
+        }
+    }
+    if ((Bonus == 2) && ((plr->obj).dead != 0)) {
+        dead = 1;
+    } else {
+        dead = 0;
+    }
+
+    if (dead) {
+        bonus_crates_destroyed = old_bonus_crates;
+    } else {
+        old_bonus_crates = bonus_crates_destroyed;
+    }
+
+    save_bonus_crates_destroyed = bonus_crates_destroyed;
+    if ((Bonus == 4) || (Bonus == 3) || (dead)) {
+        if (bonus_finish_frame < (bonus_crates_destroyed * 6)) {
+            x = bonus_finish_frame / 6;
+            if (!dead) {
+                crates_destroyed += x;
+            }
+            bonus_crates_destroyed -= x;
+        } else {
+            if (!dead) {
+                crates_destroyed += save_bonus_crates_destroyed;
+            }
+            bonus_crates_destroyed = 0;
+        }
+        if (bonus_finish_frame == save_bonus_crates_destroyed * 6 + 5) {
+            bonus_crates_wait = 0.5f;
+        } else if ((bonus_finish_frame >= save_bonus_crates_destroyed * 6 + 6) && (bonus_crates_wait -= 0.01666667f, bonus_crates_wait <= 0.0f))
+        {
+            bonus_crates_wait = -0.01666667f;
+        }
+    }
+
+    plr_crates.count = crates_destroyed;
+    plr_wumpas.count += crate_wumpa;
+    while (99 < plr_wumpas.count) {
+        plr_wumpas.count += -100;
+        AddPanelDebris(WUMPAOBJSX, PANELSY, 5, 0.0f, 1);
+    }
+
+    if (99 < plr_lives.count) {
+        plr_lives.count = 99;
+        force_panel_lives_update = 0x3c;
+    }
+
+    for (; mask_crates != 0; mask_crates--) {
+        if (((plr->obj).mask != NULL)) {
+            NewMask((plr->obj).mask, &vNEWMASK);
         }
     }
     return;

@@ -578,6 +578,44 @@ s32 HitItems(struct obj_s *obj) {
 }
 
 //NGC MATCH
+s32 HitCreatures(struct obj_s *obj, s32 destroy, s32 type) {
+    struct obj_s *cyl;
+    s32 i; 
+    s32 temp;
+  
+    if (level_part_2 != 0) {
+        return 0;
+    }
+    for (i = 0; i < 64; i++) { 
+        cyl = pObj[i];
+        
+        if ((((cyl != NULL) && (cyl->dead == 0)) && (cyl->invisible == 0)) &&
+        ((((!(cyl->flags & 1)) && (temp = cyl->flags, (cyl->flags & 4) != 0)) && (GameObjectOverlap(obj,cyl,1) != 0)))) 
+        {
+            if ((cyl->vulnerable & 0x100)) {
+                if ((cyl->flags & 0x40000)) {
+                    cyl->kill_contact = 1;
+                }
+                else if (destroy == 2) {
+                    KillGameObject(cyl, 21);
+                }
+                else if (destroy != 0) {
+                    KillGameObject(cyl, 4);
+                }
+                else {
+                    FlyGameObject(cyl, temp_yrot);
+                    KillGameObject(cyl, 1);   
+                }
+            }
+          
+            ((struct creature_s*)(cyl->parent))->hit_type = type;
+            return 1; 
+        }
+    }
+    return 0;    
+}
+
+//NGC MATCH
 s32 WipeCreatures(struct RPos_s *rpos) {
   struct obj_s *cyl;
   struct nuvec_s pos;

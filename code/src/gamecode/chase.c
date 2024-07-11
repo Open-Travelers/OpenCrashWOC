@@ -129,3 +129,36 @@ float NearestChaserDistance(struct chase_s *chase,struct obj_s *obj) {
     struct obj_s  c_obj;
     struct CData_s * cdata; // r28
 */
+
+//NGC MATCH
+void UpdateChases(void) {
+    struct chase_s* chase;
+    struct nuvec_s* p0;
+    struct nuvec_s* p1;
+    struct obj_s* obj;
+    s32 i;
+
+    if (Level == 0x1f) {
+        UpdateCrateBallsOfFireDoors();
+    }
+
+    chase = Chase;
+    obj = &player->obj;
+    for (i = 0; i < 3; i++, chase++) {
+        if (chase->status == 1) {
+            if (player->obj.transporting == 0) {
+                p0 = (struct nuvec_s*)(chase->spl_START->pts);
+                p1 = (struct nuvec_s*)(chase->spl_START->pts + (s32)chase->spl_START->ptsize);
+                if (LineCrossed(obj->oldpos.x, obj->oldpos.z, obj->pos.x, obj->pos.z, p0->x, p0->z, p1->x, p1->z) == 2)
+                {
+                    InitChase(chase);
+                }
+            }
+        } else if (chase->status > 1) {
+            if (chase->status < 4) {
+                UpdateChase(chase, obj);
+            }
+        }
+    }
+    return;
+}

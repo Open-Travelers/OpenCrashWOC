@@ -1,4 +1,52 @@
 //NGC MATCH
+void ResetAI(void) {
+  LevelAI *ai;
+  s32 i;
+  s32 j;
+  s32 gempath_reset;
+  
+  gempath_reset = 0;
+  if ((Rail[7].type == 3) &&
+     (AheadOfCheckpoint((s32)gempath_RPos.iRAIL,(s32)gempath_RPos.iALONG,gempath_RPos.fALONG) != 0)) {
+    gempath_reset = 1;
+  }
+  
+  ai = AITab;
+  for(i = 0; i < LEVELAICOUNT; i++, ai++) {
+      GetALONG(ai->pos,NULL,-1,-1,1);
+      ai->iRAIL = (char)temp_iRAIL;
+      ai->iALONG = temp_iALONG;
+      ai->fALONG = temp_fALONG;
+      if ((((s8)temp_iRAIL != -1) && (Rail[(s8)temp_iRAIL].type == 3))) {
+          if (gempath_reset != 0) {
+              goto jmp_1;
+          }
+      }
+      else if ((bonus_restart == 0) && (AheadOfCheckpoint((s32)ai->iRAIL,(s32)ai->iALONG,ai->fALONG) != 0)) {
+jmp_1:
+        ai->status = 1;
+      }
+      ai->time = 0.0f;
+      ai->delay = AIType[ai->ai_type].delay;
+      (ai->origin) = ai->pos[0];
+      if (AIType[ai->ai_type].points > 1) {
+        for(j = 1; j < AIType[ai->ai_type].points; j++) {
+            NuVecAdd(&ai->origin,&ai->origin,&ai->pos[j]);
+        }
+        NuVecScale(&ai->origin,&ai->origin, (1.0f / AIType[ai->ai_type].points));
+      }
+  }
+  for(i = 1; i < 9; i++) {
+    if (Character[i].used != 0) {
+      RemoveGameObject(&Character[i].obj);
+      Character[i].used = 0;
+      Character[i].on = 0;
+    }
+  }
+  return;
+}
+
+//NGC MATCH
 s32 FindAIType(char *name,s32 points) {
   s32 i;
   
@@ -71,92 +119,6 @@ void InitAI(void) {
     LoadAI();
   }
   ResetAI();
-  return;
-}
-
-
-void ResetAI(void)		//WIP
-
-{
-  float x;
-  float z;
-  nuvec_s *origin;
-  int count;
-  int i;
-  ai_s *Tab;
-  obj_s *obj;
-  nuvec_s *pos;
-  creature_s *chr;
-  double dVar1;
-  bool check;
-  char t_iRail;
-  float y;
-  
-  check = false;
-  if ((Rail[7].type == '\x03') &&
-     (count = AheadOfCheckpoint((int)gempath_RPos.iRAIL,(int)gempath_RPos.iALONG,gempath_RPos.fALO NG
-                               ), count != 0)) {
-    check = true;
-  }
-  count = 0;
-  if (0 < LEVELAICOUNT) {
-    dVar1 = 0.0;
-    Tab = AITab;
-    do {
-      GetALONG(Tab->pos,(RPos_s *)0x0,-1,-1,1);
-      t_iRail = (char)temp_iRAIL;
-      Tab->iRAIL = (char)temp_iRAIL;
-      y = temp_fALONG;
-      Tab->iALONG = temp_iALONG._2_2_;
-      Tab->fALONG = y;
-      if ((t_iRail == -1) || (Rail[t_iRail].type != '\x03')) {
-        if ((bonus_restart == 0) &&
-           (i = AheadOfCheckpoint((int)Tab->iRAIL,(int)Tab->iALONG,Tab->fALONG), i != 0))
-        goto LAB_80003688;
-      }
-      else if (check) {
-LAB_80003688:
-        Tab->status = '\x01';
-      }
-      Tab->time = (float)dVar1;
-      origin = &Tab->origin;
-      x = Tab->pos[0].x;
-      Tab->delay = AIType[(byte)Tab->ai_type].delay;
-      y = Tab->pos[0].y;
-      z = Tab->pos[0].z;
-      (Tab->origin).x = x;
-      (Tab->origin).y = y;
-      (Tab->origin).z = z;
-      if (1 < AIType[(byte)Tab->ai_type].points) {
-        i = 1;
-        if (1 < AIType[(byte)Tab->ai_type].points) {
-          pos = Tab->pos;
-          do {
-            pos = pos + 1;
-            i = i + 1;
-            NuVecAdd(origin,origin,pos);
-          } while (i < AIType[(byte)Tab->ai_type].points);
-        }
-        NuVecScale(origin,origin,
-                   1.0 / (float)((double)CONCAT44(0x43300000,
-                                                  (int)AIType[(byte)Tab->ai_type].points ^
-                                                  0x80000000) - 4503601774854144.0));
-      }
-      count = count + 1;
-      Tab = Tab + 1;
-    } while (count < LEVELAICOUNT);
-  }
-  chr = Character + 1;
-  obj = &Character[1].obj;
-  do {
-    if (chr->used != '\0') {
-      RemoveGameObject(obj);
-      chr->used = '\0';
-      chr->on = '\0';
-    }
-    chr = chr + 1;
-    obj = obj + 1;
-  } while ((int)chr < -0x7fdace07);
   return;
 }
 
@@ -281,17 +243,11 @@ static s32 WaterCrunchFunction_Defeated(struct creature_s *c,struct nuvec_s *pos
   return 1;
 }
 
-void ResetCRUNCHTIME(void)
-
-{
-  uint *attack;
-  int i;
-  nuvec_s v;
+//NGC MATCH
+void ResetCRUNCHTIME(void) {
+  struct nuvec_s v;
+  s32 i;
   
-  i = 9;
-  fire_attack_on = -1;
-  attack = weather_attack_on + 8;
-  fire_attack_wait = 0;
   jcrunch = 0;
   crunch_vulnerable = 0;
   crunchtime_attack_phase = 0;
@@ -300,22 +256,21 @@ void ResetCRUNCHTIME(void)
   water_attack_on = 0;
   water_attack_wait = 0;
   water_last_chute = -1;
-  do {
-    *attack = 0;
-    attack = attack + -1;
-    i = i + -1;
-  } while (i != 0);
-  CrunchTime_Intro = 1;
+  fire_attack_on = -1;
+  fire_attack_wait = 0;
+  for(i = 0; i < 9; i++) {
+    weather_attack_on[i] = 0;
+  }
   weather_attack_wait = 0;
+  CrunchTime_Intro = 1;
   InitVehMasks();
   InitVehMask(0,3);
-  v.y = 5.0;
-  v.x = 0.0;
-  v.z = 0.0;
-  SetNewMaskStuff(0,&crunchtime_arena_midpos,&v,0.0,-540.0,1.0,0,0,1.0,0.0);
+  v.y = 5.0f;
+  v.x = 0.0f;
+  v.z = 0.0f;
+  SetNewMaskStuff(0,&crunchtime_arena_midpos,&v,0.0f,-540.0f,1.0f,0,0,1.0f,0.0f);
   return;
 }
-
 
 int UpdateCRUNCHTIME(void)		//TODO
 
@@ -747,36 +702,36 @@ void DrawCRUNCHTIME(void)	//TODO
   return;
 }
 
-
-int GetTotalSpaceBossObjectives(void)
-
-{
-  return 4;
+//NGC MATCH
+s32 GetTotalSpaceBossObjectives() {
+    return 4;
 }
 
-
-int GetCurrentSpaceBossObjectives(void)
-
-{
-  return 4 - crunchtime_attack_phase;
+//NGC MATCH
+s32 GetCurrentSpaceBossObjectives(void) {
+    return 4 - crunchtime_attack_phase;
 }
 
+//NGC MATCH
+static s32 SpaceCortexFunction_CheckPunch(struct creature_s *c,struct nuvec_s *pos) {
+  return SpaceCrunch_Punch;
+}
 
-float RatioDifferenceAlongLine(float r0,float r1,nuvec_s *p0,nuvec_s *p1)
-
-{
-  double diff;
+//NGC MATCH
+float RatioDifferenceAlongLine(float r0,float r1,struct nuvec_s *p0,struct nuvec_s *p1) {
   float dx;
   float dz;
+  float r;
+  float d;
   
-  diff = (double)(r1 - r0);
-  dz = (float)((double)(p1->z - p0->z) * diff);
-  dx = (float)((double)(p1->x - p0->x) * diff);
-  dz = NuFsqrt(dx * dx + dz * dz);
-  if (diff < 0.0) {
-    dz = -dz;
+  r = (r1 - r0);
+  dx = ((p1->x - p0->x) * r);
+  dz = ((p1->z - p0->z) * r);
+  d = NuFsqrt(dx * dx + dz * dz);
+  if (r < 0.0f) {
+    d = -d;
   }
-  return dz;
+  return d;
 }
 
 
@@ -832,80 +787,48 @@ void FindGongBongerAnim(nuvec_s *pos,nuhspecial_s *obj)		//CHECK
   return;
 }
 
-
-int PlayerLateralInRange(float lateral,nuvec_s *pos,nuvec_s *p0,nuvec_s *p1,float distance)
-
-{
-  double dVar1;
-  double dVar2;
-  float fVar3;
-  
-  dVar2 = (double)distance;
-  dVar1 = (double)lateral;
-  fVar3 = RatioAlongLine(pos,p0,p1);
-  fVar3 = RatioDifferenceAlongLine((float)dVar1,fVar3,p0,p1);
-  dVar1 = (double)fVar3;
-  NuFabs(fVar3);
-  return (uint)(dVar1 < dVar2);
+//NGC MATCH
+s32 PlayerLateralInRange(float lateral,struct nuvec_s *pos,struct nuvec_s *p0,struct nuvec_s *p1,float distance) {
+  if(NuFabs(RatioDifferenceAlongLine(lateral,RatioAlongLine(pos,p0,p1),p0,p1)) < distance) {
+      return 1;
+  }
+  return 0;
 }
 
-
-int PlayerLateralOutOfRange(float lateral,nuvec_s *pos,nuvec_s *p0,nuvec_s *p1,float distance)
-
-{
-  double dVar1;
-  double dVar2;
-  float fVar3;
-  
-  dVar2 = (double)distance;
-  dVar1 = (double)lateral;
-  fVar3 = RatioAlongLine(pos,p0,p1);
-  fVar3 = RatioDifferenceAlongLine((float)dVar1,fVar3,p0,p1);
-  dVar1 = (double)fVar3;
-  NuFabs(fVar3);
-  return (uint)(dVar2 < dVar1);
+//NGC MATCH
+s32 PlayerLateralOutOfRange(float lateral,struct nuvec_s *pos,struct nuvec_s *p0,struct nuvec_s *p1,float distance) {
+  if(NuFabs(RatioDifferenceAlongLine(lateral,RatioAlongLine(pos,p0,p1),p0,p1)) > distance) {
+      return 1;
+  }
+  return 0;
 }
 
-
-float FindNearestCreature(nuvec_s *pos,int character,nuvec_s *dst)		//CHECK
-
-{
-
-  float z;
-  float y;
-  int unaff_r13;
-  int j;
-  int i;
-  creature_s *c;
-  nuvec_s *p;
-  double dVar1;
-  double dVar2;
+//NGC MATCH
+float FindNearestCreature(struct nuvec_s *pos,s32 character,struct nuvec_s *dst) {
+  struct creature_s* c;
+  float d0;
+  float d;
+  s32 j;
+  s32 i;
   
-  dVar2 = 1000000.0;
+  d0 = 1000000.0f;
   c = Character;
   j = -1;
-  i = 0;
-  do {
-    if ((c->on != '\0') && (c->used != '\0')) {
-      p = &(c->obj).pos;
-      if (((c->obj).character == character) && (pos != p)) {
-        z = NuVecDistSqr(pos,p,(nuvec_s *)0x0);
-        dVar1 = (double)z;
-        if ((dVar1 < dVar2) && (j = i, dVar2 = dVar1, dst != (nuvec_s *)0x0)) {
-          z = (c->obj).pos.z;
-          y = (c->obj).pos.y;
-          dst->x = (c->obj).pos.x;
-          dst->y = y;
-          dst->z = z;
+  for(i = 0; i < 9; i++, c++) {
+    if ((((c->on != 0) && (c->used != 0)) && (c->obj.character == character)) && (pos != &c->obj.pos)) {
+      d = NuVecDistSqr(pos,&c->obj.pos,NULL);
+      if (d < d0) {
+        j = i;
+        d0 = d;
+        if (dst != NULL) {
+          *dst = c->obj.pos;
+        }
       }
     }
-    i = i + 1;
-    c = c + 1;
-  } while (i < 9);
+  }
   temp_creature_i = j;
-  return (float)dVar2;
+  return d0;
 }
-
 
 //68% NGC
 void MoveCreature(struct creature_s* c) {

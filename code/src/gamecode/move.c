@@ -29,6 +29,73 @@ void ResetPlayerEvents(void) {
 }
 
 //NGC MATCH
+void InitPlayerEvents(void) {
+  struct plrevent_s *event;
+  static char name_153[256];
+  static char c_154;
+  static char objname_155[32];
+  s32 i;
+  s32 j;
+  s32 i_txt;
+  s32 length;
+  s32 count;
+  struct nuvec_s *p0;
+  struct nuvec_s* p1;
+  
+  if (world_scene[0] == NULL) {
+      return;
+  }
+    event = PlrEvent;
+    for(i = 0; i < 8; i++, event++) {
+      event->spl = NULL;
+      event->played = 0;
+      sprintf(tbuf,"player_trigger_%.2i_",i);
+      i_txt = strlen(tbuf);
+      event->spl = NuSplineFindPartial(world_scene[0],tbuf,name_153);
+      if (event->spl != NULL) {
+        if (event->spl->len != 2) {
+          event->spl = NULL;
+        }
+        if (event->spl != NULL) {
+          p0 = (struct nuvec_s *)event->spl->pts;
+          p1 = (struct nuvec_s *)(event->spl->pts + event->spl->ptsize);
+          event->pos.x = ((p0->x + p1->x) * 0.5f);
+          event->pos.y = ((p0->y + p1->y) * 0.5f);
+          event->pos.z = ((p0->z + p1->z) * 0.5f);
+          GetALONG(&event->pos,NULL,-1,-1,1);
+          event->iRAIL = (char)temp_iRAIL;
+          event->iALONG = temp_iALONG;
+          event->fALONG = temp_fALONG;
+          for(length = 0; length < 0x10; length++) {
+            event->obj[length].special = NULL;
+          }
+          length = strlen((char *)name_153);
+          for(j = 0, count = 0; i_txt < length; i_txt++) {
+              c_154 = name_153[i_txt];
+              if (((c_154 == 0x78) || (c_154 == 0x58)) || (i_txt == length - 1)) {
+                if (i_txt == length - 1) {
+                  objname_155[j] = c_154;
+                  j++;
+                }
+                objname_155[j] = 0;
+                if (NuSpecialFind(world_scene[0],&event->obj[count],objname_155) != 0) {
+                  count++;
+                  if (count == 0x10) break;
+                }
+                j = 0;
+              }
+              else {
+                objname_155[j] = c_154;
+                j++;
+              }
+          }
+        }
+      }
+    }
+  return;
+}
+
+//NGC MATCH
 void CheckPlayerEvents(struct obj_s *obj) {
   struct plrevent_s *event;
   struct nuvec_s* p0;
@@ -64,6 +131,187 @@ void CheckPlayerEvents(struct obj_s *obj) {
 }
 
 //NGC MATCH
+void MoveSWIMMING(struct creature_s *plr,struct nupad_s *pad) {
+  struct MoveInfo* minfo = &SwimmingMoveInfo;
+  s32 SPIN;
+
+  SPIN = (pad->paddata & 0xa8);
+  GameSfxLoop(0x27,&plr->obj.pos);
+  if ((plr->tap == 0) && ((pad->paddata_db & 0x40) != 0)) {
+    plr->tap = 0xc;
+    gamesfx_pitch = 0x96;
+    GameSfx(0x28,&plr->obj.pos);
+  }
+  if (plr->spin_wait != 0) {
+    plr->spin_wait--;
+  }
+  if ((plr->spin != 0) && (plr->spin_frame < plr->spin_frames)) {
+    plr->spin_frame++;
+  }
+  if (SPIN != 0) {
+    if (plr->spin == 0) {
+      plr->spin_frame = 0;
+      plr->spin = 1;
+      plr->spin_frames = minfo->SPINFRAMES + minfo->SPINRESETFRAMES;
+      plr->spin_wait = minfo->SUPERSPINWAITFRAMES;
+      GameSfx(0x28,&plr->obj.pos);
+    }
+    else if (((ExtraMoves != 0) || ((Game.powerbits & 4) != 0)) && ((char)plr->spin < 7)) {
+      if ((plr->spin_wait != 0) && ((plr->spin & 1) == 0)) {
+        plr->spin++;
+        plr->spin_frames = plr->spin_frames + minfo->SUPERSPINFRAMES;
+        plr->spin_wait = minfo->SUPERSPINWAITFRAMES;
+        GameSfx(0x28,&plr->obj.pos);
+      }
+    }
+  }
+  else {
+    if (plr->spin_frame == plr->spin_frames) {
+      plr->spin = 0;
+    }
+    else if (((ExtraMoves != 0) || ((Game.powerbits & 4) != 0)) && ((plr->spin & 1U) != 0)) {
+      plr->spin++;
+    }
+  }
+  plr->obj.attack = 0;
+  if ((plr->spin != 0) &&
+     (plr->spin_frame < plr->spin_frames - plr->OnFootMoveInfo->SPINRESETFRAMES)) {
+    plr->obj.attack = 2;
+  }
+  if ((plr->obj.mask != NULL) && (2 < plr->obj.mask->active)) {
+    plr->obj.attack = plr->obj.attack | 0x80;
+  }
+  return;
+}
+
+//NGC MATCH
+void AnimateSWIMMING(struct creature_s *plr) {
+  struct MoveInfo* minfo = &SwimmingMoveInfo;
+  
+  if ((u32)plr->obj.dead > 1) {
+    plr->obj.anim.newaction = plr->obj.die_action;
+  }
+  else {
+    if ((plr->spin != 0) && (plr->spin_frame < plr->spin_frames - plr->OnFootMoveInfo->SPINRESETFRAMES)) {
+      plr->obj.anim.newaction = 0x46;
+    }
+    else {
+      if ((plr->obj.pad_speed > 0.0f) || ((plr->tap != 0 ||(NuFabs(plr->obj.mom.z) > minfo->WALKSPEED)))) {
+        plr->obj.anim.newaction = 0x4c;
+      }
+      else {
+        plr->obj.anim.newaction = 0x22;
+      }
+    }
+  }
+  UpdateCharacterIdle(plr,0x73);
+  return;
+}
+
+//NGC MATCH
+void AnimateSCOOTER(struct creature_s *plr) {
+  if ((u32)plr->obj.dead > 1) {
+    plr->obj.anim.newaction = plr->obj.die_action;
+  }
+  else {
+    if ((plr->jump != 0) && ((plr->obj.ground == 0 || (plr->jump_frame < plr->jump_frames)))) {
+      if (plr->obj.anim.anim_time >= SCOOTERJUMPPAUSEFRAME) {
+        plr->obj.anim.anim_time = SCOOTERJUMPPAUSEFRAME;
+      }
+      plr->obj.anim.newaction = 99;
+    }
+    else {
+      if (plr->land != 0) {
+        plr->obj.anim.newaction = 99;
+      }
+      else {
+        if (plr->sprint != 0) {
+          plr->obj.anim.newaction = 0x6a;
+        } else {
+          plr->obj.anim.newaction = 0x68;
+        }
+      }
+    }
+  }
+  UpdateCharacterIdle(plr,1);
+  return;
+}
+
+//NGC MATCH
+void AnimateOFFROADER(struct creature_s *plr) {
+  s32 i;
+  
+  if (best_cRPos != NULL) {
+    i = RotDiff(best_cRPos->angle,plr->obj.hdg);
+  }
+  else {
+    i = 0;
+  }
+  if ((u32)plr->obj.dead > 1) {
+    plr->obj.anim.newaction = plr->obj.die_action;
+  }
+  else {
+    if (Level == 3) {
+      if ((((Pad[0] == NULL) || ((Pad[0]->paddata & 0x60) == 0)) ||
+          (SmokeyCountDownValue > 0)) && (plr->obj.xz_distance < 0.01666667f)) {
+        plr->obj.anim.newaction = 0x62;
+        goto LAB_80056fb0;
+      }
+    }
+    if (i > 0x800) {
+      plr->obj.anim.newaction = 0x67;
+    }
+    else {
+      if (i < -0x800) {
+        plr->obj.anim.newaction = 0x65;
+      } else {
+      plr->obj.anim.newaction = 0x68;
+      }
+    } 
+  }
+LAB_80056fb0:
+  UpdateCharacterIdle(plr,0);
+  return;
+}
+
+//NGC MATCH
+void AnimateFIREENGINE(struct creature_s *plr) {
+  if ((u32)plr->obj.dead > 1) {
+    plr->obj.anim.newaction = plr->obj.die_action;
+  }
+  else {
+    if ((Level == 0x16) && (FireBossHoldPlayer != 0)) {
+      plr->obj.anim.newaction = 0x62;
+    }
+    else if ((plr->jump != 0) && ((plr->obj.ground == 0 || (plr->jump_frame < plr->jump_frames)))) {
+        if (plr->jump_type == 2) {
+          if (plr->obj.anim.anim_time >= FIREENGINESTANDINGJUMPPAUSEFRAME) {
+            plr->obj.anim.anim_time = FIREENGINESTANDINGJUMPPAUSEFRAME;
+          }
+          plr->obj.anim.newaction = 100;
+        } else {
+          if (plr->obj.anim.anim_time >= FIREENGINERUNNINGJUMPPAUSEFRAME) {
+            plr->obj.anim.anim_time = FIREENGINERUNNINGJUMPPAUSEFRAME;
+          }
+          plr->obj.anim.newaction = 99;
+        }
+    }
+    else if (plr->land != 0) {
+        if (plr->jump_type == 2) {
+          plr->obj.anim.newaction = 100;
+        } else {
+          plr->obj.anim.newaction = 99;
+        }
+      }
+      else {
+        plr->obj.anim.newaction = 0x68;
+      }
+  }
+  UpdateCharacterIdle(plr,0);
+  return;
+}
+
+//NGC MATCH
 void DrawCarpet() {
   struct numtx_s m;
   float **dwa;
@@ -80,6 +328,35 @@ void DrawCarpet() {
     NuHGobjRndrMtxDwa(carpet_model[0]->hobj,&m,1,NULL,tmtx,dwa);
     SetLevelLights();
   }
+  return;
+}
+
+//NGC MATCH
+void AnimateSUBMARINE(struct creature_s *plr) {
+  plr->obj.anim.newaction = 0x62;
+  UpdateCharacterIdle(plr,0);
+  AddGameDebrisRot(0x56,plr->momLOCATOR[2],1,0,0);
+  AddGameDebrisRot(0x56,(struct nuvec_s *)&plr[1].ai.radius,1,0,0);
+  return;
+}
+
+//NGC MATCH
+void AnimateMINECART(struct creature_s *plr) {
+  if ((u32)plr->obj.dead > 1) {
+    plr->obj.anim.newaction = plr->obj.die_action;
+  }
+  else {
+    if (plr->jump != 0) {
+      if (plr->jump_frame >= plr->jump_frames) {
+       plr->obj.anim.newaction = 0x68;
+      } else {
+       plr->obj.anim.newaction = 99;
+      }
+    } else {
+        plr->obj.anim.newaction = 0x68;
+    }
+  }
+  UpdateCharacterIdle(plr,0);
   return;
 }
 
@@ -288,4 +565,286 @@ void DrawRings(void) {
         }
     }
     return;
+}
+
+//NGC MATCH
+void UpdateChaseRunAnim(struct creature_s *plr) {
+  s32 turn;
+  s32 iVar4;
+  s32 rot;
+  
+  if (((plr->obj).anim.newaction == 0x3a) &&
+     ((((Chase[0].status == 2 || (Chase[1].status == 2)) || (Chase[2].status == 2))
+      && (((best_cRPos != NULL) && (rot = RotDiff((plr->obj).hdg,best_cRPos->angle), rot = rot >= 0 ? rot : -rot,
+      (rot < 0x2000))))))) {
+        if ((plr_tocam_wait != 0) && (plr_tocam_wait = plr_tocam_wait + -1, plr_tocam_wait == 0)) {
+          plr_tocam_wait = (qrand() * 0x3c >> 0x10) + 0x3c;
+          if (plr_tocam_turn == -1) {
+            iVar4 = qrand();
+              if (iVar4 < 0) {
+                iVar4 += 0x7fff;
+              }
+              plr_tocam_turn = iVar4 >> 0xf;
+          }
+          else {
+            if (plr_tocam_turn == 1) {
+            iVar4 = -qrand();
+              if (iVar4 < 0) {
+                iVar4 += 0x7fff;
+              }
+            plr_tocam_turn = iVar4 >> 0xf;
+            } else {
+              if (qrand() < 0x8000) {
+                  turn = -1;
+              } else {
+                turn = 1;
+              }
+                plr_tocam_turn = turn;
+            }
+          }
+        }
+  }
+  else {
+    plr_tocam_turn = 0;
+    plr_tocam_wait = (qrand() * 0x3c >> 0x10) + 0x3c;
+  }
+  if ((plr->obj).anim.newaction == 0x3a) {
+    if (plr_tocam_turn < 0) {
+      (plr->obj).anim.newaction = 0x32;
+    }
+    else if (plr_tocam_turn > 0) {
+      (plr->obj).anim.newaction = 0x39;
+    }
+    else {
+      (plr->obj).anim.newaction = 0x3a;
+    }
+  }
+  return;
+}
+
+//NGC MATCH
+void AnimateGLIDER(struct creature_s *plr) {
+  if (FlyingLevelVictoryDance != 0) {
+    if (plr->obj.anim.newaction != 0x75) {
+      plr->obj.anim.oldaction = plr->obj.anim.action;
+    }
+    plr->obj.anim.newaction = 0x75;
+  }
+  else {
+    if (((plr->obj.pad_speed > 0.0f) && (plr->obj.pad_angle > 0x9555)) && (plr->obj.pad_angle < 0xeaab)) {
+      plr->obj.anim.newaction = 0x65;
+    }
+    else {
+      if ((plr->obj.pad_speed > 0.0f) && (plr->obj.pad_angle > 0x1555)) {
+          if (plr->obj.pad_angle > 0x6aaa) {
+            plr->obj.anim.newaction = 0x62;
+          } else {
+           plr->obj.anim.newaction = 0x67;
+          }
+      } else {
+        plr->obj.anim.newaction = 0x62;
+      }
+    }
+  }
+  UpdateCharacterIdle(plr,0);
+  return;
+}
+
+//NGC MATCH
+void AnimateDROPSHIP(struct creature_s *plr) {
+  if (FlyingLevelVictoryDance != 0) {
+    if (plr->obj.anim.newaction != 0x75) {
+      plr->obj.anim.oldaction = plr->obj.anim.action;
+    }
+    plr->obj.anim.newaction = 0x75;
+  }
+  else {
+    plr->obj.anim.newaction = 0x62;
+  }
+  UpdateCharacterIdle(plr,1);
+  return;
+}
+
+//NGC MATCH
+void AnimateATLASPHERE(struct creature_s *plr) {
+  if ((u32)plr->obj.dead > 1) {
+    plr->obj.anim.newaction = plr->obj.die_action;
+  }
+  else {
+    if ((plr->obj.pad_speed == 0.0f) && (plr->obj.xz_distance < 0.004166667f)) {
+      plr->obj.anim.newaction = 0x22;
+    }
+    else {
+      if (plr->obj.xz_distance < CrashMoveInfo.WALKSPEED) {
+        plr->obj.anim.newaction = 0x71;
+      } else {
+       plr->obj.anim.newaction = 0x68;
+      }
+    }
+  }
+  UpdateCharacterIdle(plr,0);
+  return;
+}
+
+//NGC MATCH
+void AnimateJEEP(struct creature_s *plr) {
+  if ((u32)plr->obj.dead < 2) {
+    plr->obj.anim.newaction = 0x68;
+  } else {
+    plr->obj.anim.newaction = plr->obj.die_action;
+  }
+  UpdateCharacterIdle(plr,0);
+  return;
+}
+
+//NGC MATCH
+void AnimateMOSQUITO(struct creature_s *plr) {
+  if (FlyingLevelVictoryDance != 0) {
+    if (plr->obj.anim.newaction != 0x75) {
+      plr->obj.anim.oldaction = plr->obj.anim.action;
+    }
+    plr->obj.anim.newaction = 0x75;
+  }
+  else {
+    plr->obj.anim.newaction = 0x62;
+  }
+  UpdateCharacterIdle(plr,0);
+  return;
+}
+
+//NGC MATCH
+void AnimateMECH(struct creature_s *plr) {
+  struct MoveInfo *minfo;
+
+  minfo = &MechMoveInfo;
+  if ((u32)plr->obj.dead > 1) {
+    plr->obj.anim.newaction = plr->obj.die_action;
+  }
+  else {
+    if (plr->fire != 0) {
+      plr->obj.anim.newaction = plr->fire_action;
+    }
+    else {
+      if (plr->target != 0) {
+        if (plr->fire_action == 0x5d) {
+          plr->obj.anim.newaction = 0x6c;
+        }
+        else if (plr->fire_action == 0x5f) {
+          plr->obj.anim.newaction = 0x6e;
+        }
+        else {
+          if (plr->fire_action == 0x60) {
+            plr->obj.anim.newaction = 0x6f;
+          } else {
+            plr->obj.anim.newaction = 0x6b;
+          } 
+        }
+      }
+      else {
+        if ((plr->jump != 0) && ((plr->obj.ground == 0 || (plr->jump_frame < plr->jump_frames)))) {
+            if (plr->jump_type == 2) {
+              if (plr->obj.anim.anim_time >= MECHSTANDINGJUMPPAUSEFRAME) {
+                plr->obj.anim.anim_time = MECHSTANDINGJUMPPAUSEFRAME;
+              }
+              plr->obj.anim.newaction = 100;
+            }
+            else {
+              if (plr->obj.anim.anim_time >= MECHRUNNINGJUMPPAUSEFRAME) {
+                plr->obj.anim.anim_time = MECHRUNNINGJUMPPAUSEFRAME;
+              }
+              plr->obj.anim.newaction = 99;
+            }
+        } else if (plr->land != 0) {
+            if (plr->jump_type == 2) {
+              plr->obj.anim.newaction = 100;
+            } else {
+              plr->obj.anim.newaction = 99;
+            }
+          }
+          else {
+            if ((plr->obj.pad_speed == 0.0f) && ((plr->pad_type != 1 || !(plr->obj.mom.x * plr->obj.mom.x + plr->obj.mom.z * plr->obj.mom.z >= plr->OnFootMoveInfo->IDLESPEED * plr->OnFootMoveInfo->IDLESPEED)))) {
+              plr->obj.anim.newaction = 0x62;
+            }
+            else {
+              if (plr->obj.pad_speed == minfo->WALKSPEED) {
+                plr->obj.anim.newaction = 0x71;
+              } else {
+                plr->obj.anim.newaction = 0x68;
+              }
+            }
+          }
+      }
+    }
+  }
+  UpdateCharacterIdle(plr,0);
+  return;
+}
+
+//NGC MATCH
+void AnimateSNOWBOARD(struct creature_s *plr) {
+  s32 i;
+  
+  if (best_cRPos != NULL) {
+    i = RotDiff(best_cRPos->angle,plr->obj.hdg);
+  }
+  else {
+    i = 0;
+  }
+  if ((u32)plr->obj.dead > 1) {
+    plr->obj.anim.newaction = plr->obj.die_action;
+  }
+  else {
+    if ((plr->jump != 0) && ((plr->obj.ground == 0 || (plr->jump_frame < plr->jump_frames)))) {
+      if (plr->obj.anim.anim_time >= SNOWBOARDJUMPPAUSEFRAME) {
+        plr->obj.anim.anim_time = SNOWBOARDJUMPPAUSEFRAME;
+      }
+      plr->obj.anim.newaction = 99;
+    }
+    else {
+      if (plr->land != 0) {
+        plr->obj.anim.newaction = 99;
+      }
+      else {
+        if (plr->sprint != 0) {
+          plr->obj.anim.newaction = 0x6a;
+        }
+        else {
+          if (i > 0x1000) {
+            plr->obj.anim.newaction = 0x65;
+          }
+          else if (i < -0x1000) {
+              plr->obj.anim.newaction = 0x67;
+            } else {
+              plr->obj.anim.newaction = 0x68;
+            }
+        }
+      }
+    }
+  }
+  UpdateCharacterIdle(plr,1);
+  if (((plr->obj.anim.newaction == 0x68) || (plr->obj.anim.newaction == 0x6a)) || (plr->land != 0)) {
+    AddGameDebrisRot(0x53,(struct nuvec_s *)&plr->mtxLOCATOR[8][0]._30,1,0,0);
+    AddGameDebrisRot(0x53,(struct nuvec_s *)&plr->mtxLOCATOR[8][1]._30,1,0,0);
+    AddGameDebrisRot(0x54,(struct nuvec_s *)&plr->mtxLOCATOR[8][2]._30,2,0,0);
+  }
+  else {
+    if (plr->obj.anim.newaction == 0x65) {
+        AddGameDebrisRot(0x55,(struct nuvec_s *)&plr->mtxLOCATOR[9][2]._30,3,0,0);
+        return;
+    } else if (plr->obj.anim.newaction == 0x67) {
+        AddGameDebrisRot(0x55,(struct nuvec_s *)&plr->mtxLOCATOR[8][3]._30,3,0,0);
+        return;
+      }
+  }
+  return;
+}
+
+//NGC MATCH
+void AnimateDIVE(struct creature_s *plr,float ratio) {
+  if (ratio < 0.333f) {
+    plr->obj.anim.newaction = 0x2c;
+    return;
+  }
+  plr->obj.anim.newaction = 0x44;
+  return;
 }
