@@ -131,6 +131,87 @@ void CheckPlayerEvents(struct obj_s *obj) {
 }
 
 //NGC MATCH
+void AnimateCOCO(struct creature_s *plr) {
+  struct MoveInfo* minfo = &CocoMoveInfo;
+  
+  if ((u32)plr->obj.dead > 1) {
+    plr->obj.anim.newaction =  plr->obj.die_action;
+  }
+  else {
+    if (((Level == 0x25) && (tumble_time < tumble_duration)) && (last_hub != -1)) {
+            plr->obj.anim.newaction =  tumble_action;
+    }
+    else if ((plr->spin != 0) && (plr->spin_frame < plr->spin_frames - plr->OnFootMoveInfo->SPINRESETFRAMES)) {
+        plr->obj.anim.newaction =  0x46;
+      }
+      else {
+        if (plr->slam_wait != 0) {
+          plr->obj.anim.newaction =  0x1f;
+        }
+        else {
+          if (plr->slam == 1) {
+            plr->obj.anim.newaction =  0x41;
+          }
+          else if (plr->slide != 0) {
+            plr->obj.anim.newaction =  0x43;
+          }
+          else if ((plr->jump != 0) && ((plr->obj.ground == 0 || (plr->jump_frame < plr->jump_frames)))) {
+                if (plr->somersault != 0) {
+                  plr->obj.anim.newaction =  0x44;
+                }
+                else if (plr->jump_type == 4) {
+                    plr->obj.anim.newaction =  0x19;
+                }
+                else {
+                    if (plr->jump_type == 2) {
+                      plr->obj.anim.newaction =  0x2d;
+                    } else {
+                      plr->obj.anim.newaction =  0x2c;
+                    }
+                } 
+          }
+            else if ((plr->land != 0) && (plr->obj.pad_speed == 0.0f)) {
+                if (plr->jump_type == 2) {
+                  plr->obj.anim.newaction =  0x31;
+                } else {
+                    plr->obj.anim.newaction =  0x30;
+                }   
+              } else if ((((plr->obj.ground != 0) || (plr->allow_jump != 0)) &&
+                    ((TerSurface[plr->obj.surface_type].flags & 0x20) != 0)) &&
+                   ((plr->obj.pad_speed != 0.0f || (plr->obj.xz_distance >= minfo->IDLESPEED)))) {
+                  plr->obj.anim.newaction =  0x40;
+              }
+              else {
+                  if ((plr->obj.ground == 0) && ((plr->allow_jump == 0 && (plr->obj.mom.y < -FALLONCRATEBREAKSPEED)))) {
+                    plr->obj.anim.newaction =  0x19;
+                  }
+                  else {
+                    if ((plr->obj.pad_speed == 0.0f) && (plr->pad_type != 1
+                     || !((POW2(plr->obj.mom.x) + POW2(plr->obj.mom.z)) >= POW2(plr->OnFootMoveInfo->IDLESPEED)))) {
+                      plr->obj.anim.newaction =  0x22;
+                    }
+                    else {
+                      if (plr->sprint != 0) {
+                        plr->obj.anim.newaction =  0x48;
+                      }
+                      else {
+                            if (plr->obj.pad_speed == minfo->WALKSPEED) {
+                              plr->obj.anim.newaction =  0x74;
+                            } else {
+                              plr->obj.anim.newaction =  0x3a;
+                            }
+                      }
+                    }
+                  }
+              }
+        }
+      }
+  }
+  UpdateCharacterIdle(plr,1);
+  return;
+}
+
+//NGC MATCH
 void MoveSWIMMING(struct creature_s *plr,struct nupad_s *pad) {
   struct MoveInfo* minfo = &SwimmingMoveInfo;
   s32 SPIN;
@@ -357,6 +438,182 @@ void AnimateMINECART(struct creature_s *plr) {
     }
   }
   UpdateCharacterIdle(plr,0);
+  return;
+}
+
+//NGC MATCH
+void AnimateMINETUB(struct creature_s* plr) {
+    s32 l;
+    s32 r;
+    s32 off1;
+    s32 off2;
+    struct nuvec_s vec;
+
+    if (plr->obj.dead != 0 && plr->obj.dead != 1) {
+        plr->obj.anim.newaction = plr->obj.die_action;
+    } else if (plr->obj.direction == 3) {
+        plr->obj.anim.newaction = 0x65;
+    } else if (plr->obj.direction == 4) {
+        plr->obj.anim.newaction = 0x67;
+    } else {
+        plr->obj.anim.newaction = 0x68;
+    }
+
+    UpdateCharacterIdle(plr, 0);
+    if (plr->obj.anim.newaction != plr->obj.die_action) {
+        off1 = 0x5c;
+        off2 = 0x5c;
+        l = 0x4000;
+        r = -0x4000;
+        if (plr_tub_tilt < 0) {
+            l = -0x4000;
+            off2 = 0x5d;
+        } else if (plr_tub_tilt > 0) {
+            off1 = 0x5c;
+            off2 = 0x5d;
+            r = 0x4000;
+        } else if (PlrTub.spark != 0) {
+            off1 = 0x5d;
+            off2 = 0x5d;
+        }
+
+        if ((Level != 0x1c) || (race_finished == 0)) {
+            vec.x = NuTrigTable[(s32)plr->obj.hdg + l & 0xffff] * 0.45f + plr->obj.pos.x;
+            vec.y = plr->obj.pos.y;
+            vec.z = NuTrigTable[(((s32)plr->obj.hdg + l & 0xffff) + 0x4000) & 0x2ffff] * 0.45f + plr->obj.pos.z;
+            AddVariableShotDebrisEffect(GDeb[off1].i, &vec, 1, 0, plr->obj.hdg);
+
+            vec.x = NuTrigTable[(s32)plr->obj.hdg + r & 0xffff] * 0.44999999f + plr->obj.pos.x;
+            vec.y = plr->obj.pos.y;
+            vec.z =
+                NuTrigTable[(((s32)plr->obj.hdg + r & 0xffff) + 0x4000) & 0x2ffff] * 0.44999999f + plr->obj.pos.z;
+            AddVariableShotDebrisEffect(GDeb[off2].i, &vec, 1, 0, plr->obj.hdg);
+        }
+    }
+    
+    if (Level == 0x1c) {
+        if (opptub_wait != 0) {
+            opptub_wait--;
+            if (opptub_wait == 0) {
+                if (opptub_action == 0x62) {
+                    opptub_action = (qrand() < 0x8000) ? 0x5f : 0x60;
+                    opptub_wait = ModelAnimDuration(OppTub.c->obj.character, opptub_action, 0.0f, 0.0f) * 60.0f;
+                } else {
+                    opptub_action = 0x62;
+                    opptub_wait = (qrand() * 0x3c / 0x10000) + 0x3c;
+                }
+            }
+        }
+        OppTub.c->obj.anim.oldaction = OppTub.c->obj.anim.action;
+        OppTub.c->obj.anim.newaction = opptub_action;
+        UpdateAnimPacket(OppTub.c->obj.model, &OppTub.c->obj.anim, 0.5f, OppTub.c->obj.xz_distance);
+    }
+    return;
+}
+
+//NGC MATCH
+void AnimateGYRO(struct creature_s* plr, struct nupad_s* pad) {
+    s32 i;
+
+    i = pad->paddata & 0x60;
+    if ((plr->spin != 0) && (plr->spin_frame < plr->spin_frames - plr->OnFootMoveInfo->SPINRESETFRAMES)) {
+        plr->obj.anim.newaction = 0x69;
+    } else if (plr->tap != 0) {
+        plr->obj.anim.newaction = 0x67;
+    } else if ((i == 0x40) || (i == 0x20)) {
+        plr->obj.anim.newaction = 0x70;
+    } else if (plr->obj.pad_speed > 0.0f) {
+        if ((plr->obj.pad_angle < 0x2000) || (plr->obj.pad_angle > 0xE000)) {
+            plr->obj.anim.newaction = 0x5a;
+        } else if ((plr->obj.pad_angle > 0x6000) && (plr->obj.pad_angle < 0xA000)) {
+            plr->obj.anim.newaction = 0x70;
+        } else if ((plr->obj.pad_angle & 0x8000) == 0) {
+            plr->obj.anim.newaction = (plr->obj.direction == 0) ? 0x67 : 0x65;
+        } else {
+            plr->obj.anim.newaction = (plr->obj.direction == 0) ? 0x65 : 0x67;
+        }
+    } else {
+        plr->obj.anim.newaction = 0x62;
+    }
+
+    UpdateCharacterIdle(plr, 0);
+    return;
+}
+
+//NGC DONE (96%) loop
+void CheckGates(struct obj_s* obj) {
+    struct nugspline_s* spl;
+    struct nuvec_s* p0;
+    struct nuvec_s* p1;
+    s32 i;
+    s32 j;
+    s32 sfx;
+    s32 iVar4;
+
+    if ((TimeTrial == 0) && (SplTab[28].spl != NULL)) {
+        spl = SplTab[28].spl;
+        for (i = 0, j = 1; i < GATECOUNT; i++, j += 2) {
+            if ((gate_bits & (1 << i)) == 0) {
+                p0 = (struct nuvec_s*)(spl->pts + ((j * 1) * spl->ptsize));
+                p1 = (struct nuvec_s*)(spl->pts + ((i * 2) * spl->ptsize));
+                
+                iVar4 = LineCrossed(obj->oldpos.x, obj->oldpos.z, obj->pos.x, obj->pos.z, p1->x, p1->z, p0->x, p0->z);
+                
+                if (iVar4 != 0) {
+                    NewBuzz(&player->rumble, 6);
+                }
+                if (iVar4 == 2) {
+                    sfx = 0x36;
+                    gate_bits |= 1 << i;
+                    plr_gates++;
+                    if (plr_gates == GATECOUNT) {
+                        if ((Level == 5) && ((Game.level[0].flags & 0x20) == 0)) {
+                            PickupBonusGem(4);
+                        }
+                    }
+                } else if (iVar4 == 1) {
+                    sfx = 0x3c;
+                } else {
+                    sfx = -1;
+                }
+                
+                if (sfx != -1) {
+                    GameSfx(sfx, NULL);
+                }
+            }
+        }
+    }
+    return;
+}
+
+//NGC MATCH
+void ResetGates(void) {
+  struct nugspline_s *spl;
+  struct nuvec_s* p0;
+  struct nuvec_s* p1;
+  struct nuvec_s pos;
+  
+  GATECOUNT = 0;
+  spl = SplTab[28].spl;
+  if (spl != NULL) {
+    GATECOUNT = (int)(spl)->len / 2;
+    if (0x40 < GATECOUNT) {
+      GATECOUNT = 0x40;
+    }
+    p0 = (struct nuvec_s *) spl->pts;
+    p1 = (struct nuvec_s *) (spl->pts + spl->ptsize);
+    pos.x = (p0->x + p1->x) * 0.5f;
+    pos.y = (p0->y + p1->y) * 0.5f;
+    pos.z = (p0->z + p1->z) * 0.5f;
+    GetALONG(&pos,NULL,-1,-1,1);
+    if (AheadOfCheckpoint(temp_iRAIL,temp_iALONG,temp_fALONG) != 0) {
+      plr_gates = 0;
+      gate_bits = 0;
+      if (Level == 5) {
+        bonusgem_ok = 0;
+      }
+    }
+  }
   return;
 }
 
@@ -846,5 +1103,54 @@ void AnimateDIVE(struct creature_s *plr,float ratio) {
     return;
   }
   plr->obj.anim.newaction = 0x44;
+  return;
+}
+
+//NGC MATCH
+void ResetTubs(void) {
+  struct cdata_s* cdata;
+  struct nuvec_s *p0;
+  struct nuvec_s *p1;
+  struct creature_s* c;
+  s32 i;
+  
+  ResetTub(&PlrTub,player);
+  c = &OppTubCreature;
+  ResetTub(&OppTub,c);
+  memset(c,0,sizeof(struct creature_s));
+  ResetAnimPacket(&c->obj.anim,0x62);
+  c->obj.character = 0x7f;
+  c->obj.vehicle = (CRemap[161] != -1) ? 0xa1 : -1;
+  c->obj.reflect_y = 2000000.0f;
+  if (CRemap[127] != -1) {
+    c->obj.model = &CModel[CRemap[127]];
+  }
+  else {
+    c->obj.model = NULL;
+  }
+  cdata = &CData[c->obj.character];
+  
+  c->obj.RADIUS = cdata->radius;
+  c->obj.radius = cdata->radius;
+  c->obj.min = cdata->min;
+  c->obj.max = cdata->max;
+  c->obj.SCALE = 0.77f;
+  c->obj.scale = 0.77f;
+  c->obj.bot = c->obj.min.y;
+  c->obj.top = c->obj.max.y;
+  c->used = 1;
+  c->on = 1;
+  ResetLights(&c->lights);
+  OppTub.c = c;
+  if ((SplTab[30].spl != NULL) && (SplTab[46].spl != NULL)) {
+    p0 = (struct nuvec_s *)(SplTab[30].spl)->pts;
+    p1 = (struct nuvec_s *)(SplTab[46].spl)->pts;
+    c->obj.pos.x = (p0->x + p1->x) * 0.5f;
+    c->obj.pos.y = (p0->y + p1->y) * 0.5f;
+    c->obj.pos.z = (p0->z + p1->z) * 0.5f;
+  }
+  opptub_action = 0x62;
+  i = qrand() * 0x3c;
+  opptub_wait = (i / 0x10000) + 0x3c;
   return;
 }

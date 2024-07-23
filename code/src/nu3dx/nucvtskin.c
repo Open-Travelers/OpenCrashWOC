@@ -326,265 +326,266 @@ static s32 FillFreeMatrixSlots(struct primdef_s* pd, s32 cnt, s32 start) {
 }
 
 
-//69,91%
+//78% NGC
 static s32 SortPrimdefs(struct primdef_s* pd, s32 count) {
-    s32 scnt; //
-    s32 tot; // 
-    s32 baseid; // 
-    s32 totsmtx; // 
-    s32 totusmtx; // 
-    s32 n; // 
-    s32 m; // 
-    s32 o; // 
-    s32 p; // 
-    s32 s; // 
-    s32 t; // 
-    struct primdef_s tpd; //
-    s32 batchmatrices[200][15]; //
-    s32 batchmatrices_sorted[200][15]; // 
-    s32 batchcount; // 
-    s32 matrixusecount[150]; // 
-    s32 matrixindex; // 
-    s32 matrixcount; // 
-    s32 maxmatrix; // 
-    struct matchingslot_s matchingslot[200]; //
-    s32 nummatches; // 
-    s32 freeslotcount; // 
-    s32 matrixslot; // 
-    s32 batchnum; // 
-    float totalweights11; // 
-    float totalweights12; // 
-    float totalweights13; // 
-    s32 totalmtx; // 
-    s32 i; // 
-    s32 j;
+    s32 scnt; // r1+0x67D8
+    s32 tot; // r8
+    s32 baseid; // r19
+    s32 totsmtx; // r3
+    s32 totusmtx;
+    s32 n; // r28
+    s32 m; // r7
+    s32 o; // r5
+    s32 p;
+    s32 s; // r30
+    s32 t; // r4
+    struct primdef_s tpd; // r1+0x8
+    s32 batchmatrices[200][15]; // r1+0x180
+    s32 batchmatrices_sorted[200][15]; // r1+0x3060
+    s32 batchcount; // r1+0x67DC
+    s32 matrixusecount[150]; // r1+0x5F40
+    s32 matrixindex; // r4
+    s32 matrixcount; // r8
+    s32 maxmatrix; // r30
+    struct matchingslot_s matchingslots[200]; // r1+0x6198
+    s32 nummatches; // r6
+    s32 freeslotcount; // r11
+    s32 matrixslot; // r8
+    s32 batchnum;
+    float totalweights1; // f10
+    float totalweights2; // f9
+    float totalweights3; // f8
+    s32 totalmtx; // r5
+    s32 i; // r30 only meant to be used in a single block
+    s32 j; // r5 only meant to be used in a single block
+    
+    baseid = 0;
 
-    s32 l;
-    s32 u;
-    s32 z;
-    s32 var_r8_4;
+    scnt = count;
     
-    s32 iVar6;
-    s32 iVar9;
-    s32 iVar16;
-    s32 iVar17;
-    s32 iVar21;
-    s32 iVar22;
-    s32 iVar23;
-    s32 bID;
-    s32 k;
-    
-    //mtxusecnt = matrixusecount;
-    //batchmtx_sorted = batchmatrices_sorted;
-    // n = 0;
-    bID = 0;
-    // 'Tis but a bubble sort
-    for (i = 0; i < count; i++) {
-        for (j = i + 1; j < count; j++) {
-            if (pd[j].nummtx > pd[i].nummtx) {
+    for (i = 0; i < scnt; i++)
+    {
+        for (j = i + 1; j < scnt; j++)
+        {
+            if (pd[j].nummtx > pd[i].nummtx) 
+            {
                 tpd = pd[i];
+                
                 pd[i] = pd[j];
-                pd[j] = tpd;
+                
+                pd[j] = tpd; 
             }
         }
     }
-
-    m = 0;
-    for (k = 0; k < count; k++) {
-        if (pd[k].sorted == 0) {
-            //bID++;
+    
+    for (m = 0, s = 0; s < scnt; s++)
+    {
+        if (pd[s].sorted == 0) 
+        {
             memset(&mtxused, 0, sizeof(mtxused));
             
-            for (n = 0; n < pd[k].nummtx; n++) {
-                mtxused[pd[k].mtxid[n]] = 1;
+            for (matrixindex = 0; matrixindex < pd[s].nummtx; n++) 
+            {
+                mtxused[pd[s].mtxid[n]] = 1;
             }
             
-            pd[k].nummtx = FillFreeMatrixSlots(pd, count, k);
+            pd[s].nummtx = FillFreeMatrixSlots(pd, scnt, s);
             
-            pd[k].baseid = m;
-            memcpy(&primdefs_sorted[m], &pd[k], sizeof (struct primdef_s));
+            pd[s].baseid = m;
+            
+            memcpy(&primdefs_sorted[m], &pd[s], sizeof(struct primdef_s));
             
             m++;
             
-            for (j = k + 1; j < count; j++) {
-                if ((pd[j].sorted == 0) && (pd[k].nummtx >= pd[j].nummtx)) {
-                    iVar6 = 0;
-                    for (i = 0; i < pd[j].nummtx; i++) {
-                        matrixslot = (mtxused[pd[j].mtxid[i]] - 1);
-                        iVar6 += matrixslot > 0 ? matrixslot : -matrixslot;
+            for (j = s + 1; j < scnt; j++) 
+            {
+                if ((pd[j].sorted == 0) && (pd[s].nummtx >= pd[j].nummtx)) 
+                {
+                    for (t = 0, i = 0; i < pd[j].nummtx; i++) 
+                    {
+                        matrixslot = mtxused[pd[j].mtxid[i]] - 1;
+                        
+                        t += matrixslot > 0 ? matrixslot : -matrixslot;
                     }
                     
-                    // pSorted = primdefs_sorted;
-                    
-                    if (iVar6 == 0) {
+                    if (t == 0) 
+                    {
                         pd[j].baseid = m;
-                        memcpy(&primdefs_sorted[m], &pd[j], sizeof (struct primdef_s));
-
+                        
+                        memcpy(&primdefs_sorted[m], &pd[j], sizeof(struct primdef_s));
                         
                         pd[j].sorted = 1;
                         
-                        for (n = 0; n < 15; n++) {
+                        for (n = 0; n < 15; n++) 
+                        {
                             primdefs_sorted[m].mtxid[n] = -1;
+                            
                             primdefs_sorted[m].weights[0][n] = 0.0f;
                             primdefs_sorted[m].weights[1][n] = 0.0f;
                             primdefs_sorted[m].weights[2][n] = 0.0f;
                         }
                         
-                        for (n = 0; n < pd[k].nummtx; n++) {
-                            for (iVar6 = 0; iVar6 < pd[j].nummtx; iVar6++) {
-                                if (pd[k].mtxid[n] == pd[j].mtxid[iVar6]) {
-                                    primdefs_sorted[m].weights[0][n] = pd[j].weights[0][iVar6];
-                                    primdefs_sorted[m].weights[1][n] = pd[j].weights[1][iVar6];
-                                    primdefs_sorted[m].weights[2][n] = pd[j].weights[2][iVar6];
-                                    primdefs_sorted[m].mtxid[n] = pd[k].mtxid[n];
+                        for (n = 0; n < pd[s].nummtx; n++) 
+                        {
+                            for (t = 0; t < pd[j].nummtx; t++) 
+                            {
+                                if (pd[s].mtxid[n] == pd[j].mtxid[t]) 
+                                {
+                                    primdefs_sorted[m].weights[0][n] = pd[j].weights[0][t];
+                                    primdefs_sorted[m].weights[1][n] = pd[j].weights[1][t];
+                                    primdefs_sorted[m].weights[2][n] = pd[j].weights[2][t];
+                                    
+                                    primdefs_sorted[m].mtxid[n] = pd[s].mtxid[n];
                                 }
                             }
                         }
+                        
                         m++;
                     }
                 }
             }
             
-            for (t = 0; t < 15; t++) {
-                batchmatrices[bID][t] = primdefs_sorted[bID].mtxid[t];
+            for (t = 0; t < 15; t++) 
+            {
+                batchmatrices[baseid][t] = primdefs_sorted[baseid].mtxid[t];
             }
-            bID++;
+            
+            baseid++;
         }
     }
     
     memset(matrixusecount, 0, sizeof(matrixusecount));
-    i = -1;
-    for (iVar17 = 0; iVar17 < bID; iVar17++) {
-        for (iVar21 = 0; iVar21 < 15; iVar21++) {
-            if (batchmatrices[iVar17][iVar21] != -1) {
-                matrixusecount[batchmatrices[iVar17][iVar21]]++;
-                if (batchmatrices[iVar17][iVar21] < i) {
-                    i = batchmatrices[iVar17][iVar21];
+    
+    for (batchnum = -1, m = 0; m < baseid; m++) 
+    {
+        for (s = 0; s < 15; s++)
+        {
+            if (batchmatrices[m][s] != -1) 
+            {
+                matrixusecount[batchmatrices[m][s]]++;
+                
+                if (batchmatrices[m][s] < batchnum) 
+                {
+                    batchnum = batchmatrices[m][s];
                 }
             }
         }
     }
     
     memset(batchmatrices_sorted, -1, sizeof(batchmatrices_sorted));
-    //cnt = count;
-    while (1) {
-        iVar17 = 0;
-        var_r8_4 = matrixusecount[0];
-        for (iVar23 = 0; iVar23 <= i; iVar23++) {
-            if (matrixusecount[iVar23] > matrixusecount[iVar17]) {
-                var_r8_4 = matrixusecount[iVar23];
-                iVar17 = iVar23;
+
+    for ( ; ; )
+    {
+        for (m = 0, matrixcount = matrixusecount[m], o = 0; o <= batchnum; o++) 
+        {
+            if (matrixusecount[o] > matrixusecount[m]) 
+            {
+                matrixcount = matrixusecount[o];
+                
+                m = o;
             }
         }
 
-        if (var_r8_4 == 0) break;
+        if (matrixcount == 0) 
+        {
+            break;
+        }
         
-        iVar23 = 0;
-        iVar9 = 0;
-        for (iVar21 = 0; iVar21 < bID; iVar21++) {
-            for (j = 0; j < 0xF; j++) {
-                if (batchmatrices[iVar21][j] == iVar17) {
-                    matchingslot[iVar9].batch = iVar21;
-                    matchingslot[iVar9].slot = j;
-                    iVar23++;
-                    iVar9++;
+        for (o = 0, p = 0, s = 0; s < baseid; s++) 
+        {
+            for (j = 0; j < 15; j++) 
+            {
+                if (batchmatrices[s][j] == m) 
+                {
+                    matchingslots[p].batch = s;
+                    
+                    matchingslots[p].slot = j;
+                    
+                    p++;
+                    o++;
                 }
             }
         }
         
-        // iVar9 = 0;
-        // iVar21 = iVar9;
-        // if (iVar23 > 0) {
-        u = 0;
-        // if (iVar23 > 0) {
-        // for (iVar9 = 0; iVar9 < 0xf; iVar9++) {
-            // for (iVar9 = 0; iVar9 < 0xf; iVar9++) {
-        while (1){
-            // do {
-                iVar16 = 0;
-                // iVar9 = iVar21 + 1;
-                // if (0 < iVar23) {
-                for (iVar22 = 0; iVar22 < iVar23; iVar22++) {
-                    //pmVar12 = matchingslot;
-                    // iVar22 = iVar23;
-                    // do {
-                        // batchcount = &matchingslot->batch;
-                        //pmVar12 = pmVar12 + 1;
-                        if (batchmatrices_sorted[matchingslot[iVar22].batch][iVar9] == -1) {
-                            iVar16++;
-                        }
-                        // iVar22 = iVar22 + -1;
-                    // } while (iVar22 != 0);
+        for (o = 0; ; )
+        { 
+            for (t = 0, s = 0; s < o; s++) 
+            {
+                if (batchmatrices_sorted[matchingslots[s].batch][p] == -1) 
+                {
+                    t++;
                 }
-                u++;
-                if (iVar16 < iVar23) {
-                    if (u > 0xE){
-                        NuErrorProlog("C:/source/crashwoc/code/nu3dx/nucvtskn.c", 0x232)("SortPrimDefs: Unable to find a matching free slot in all batches!!");
-                        break;
-                        // goto h;
-                    }
+            }
+            
+            o++;
+            
+            if (t < o) 
+            {
+                if (o > 14) 
+                {
+                    NuErrorProlog("C:/source/crashwoc/code/nu3dx/nucvtskn.c", 562)("SortPrimDefs: Unable to find a matching free slot in all batches!!");
+                    break;
                 }
-                // iVar21 = iVar9;
-            // }
-        // }
-            // } while (iVar9 < 0xf);
-        // }
-        // else {
-            // LAB_800ae5b0:
-            for (z = 0; z < iVar23; z++) {
-                //pmVar12 = matchingslot;
-                // do {
-                    // batchcount = &matchingslot->batch;
-                    // iVar23 = iVar23 + -1;
-                    //pmVar12 = pmVar12 + 1;
-                    batchmatrices_sorted[matchingslot[z].batch][u - 1] = iVar17;
-                    matrixusecount[iVar17] = 0;
-                // } while (iVar23 != 0);
             }
         }
-        // }
+            
+        for (p = 0; p < o; p++) 
+        {
+            batchmatrices_sorted[matchingslots[p].batch][o] = o;
+            
+            matrixusecount[m] = 0;
+        }
     }
-   // h:
-    bID = 0;
-    iVar17 = 0;
-    for (iVar23 = 0; iVar23 < count; iVar23++) {
-        if (primdefs_sorted[i].baseid != bID) {
-            bID = primdefs_sorted[i].baseid;
-            iVar17++;
+    
+    for (m = 0, baseid = 0, o = 0; o < scnt; o++) 
+    {
+        if (primdefs_sorted[baseid].baseid != baseid) 
+        {
+            baseid = primdefs_sorted[baseid].baseid;
+            
+            m++;
         }
         
-        memcpy(&pd[iVar23], &primdefs_sorted[iVar23], sizeof (struct primdef_s));
+        memcpy(&primdefs_sorted[baseid], &pd[baseid], sizeof(struct primdef_s));
         
-        for (k = 0; k < 0xF; k++) {
-            pd[iVar23].mtxid[k] = -1;
-            pd[iVar23].weights[0][k] = 0.0f;
-            pd[iVar23].weights[1][k] = 0.0f;
-            pd[iVar23].weights[2][k] = 0.0f;
+        for (s = 0; s < 15; s++) 
+        {
+            pd[o].mtxid[s] = -1;
+            
+            pd[o].weights[0][s] = 0.0f;
+            pd[o].weights[1][s] = 0.0f;
+            pd[o].weights[2][s] = 0.0f;
         }
         
-        pd[iVar23].nummtx = primdefs_sorted[iVar23].nummtx;
-        pd[iVar23].baseid = bID;
+        pd[o].nummtx = &primdefs_sorted[o].nummtx; 
+
+        pd[o].baseid = &primdefs_sorted[o].baseid;
         
-        for (k = 0; k < 0xF; k++) {
-            for (l = 0; l < 0xF; l++) {
-                if (batchmatrices_sorted[iVar17][iVar23] == primdefs_sorted[iVar23].mtxid[l]) {
-                    pd[iVar23].weights[0][k] = primdefs_sorted[iVar23].weights[0][l];
-                    pd[iVar23].weights[1][k] = primdefs_sorted[iVar23].weights[1][l];
-                    pd[iVar23].weights[2][k] = primdefs_sorted[iVar23].weights[2][l];
-                    pd[iVar23].mtxid[k] = primdefs_sorted[iVar23].mtxid[l];
+        for (s = 0; s < 15; s++) 
+        {
+            for (t = 0; t < 15; t++) 
+            {
+                if (batchmatrices_sorted[m][o] == primdefs_sorted[o].mtxid[t]) 
+                {
+                    pd[o].weights[0][s] = primdefs_sorted[o].weights[0][t];
+                    pd[o].weights[1][s] = primdefs_sorted[o].weights[1][t];
+                    pd[o].weights[2][s] = primdefs_sorted[o].weights[2][t];
+                   
+                    pd[o].mtxid[s] = primdefs_sorted[o].mtxid[t];
                 }
             }
         }
     }
     
-    i = 0;
-    bID = -1;
-    //pSorted = primdefs_sorted;
-    for (k = 0; k < n; k++) {
-        if (primdefs_sorted[k].baseid != bID) {
-            i += primdefs_sorted[k].nummtx;
-            bID = primdefs_sorted[k].baseid;
+    for (totalmtx = 0, baseid = -1, s = 0; s < n; s++) 
+    {
+        if (primdefs_sorted[s].baseid != baseid) 
+        {
+            totalmtx += primdefs_sorted[s].nummtx;
+            
+            baseid = primdefs_sorted[s].baseid;
         }
     }
-    return i;
+    
+    return totalmtx;
 }

@@ -112,6 +112,123 @@ float GameObjectRadius(struct obj_s *obj) {
   return r;
 }
 
+//NGC 99% (regswap)
+s32 CylinderCuboidOverlapXZ(struct nuvec_s* pos, float radius, struct obj_s* cub, struct nuvec_s* cub_pos) {
+    struct nuvec_s vNew;
+    float x0;  // f5
+    float z0;  // f7
+    float x1;  // f6
+    float z1;  // f11
+    float dx;  // f1
+    float dz;  // f2
+    float xc;  // f30
+    float zc;  // f31
+    float _x0; // f8
+    float _z0; // f12
+    float _x1; // f9
+    float _z1; // f0
+    unsigned short yrot; // r8
+    s32 corner; // r9
+
+    NuVecSub(&vNew, pos, cub_pos);
+    NuVecRotateY(&vNew, &vNew, -cub->hdg);
+    
+    _x0 = cub->min.x * cub->SCALE;
+    x0 = _x0 - radius;
+    if (vNew.x < x0) {
+        return 0;
+    }
+
+    _x1 = cub->max.x * cub->SCALE;
+    x1 = _x1 + radius;
+    if (vNew.x > x1) {
+        return 0;
+    }
+
+    _z0 = cub->min.z * cub->SCALE;
+    z0 = (_z0 - radius);
+    if (vNew.z < z0) {
+        return 0;
+    }
+
+    _z1 = cub->max.z * cub->SCALE;
+    z1 = (_z1 + radius);
+    if (vNew.z > z1) {
+        return 0;
+    }
+
+    yrot = 0;
+    if (vNew.x < _x0) {
+        if (vNew.z < _z0) {
+            yrot = 10;
+            xc = _x0;
+            zc = _z0;
+
+            temp_cuboid_side = ((_z0 - vNew.z) < (_x0 - vNew.x)) ? 0x20 : 0x40;
+        } else if (vNew.z > _z1) {
+            yrot = 9;
+            xc = _x0;
+            zc = _z1;
+
+            temp_cuboid_side = ((vNew.z - _z1) < (_x0 - vNew.x)) ? 0x10 : 0x40;
+        }
+    } else if (vNew.x > _x1) {
+        if (vNew.z < _z0) {
+            yrot = 6;
+            xc = _x1;
+            zc = _z0;
+
+            temp_cuboid_side = ((_z0 - vNew.z) < (vNew.x - _x1)) ? 0x20 : 0x80;
+        } else if (vNew.z > _z1) {
+            yrot = 5;
+            xc = _x1;
+            zc = _z1;
+
+            temp_cuboid_side = ((vNew.z - _z1) < (vNew.x - _x1)) ? 0x10 : 0x80;
+        }
+    }
+    
+    if (yrot != 0) {
+        dx = vNew.x - xc;
+        dz = vNew.z - zc;
+        if ((dx * dx) + (dz * dz) > (radius * radius)) {
+            return 0;
+        } else {
+            temp_cuboid_bounce_angle = NuAtan2D(dx, dz) + cub->hdg;
+            return 1;
+        }
+    }
+    
+    
+    if ((vNew.x - x0) < (x1 - vNew.x)) {
+        if ((vNew.z - z0) < (z1 - vNew.z)) {
+            corner = ((vNew.z - z0) < (vNew.x - x0)) ? 0x8000 : 0xC000;
+        } else {
+            corner = ((z1 - vNew.z) < (vNew.x - x0)) ? 0 : 0xC000;
+        }
+    } else {
+        if ((vNew.z - z0) < (z1 - vNew.z)) {
+            corner = ((vNew.z - z0) < (x1 - vNew.x)) ? 0x8000 : 0x4000;
+        } else {
+            corner = ((z1 - vNew.z) < (x1 - vNew.x)) ? 0 : 0x4000;
+        }
+    }
+    
+    temp_cuboid_bounce_angle = corner + cub->hdg;
+
+    if (corner == 0) {
+        temp_cuboid_side = 0x10;
+    } else if (corner == 0x4000) {
+        temp_cuboid_side = 0x80;
+    } else if (corner == 0x8000) {
+        temp_cuboid_side = 0x20;
+    } else {
+        temp_cuboid_side = 0x40;
+    }
+
+    return 1;
+}
+
 //NGC MATCH
 s32 CylinderCylinderOverlapXZ(struct nuvec_s *p0,float r0,struct nuvec_s *p1,float r1) {
   float dz;
@@ -527,6 +644,18 @@ void PickupCrateGem(void) {
 }
 
 //NGC MATCH
+void PickupBonusGem(unsigned int item) {
+    plr_items |= item;
+    plr_bonusgem.item = item;
+    plr_bonusgem.count = 1;
+    item = plr_items;
+    plr_bonusgem.frame = 0x1e;
+    
+    GameSfx(0x26, NULL);
+    AddPanelDebris(0.2f,-0.7f, 6, 0.125f, 0x10);
+}
+
+//NGC MATCH
 void PickupPower(s32 character) {
     switch (character) {
     case 0xA7:
@@ -556,6 +685,65 @@ void PickupPower(s32 character) {
         player->obj.mom.x = 0.0f;
         player->obj.mom.z = 0.0f;
     }
+}
+
+//NGC MATCH
+void PickupItem(struct obj_s* obj) {
+    u32 item;
+
+    if ((new_mode == -1) && (new_level == -1)) {
+        switch (obj->character) {
+            case 0x75:
+                PickupCrystal();
+                ClockOff();
+                GameSfx(0x26, 0);
+                break;
+            case 0x76:
+                StartTimeTrial(&obj->pos, 0);
+                break;
+            case 0x77:
+                PickupCrateGem();
+                ClockOff();
+                GameSfx(0x26, 0);
+                break;
+            case 0x78:
+            case 0x79:
+            case 0x7A:
+            case 0x7B:
+            case 0x7C:
+            case 0x7D:
+                if (obj->character == 0x79) {
+                    item = 8;
+                } else if (obj->character == 0x7A) {
+                    item = 0x20;
+                } else if (obj->character == 0x7B) {
+                    item = 0x10;
+                } else if (obj->character == 0x7C) {
+                    item = 0x40;
+                } else if (obj->character == 0x7D) {
+                    item = 0x80;
+                } else {
+                    item = 4;
+                }
+                PickupBonusGem(item);
+                GameSfx(0x26, 0);
+                break;
+            case 0xA2:
+            case 0xA3:
+            case 0xA4:
+            case 0xA5:
+            case 0xA6:
+            case 0xA7:
+                if ((LBIT & 0x03E00000) != 0) {
+                    boss_dead = 2;
+                }
+                PickupPower(obj->character);
+                break;
+        }
+    }
+
+    KillItem(obj);
+    return;
 }
 
 //NGC MATCH
