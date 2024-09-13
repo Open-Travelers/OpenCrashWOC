@@ -8,10 +8,28 @@ s32 screendump;
 s32 save_paused;
 s32 editor_active;
 
+struct objtab_s ObjTab[201];
+struct pdeb_s PDeb[32];
+struct pdebnfo_s PDebInfo[7];
+float WUMPAOBJSX;
+float BONUSWUMPAOBJSX;
+float PANELSY;
+float LIFESCALE;
+struct GTimer GameTimer;
+struct plritem_s plr_lives;
+float BONUSLIVESOBJSX;
+float BONUSPANELSY;
+float BONUSLIFESCALE;
+float NEWBONUSLIFEOBJSX;
+float NEWLIFEOBJSX;
+float LIVESOBJSX;
+s32 force_panel_lives_update;
+s32 bonus_lives;
+unsigned short panel_head_yrot;
+unsigned short panel_head_xrot;
+
 /*
-	DrawWorldToPanelWumpa 57%**
 	Draw3DCheckpointLetters 50%**
-	UpdatePanelDebris 97%*
 	DrawPanel 87%
 	UpdatePlayerStats PS2 MATCH / 93% (mtctr and mfctr missing, lines 65-69)
 */
@@ -215,42 +233,31 @@ void UpdatePanelItem(struct plritem_s* item, int force_update, int use_change) {
     }
 }
 
-//NGC 56%
-void DrawWorldToPanelWumpa(void) {
-  //char *pcVar2;
+//NGC MATCH
+void DrawWorldToPanelWumpa() {
   float xs;
-    float x;
-    float y;
   float ys;
   float f;
   float size;
   s32 i;
-    s16 rot;
-    
-  //pcVar2 = &WScr[0].bonus;
-  //iVar3 = 0;
-      rot = 0;
+  s16 rot;
+  float x;
+  float y;
+
   for (i = 0; i < 32; i++) {
     if (WScr[i].timer > 0.0f) {
-      f = (0.25f - WScr[i].timer) * 4.0f;
+      rot = 0;
       x = WScr[i].pos.x;
       y = WScr[i].pos.y;
-      if (WScr[i].bonus != 0) {
-          size =  (0.125f - WScr[i].scale) * f + WScr[i].scale;
-      }
-      else {
-          size = (0.2f - WScr[i].scale) * f + WScr[i].scale;  
-      }
-        ys = ((WScr[i].ys - y) * f + y);
-        xs = ((WScr[i].xs -  x) * f + x);
+      f = ((0.25f - WScr[i].timer) * 4.0f);
+      size = WScr[i].scale + ((WScr[i].bonus != 0 ? 0.125f : 0.2f) - WScr[i].scale) * f;
+      xs = ((WScr[i].xs -  x) * f + x);
+      ys = ((WScr[i].ys - y) * f + y);
       if (WScr[i].bonus == 0) {
           rot = -0x1800;
       }
-      DrawPanel3DObject(0,xs,ys,1.0f,size,size,size,rot,
-                        PANELWUMPAYROT,0,ObjTab[0].obj.scene,ObjTab[0].obj.special,1);
+      DrawPanel3DObject(0,xs,ys,1.0f,size,size,size,rot,PANELWUMPAYROT,0,ObjTab[0].obj.scene,ObjTab[0].obj.special,1);
     }
-    //pcVar2 = pcVar2 + 0x20;
-    //iVar3 = iVar3 + 0x20;
   }
   return;
 }
@@ -487,6 +494,109 @@ void UpdatePlayerStats(struct creature_s* plr) {
         }
     }
     return;
+}
+
+//NGC MATCH
+void UpdatePanelDebris(void) {
+    struct pdeb_s* deb;
+    float tmul;
+    float xs[2];
+    float ys;
+    float scale;
+    float f;
+    float old_time;
+    s32 i;
+
+    deb = PDeb;
+    for (i = 0; i < 0x20; i++, deb++) {
+        if (deb->active != 0) {
+            // pPVar9 = deb->info;
+            old_time = deb->time;
+            deb->time += 0.016666668f;
+            if (deb->time < deb->info->duration) {
+                tmul = (deb->time / deb->info->duration);
+                switch (deb->type) {
+                    case 0:
+                        (deb->pos).x = ((WUMPAOBJSX - BONUSWUMPAOBJSX) * 0.9f) * tmul + BONUSWUMPAOBJSX;
+                        (deb->pos).y = ((PANELSY - BONUSPANELSY) * 0.9f) * tmul + BONUSPANELSY;
+                        deb->xrot = (tmul * -5529.5996f);
+                        deb->yrot = -(((GameTimer.frame % 40) * 0x10000) / 40);
+                        deb->scale = tmul * 0.075f + 0.125f;
+                        break;
+                    case 1:
+                        (deb->pos).x += (deb->mom).x;
+                        (deb->mom).y += deb->info->gravity;
+                        (deb->pos).y += (deb->mom).y;
+                        deb->xrot = 0;
+                        deb->yrot = -(((GameTimer.frame % 40) * 0x10000) / 40);
+                        deb->scale = 0.125f;
+                        break;
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                        if (deb->type == 3) {
+                            xs[0] = NEWBONUSLIFEOBJSX;
+                            xs[1] = BONUSLIVESOBJSX;
+                            ys = BONUSPANELSY;
+                            scale = BONUSLIFESCALE;
+                            deb->xrot = panel_head_xrot;
+                        } else {
+                            xs[0] = NEWLIFEOBJSX;
+                            xs[1] = LIVESOBJSX;
+                            ys = PANELSY;
+                            scale = LIFESCALE;
+                            if ((deb->type == 2) || (deb->type == 5)) {
+                                deb->xrot = panel_head_xrot - 0x1000;
+                            } else {
+                                deb->xrot = panel_head_xrot - (tmul * 4096.0f);
+                            }
+                        }
+                        if (deb->time < 0.25f) {
+                            f = deb->time * 4.0f;
+                            (deb->pos).x = (xs[0] - (deb->oldpos).x) * f + (deb->oldpos).x;
+                            (deb->pos).y = (ys - (deb->oldpos).y) * f + (deb->oldpos).y;
+                            deb->scale = (scale - deb->oldscale) * f + deb->oldscale;
+                        } else {
+                            if (deb->time < 1.0f) {
+                                if (old_time < 0.25f) {
+                                    GameSfx(0x2b, NULL);
+                                }
+                                if ((deb->time - 0.016666668f) < 0.25f) {
+                                    force_panel_lives_update = 60;
+                                }
+                                (deb->pos).x = xs[0];
+                                (deb->pos).y = ys;
+                            } else {
+                                f = (deb->time -1.0f) * 2;
+                                deb->pos.x = (xs[1] - xs[0]) * f + xs[0];
+                            }
+                        }
+                        deb->yrot = panel_head_yrot + 0x2000;
+                        break;
+
+                    case 6:
+                        (deb->pos).x += (deb->mom).x;
+                        (deb->mom).y += deb->info->gravity;
+                        (deb->pos).y = (deb->pos).y + (deb->mom).y;
+                        if ((deb->mom.x != 0.0f) || (deb->mom.y != 0.0f)) {
+                            deb->zrot = -NuAtan2D((deb->mom).x, (deb->mom).y);
+                        }
+                        deb->scale = (1.0f - tmul) * 0.125f;
+                        break;
+                }
+            } else {
+                if (((deb->type == 2) || (deb->type == 4)) || (deb->type == 5)) {
+                    if (plr_lives.count < 99) {
+                        plr_lives.count++;
+                    }
+                } else if (deb->type == 3) {
+                    bonus_lives++;
+                }
+                deb->active = 0;
+            }
+        }
+    }
 }
 
 //87% NGC
