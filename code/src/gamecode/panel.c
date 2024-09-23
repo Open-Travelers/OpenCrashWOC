@@ -29,7 +29,6 @@ unsigned short panel_head_yrot;
 unsigned short panel_head_xrot;
 
 /*
-	Draw3DCheckpointLetters 50%**
 	DrawPanel 87%
 	UpdatePlayerStats PS2 MATCH / 93% (mtctr and mfctr missing, lines 65-69)
 */
@@ -597,6 +596,112 @@ void UpdatePanelDebris(void) {
             }
         }
     }
+}
+
+//NGC MATCH
+void Draw3DCheckpointLetters(void) {
+    s32 i;
+    s32 j;
+    u16 ang;
+    float dx;
+    float dz;
+    float t;
+    float f;
+    float x;
+    float time;
+    struct nuvec_s pos;
+    struct nuvec_s s;
+    char* txt;
+    struct nuspecial_s* obj[2];
+
+    if (font3d_scene != NULL) {
+        dx = NuTrigTable[((GameCam.yrot + 0x4000 & 0xffff))] * CHECKPOINT3DSEPERATION;
+        dz = NuTrigTable[((GameCam.yrot - 0x8000 & 0xffff))] * CHECKPOINT3DSEPERATION;
+        ang = ((GameTimer.frame % 0xb4) * 0x10000) / 0xb4;
+        if ((check_time < check_duration) && (check_time >= CHECKWAIT)) {
+            time = (check_time - CHECKWAIT);
+            txt = tCHECK[Game.language];
+            for (i = 0; i < nCheckLetters; i++, ang += 0x1383) {
+                t = (CPLTIME * i);
+                txt = &txt[NextLetter(txt, &obj[0])];
+                if (((obj[0] != NULL) && (time >= t)) && (time < (t + check_delay))) {
+                    f = (time - t);
+                    x = i * CHECKPOINT3DSEPERATION;
+                    x += (nCheckLetters - 1) * CHECKPOINT3DSEPERATION * 0.5f * -1;
+                    pos.x = cpPOS.x;
+                    pos.y = ((cpPOS.y + 0.25f) + CHECKPOINT3DHEIGHT);
+                    pos.y += (NuTrigTable[ang] * 0.125f);
+                    pos.z = cpPOS.z;
+                    if (f < CPLTIME) {
+                        pos.x += ((pos.x + (dx * x) - pos.x) * f) * (1.0f / CPLTIME);
+                        pos.y = cpPOS.y + ((pos.y - cpPOS.y) * f) * (1.0f / CPLTIME);
+                        pos.z += (((pos.z + dz * x) - pos.z) * f) * (1.0f / CPLTIME);
+                        s.x = (CHECKPOINT3DSCALE * f) * (1.0f / CPLTIME);
+                    } else {
+                        if (f >= (check_delay - CPLTIME)) {
+                            x -= (((f - (check_delay - CPLTIME)) / CPLTIME) * 5.0f);
+                        }
+                        pos.x = cpPOS.x + dx * x;
+                        pos.z = cpPOS.z + dz * x;
+                        s.x = CHECKPOINT3DSCALE;
+                    }
+                    s.z = s.x;
+                    s.y = s.x;
+                    if (Game.language == 0x63) {
+                        s.x *= FONT3D_JSCALEX;
+                    }
+
+                    for (j = 0; j < 2; j++) {
+                        if (obj[j] != NULL) {
+                            Draw3DObject(-1, &pos, 0, GameCam.yrot, 0, s.x, s.y, (j == 1) ? (s.z * 1.5f) : s.z, font3d_scene, obj[j], 0);
+                        }
+                    }
+                }
+            }
+        }
+        if ((point_time < point_duration) && (point_time >= POINTWAIT)) {
+            time = (point_time - POINTWAIT);
+            txt = tPOINT[Game.language];
+            for (i = 0; i < nPointLetters; i++, ang += 0x1383) {
+                t = CPLTIME * (float)i;
+                txt = &txt[NextLetter(txt, &obj[0])];
+                if (((obj[0] != NULL) && (time >= t)) && (time < (t + point_delay))) {
+                    f = time - t;
+                    x = i * CHECKPOINT3DSEPERATION;
+                    x += (nPointLetters - 1) * CHECKPOINT3DSEPERATION * 0.5f * -1;
+                    pos.x = cpPOS.x;
+                    pos.y = ((cpPOS.y + 0.25f) + CHECKPOINT3DHEIGHT);
+                    pos.y += (NuTrigTable[ang] * 0.125f);
+                    pos.z = cpPOS.z;
+                    if (f < CPLTIME) {
+                        pos.x += ((pos.x + (dx * x) - pos.x) * f) * (1.0f / CPLTIME);
+                        pos.y = cpPOS.y + ((pos.y - cpPOS.y) * f) * (1.0f / CPLTIME);
+                        pos.z += (((pos.z + dz * x) - pos.z) * f) * (1.0f / CPLTIME);
+                        s.x = (CHECKPOINT3DSCALE * f) * (1.0f / CPLTIME);
+                    } else {
+                        if (f >= (point_delay - CPLTIME)) {
+                            x -= ((f - (point_delay - CPLTIME)) / CPLTIME) * 5.0f;
+                        }
+                        pos.x = cpPOS.x + dx * x;
+                        pos.z = cpPOS.z + dz * x;
+                        s.x = CHECKPOINT3DSCALE;
+                    }
+                    s.z = s.x;
+                    s.y = s.x;
+                    if (Game.language == 0x63) {
+                        s.x = s.x * FONT3D_JSCALEX;
+                    }
+
+                    for (j = 0; j < 2; j++) {
+                        if (obj[j] != NULL) {
+                            Draw3DObject(-1, &pos, 0, GameCam.yrot, 0, s.x, s.y, (j == 1) ? (s.z * 1.5f) : s.z, font3d_scene, obj[j], 0);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return;
 }
 
 //87% NGC

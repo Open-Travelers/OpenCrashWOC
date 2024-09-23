@@ -9,7 +9,6 @@ s32 gamecut; //cut.c
 	ManageCreatures 88%
 	LoadCharacterModel 95%
 	LoadCharacterModels 92%
-	NewCharacterIdle 94%*
 	MovePlayer 29%**
 	DrawCharacterModel 96%
 	UpdateAnimPacket 99%*
@@ -909,7 +908,7 @@ void TerrainFailsafe(struct obj_s *obj) {
   return;
 }
 
-//94% NGC
+//NGC MATCH
 s32 NewCharacterIdle(struct creature_s* c, struct CharacterModel* model) {
     s32 i;
     s32 ok;
@@ -927,36 +926,34 @@ s32 NewCharacterIdle(struct creature_s* c, struct CharacterModel* model) {
                 goto New;
             }
         }
-        
         count = 0;
         for (i = 0; i < 0x76; i++) {
-
             if ((model->anmdata[i] != 0) && ((model->animlist[i]->flags & 8) != 0)) {
                 ok = 1;
-                if ((c == player && c->obj.character == 0)
-                    && ((GameMode == 1 && (i == 0x25 || i == 0x26 || i == 0x27))
-                        || (i == 0x27 && (abs(RotDiff(GameCam->hdg_to_player, c->obj.hdg)) < 0x6000))
-                        || (i == 0x29
-                            && (GemPath == 1 || GemPath == 3 || Death == 1 || Death == 3 || Bonus == 1 || Bonus == 3))))
-                {
-
-                    ok = 0;
+                if ((c == player && c->obj.character == 0)) {
+                    if (GameMode == 1 && (i == 0x25 || i == 0x26 || i == 0x27)) {
+                        ok = 0;
+                    }
+                    else if (i == 0x27 && (abs(RotDiff(GameCam->hdg_to_player, c->obj.hdg)) < 0x6000)) {
+                        ok = 0;
+                    }
+                    else if (i == 0x29 && (GemPath == 1 || GemPath == 3 || Death == 1 || Death == 3 || Bonus == 1 || Bonus == 3)) {
+                        ok = 0;
+                    }
                 }
-
+                
                 if (ok) {
-                    // count++;
                     list[count++] = i;
                 }
             }
         }
-
+        
         if (count < 1)
             return 0;
 
     Retry:
         sfx = -1;
         i = (count <= 1) ? 0 : qrand() / (0xffff / count + 1);
-
         c->idle_repeat = 1;
         c->idle_action = list[i];
         if (c->obj.character == 0) {
@@ -975,7 +972,6 @@ s32 NewCharacterIdle(struct creature_s* c, struct CharacterModel* model) {
                     break;
             }
         }
-
         if ((count >= 2) && (c->idle_action == c->old_idle_action)) {
             goto Retry;
         }
@@ -986,10 +982,8 @@ s32 NewCharacterIdle(struct creature_s* c, struct CharacterModel* model) {
         if ((1 < c->idle_repeat) && ((model->animlist[c->idle_action]->flags & 1) == 0)) {
             c->idle_repeat = 1;
         }
-
         c->idle_time = 0.0f;
-        c->idle_wait = (model->anmdata[c->idle_action]->time - 1.0f) * c->idle_repeat;
-
+        c->idle_wait = (model->anmdata[c->idle_action]->time - 1.0f) * c->idle_repeat; 
         i = model->animlist[c->idle_action]->blend_out_frames;
         if (i != 0) {
             c->idle_wait -= i * 0.5f;
@@ -997,7 +991,6 @@ s32 NewCharacterIdle(struct creature_s* c, struct CharacterModel* model) {
                 c->idle_wait = 1.0f;
             }
         }
-
         if (sfx != -1) {
             GameSfx(sfx, &c->obj.pos);
         }

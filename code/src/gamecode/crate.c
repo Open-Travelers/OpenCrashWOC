@@ -56,6 +56,77 @@ void CloseCrates(void) {
 }
 
 //NGC MATCH
+s32 ReadCrateData(void) {
+  s32 handle;
+  s32 i;
+  s32 iVar7;
+  s32 version;
+  void * fbuff;
+  
+  CRATECOUNT = 0;
+  sprintf(tbuf,"%s.crt",LevelFileName);
+  if (NuFileExists(tbuf) != 0) {
+    fbuff = Chase;
+    handle = NuMemFileOpen(fbuff,NuFileLoadBuffer(tbuf,fbuff,0x7fffffff),NUFILE_READ);
+    if (handle != 0) {
+      version = NuFileReadInt(handle);
+      if (version > 5) {
+          NuFileClose(handle);
+          return 0;
+      }
+      CRATEGROUPCOUNT = (s32)NuFileReadShort(handle);
+      for(i = 0; i < CRATEGROUPCOUNT; i++) {
+            CrateGroup[i].origin.x = NuFileReadFloat(handle);
+            CrateGroup[i].origin.y = NuFileReadFloat(handle);
+            CrateGroup[i].origin.z = NuFileReadFloat(handle);
+            CrateGroup[i].radius = 0.0f;
+            CrateGroup[i].iCrate = NuFileReadShort(handle);
+            CrateGroup[i].nCrates = NuFileReadShort(handle);
+            CRATECOUNT = CRATECOUNT + CrateGroup[i].nCrates;
+            CrateGroup[i].angle = NuFileReadShort(handle);
+            for (iVar7 = (s32)CrateGroup[i].iCrate; iVar7 < (s32)CrateGroup[i].iCrate + (s32)CrateGroup[i].nCrates; iVar7++) {
+                Crate[iVar7].pos0.x = NuFileReadFloat(handle);
+                Crate[iVar7].pos0.y = NuFileReadFloat(handle);
+                Crate[iVar7].pos0.z = NuFileReadFloat(handle);
+                Crate[iVar7].shadow = NuFileReadFloat(handle);
+                Crate[iVar7].dx = NuFileReadShort(handle);
+                Crate[iVar7].dy = NuFileReadShort(handle);
+                Crate[iVar7].dz = NuFileReadShort(handle);
+                Crate[iVar7].type1 = NuFileReadChar(handle);
+                if (version > 2) {
+                  Crate[iVar7].type2 = NuFileReadChar(handle);
+                  Crate[iVar7].type3 = NuFileReadChar(handle);
+                  Crate[iVar7].type4 = NuFileReadChar(handle);
+                }
+                else {
+                  Crate[iVar7].type2 = -1;
+                  Crate[iVar7].type3 = -1;
+                  Crate[iVar7].type4 = -1;
+                }
+                Crate[iVar7].timer = 0.0f;
+                Crate[iVar7].on = 1;
+                Crate[iVar7].iU = NuFileReadShort(handle);
+                Crate[iVar7].iD = NuFileReadShort(handle);
+                Crate[iVar7].iN = NuFileReadShort(handle);
+                Crate[iVar7].iS = NuFileReadShort(handle);
+                Crate[iVar7].iE = NuFileReadShort(handle);
+                Crate[iVar7].iW = NuFileReadShort(handle);
+                if (version > 3) {
+                  Crate[iVar7].trigger = NuFileReadShort(handle);
+                }
+                else {
+                  Crate[iVar7].trigger = -1;
+                }
+            }
+      }
+      NuFileClose(handle);
+      return 1;        
+    }
+  }
+  return 0;
+}
+
+//NGC MATCH
 s32 NewCrateAnimation(CrateCube* crate, s32 type, s32 action, s32 random) {
     struct CharacterModel* model;
     s32 i;
@@ -213,12 +284,61 @@ void RestoreCrateTypeData(void) {
 }
 
 //NGC MATCH
+void AddExtraLife(struct nuvec_s *pos,int pdeb) {
+  struct nuvec_s scr_pos;
+  struct nuvec_s cV[2];
+  float scale;
+  
+  NuCameraTransformScreenClip(&scr_pos,pos,1,NULL);
+  cV[0].x = GameCam[0].vX.x * 0.1f + pos->x;
+  cV[0].y = GameCam[0].vX.y * 0.1f + pos->y;
+  cV[0].z = GameCam[0].vX.z * 0.1f + pos->z;
+  NuCameraTransformScreenClip(&cV[1],&cV[0],1,NULL);
+  scale = NuFabs((scr_pos.x - cV[1].x));
+  AddPanelDebris(scr_pos.x,scr_pos.y,pdeb,(scale * 3.6363637f),1);
+  return;
+}
+
+//NGC MATCH
+CrateCube * CrateInSlot(CrateCubeGroup *group,s32 x,s32 y,s32 z) {
+  CrateCube *crate;
+  s32 i;
+  
+  crate = &Crate[group->iCrate];
+  for(i = 0; i < group->nCrates; i++, crate++) {
+      if (((crate->dx == x) && (crate->dy == y)) && (crate->dz == z)) {
+        return crate;
+      }
+  }
+  return NULL;
+}
+
+//NGC MATCH
 void ResetInvisibility(void) {
   plr_invisibility_time = 5.0f;
   glass_mix = (Level != 0x17) ? 0.0f : WATERBOSSGLASSMIX;
   glass_col_mix = 0;
   glass_col_enabled = 0;
   glass_enabled = 0;
+  return;
+}
+
+//NGC MATCH
+void ResetCrate(CrateCube *crt) {
+  crt->mom = 0.0f;
+  crt->oldy = crt->pos0.y;
+  crt->pos.y = crt->pos0.y;
+  crt->newtype = -1;
+  crt->subtype = -1;
+  if (((crt->type1 == 6) || (crt->type2 == 6)) || ((crt->type1 == 0 && (crt->type3 == 6)))) {
+    crt->counter = 0xa;
+  }
+  else {
+    crt->counter = 0;
+  }
+  crt->metal_count = 0;
+  crt->action = -1;
+  crt->appeared = 0;
   return;
 }
 
@@ -324,6 +444,104 @@ void DestroyAllNitroCrates(CrateCubeGroup *group,CrateCube *crate) {
   JudderGameCamera(GameCam,0.5f,NULL);
   GameSfx(0x33,&crate->pos);
   return;
+}
+
+//NGC MATCH
+s32 AttackCrate(struct obj_s *obj,CrateCubeGroup *group,CrateCube *crate) {
+  s32 type;
+  
+  type = GetCrateType(crate,0);
+  if (type == -1) {
+    return 1;
+  }
+    if (type == 0xe) {
+      if ((crate->action == -1) && (NewCrateAnimation(crate,0xe,0x35,0) == 0)) {
+        StartExclamationCrateSequence(group,crate);
+      }
+      return 2;
+    }
+    if (type == 0x11) {
+        if ((crate->action == -1) && (NewCrateAnimation(crate,0x11,0x35,0) == 0)) {
+            DestroyAllNitroCrates(group,crate);
+        }
+        return 2;
+    }
+    if (CrateOff(group,crate,0,obj->attack >> 9 & 1) != 0) {
+        if ((type == 9) || (type == 0x10)) {
+                KillPlayer(obj,GetDieAnim(obj,6));   
+        }
+        return 1;
+    }
+  return 0;
+}
+
+//NGC MATCH
+s32 LowestCrate(CrateCubeGroup *group,CrateCube *crate) {
+  CrateCube *crate2;
+  s32 i;
+  s32 dx;
+  s32 dz;
+  
+  crate2 = &Crate[group->iCrate];
+  dx = crate->dx;
+  dz = crate->dz;
+  for(i = 0; i < group->nCrates; i++, crate2++) {
+      if ((((crate2 != crate) && (crate2->dx == dx)) && (crate2->dz == dz)) &&
+         ((crate2->pos0).y < (crate->pos0).y)) {
+        return 0;
+      }
+  }
+  return 1;
+}
+
+//NGC MATCH
+s32 LowestActiveCrate(CrateCubeGroup *group,CrateCube *crate) {
+  CrateCube *crate2;
+  s32 i;
+  s32 dx;
+  s32 dz;
+  
+  crate2 = &Crate[group->iCrate];
+  dx = crate->dx;
+  dz = crate->dz;
+  for(i = 0; i < group->nCrates; i++, crate2++) {
+      if ((((crate2 != crate) && (crate2->on != 0)) && (crate2->dx == dx)) &&
+         ((crate2->dz == dz && ((crate2->pos).y < (crate->pos).y)))) {
+        return 0;
+      }
+  }
+  return 1;
+}
+
+//NGC MATCH
+s32 CrateInTheWay(struct obj_s *obj,CrateCubeGroup *group,CrateCube *crate,s32 dx,s32 dz,char *hit) {
+  CrateCube *crate2;
+  s32 i;
+  
+  crate2 = &Crate[group->iCrate];
+  for(i = 0; i < group->nCrates; i++, crate2++) {
+      if ((((crate2 != crate) && (hit[i] == 1)) && (crate2->dx == dx)) &&
+         (crate2->dz == dz)) {
+        return 1;
+      }
+  }
+  return 0;
+}
+
+//NGC MATCH
+s32 CrateOnTop(CrateCubeGroup *group,CrateCube *crate) {
+  s32 i;
+  CrateCube *crate2;
+  
+  crate2 = &Crate[group->iCrate];
+  for(i = 0; i < group->nCrates; i++, crate2++) {
+      if ((((crate2 != crate) && (crate2->on != 0)) && (GetCrateType(crate2,0) != 0)) &&
+         (((crate2->dx == crate->dx && (crate2->dz == crate->dz)) &&
+          (crate2->pos.y == crate->pos.y + 0.5f)))) {
+        return 1;
+      }
+  }
+  return 0;
 }
 
 //NGC MATCH
@@ -586,4 +804,50 @@ s32 CrateRayCast(struct nuvec_s *p0,struct nuvec_s *p1) {
       return 1;
   }
   return 0;
+}
+
+//NGC MATCH
+s32 GotoCheckpoint(struct nuvec_s *pos,s32 direction) {
+  CrateCubeGroup *group;
+  CrateCube *crate;
+  s32 i;
+  s32 j;
+  s32 iRAIL;
+  s32 iALONG;
+  float fALONG;
+  
+  cp_goto = -1;
+  if ((best_cRPos == NULL) || ((u32)direction > 1)) {
+      return 0;
+  }
+    group = CrateGroup;
+    iRAIL = -1;
+    for(i = 0; i < CRATEGROUPCOUNT; i++, group++) {
+        crate = Crate + group->iCrate;
+        for(j = 0; j < group->nCrates; j++, crate++) {
+            if ((((crate->type1 == 7) && (NuVecDist(pos,&crate->pos0,NULL) > 5.0f)) && ((((direction == 0) &&
+                  (FurtherALONG(crate->iRAIL,crate->iALONG,crate->fALONG,
+                                        best_cRPos->iRAIL,best_cRPos->iALONG,
+                                        best_cRPos->fALONG) != 0)) || ((direction == 1 &&
+                  (FurtherBEHIND(crate->iRAIL,crate->iALONG,crate->fALONG,
+                                         best_cRPos->iRAIL,best_cRPos->iALONG,
+                                         best_cRPos->fALONG) != 0))))))
+                && ((iRAIL == -1 || (((direction == 0 &&
+                  (FurtherBEHIND(crate->iRAIL,crate->iALONG,crate->fALONG,iRAIL,iALONG,fALONG) != 0)) ||
+                 ((direction == 1 &&
+                   (FurtherALONG(crate->iRAIL,crate->iALONG,crate->fALONG,iRAIL,iALONG,fALONG) != 0)))))))) {
+              cpGOTO.x = crate->pos.x;
+              cpGOTO.y = (crate->pos0.y + 0.5f) + 1.0f;
+              cpGOTO.z = crate->pos.z;
+              iRAIL = crate->iRAIL;
+              iALONG = crate->iALONG;
+              fALONG = crate->fALONG;
+            }
+        }
+    }
+    if (iRAIL != -1) {
+        cp_goto = direction;
+        return 1;
+    }
+    return 0;
 }

@@ -33,12 +33,11 @@ s32 wdir;
 s32 wtimer;
 
 /*
-	RBodySetCubiodClass  95%
 	AddDeb3Ang     73%
 	AddDeb3           65%
-	JonExtraDraw    87%
-	LaunchObjects  67%
-	ProcDeb3 TODO
+	JonExtraDraw    94%
+	LaunchObjects  86%
+	ProcDeb3       92%
 	DrawDeb3      99%
 */
 
@@ -98,6 +97,27 @@ void RBodySetFakeClass(s32 classid,float r,float kr) {
   rbc->mass = 0.0f;
   rbc->kr = kr;
   rbc->kf = r;
+  return;
+}
+
+//NGC MATCH
+static void RBodySetCubiodClass(int classid,float dx,float dy,float dz,float mass,float kr,float kf) {
+  struct rbclass_s* rbc; 
+  float dz2;
+  float dx2;
+  float dy2;
+
+  dx2 = (dx * 0.5f);
+  dy2 = (dy * 0.5f);
+  dz2 = (dz * 0.5f);
+  rbc = &rbclass[classid];
+  rbc->invBodyInertiaTensor = numtx_identity;
+  rbc->invBodyInertiaTensor._00 = 3.0f / (mass * ((dy2 * dy2) + (dz2 * dz2)));
+  rbc->invBodyInertiaTensor._11 = 3.0f / (mass * ((dx2 * dx2) + (dz2 * dz2)));
+  rbc->invBodyInertiaTensor._22 = 3.0f / (mass * ((dx2 * dx2) + (dy2 * dy2)));
+  rbc->mass = mass;
+  rbc->kr = kr;
+  rbc->kf = kf;
   return;
 }
 
