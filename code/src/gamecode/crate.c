@@ -299,6 +299,213 @@ void AddExtraLife(struct nuvec_s *pos,int pdeb) {
   return;
 }
 
+//99% NGC
+s32 GetCrateType(CrateCube* crate, s32 flags) {
+    s32 type;
+
+    if (TimeTrial != 0) {
+        type = crate->type2;
+    } else {
+        type = crate->type1;
+    }
+    
+    if (type == 0 && crate->newtype != -1) {
+        type = crate->newtype;
+    }
+    
+    if (flags & 2) {
+        if (type == 8) {
+            if (crate->newtype != -1) {
+                goto block_12;
+            } else {
+                goto block_20;
+            }
+        }
+    }
+    
+    if (crate->newtype != -1) {
+block_12:
+        if (TimeTrial != 0 && (type != 9) || crate->subtype == -1) {
+            type = crate->newtype;
+            goto block_20;
+        }
+        //goto block_1;
+    } else if (TimeTrial == 0 || type == 9) {
+block_1:
+        type = (crate->subtype != -1) ? crate->subtype : type;
+    }
+block_20:
+
+    if (!(flags & 1)) {
+        if (type == 22 || type == 23 || type == 24) {
+            type = 9;
+        }
+    }
+        
+    else if (type == 2) {
+        if (LDATA->character == 1) {
+            type = 25;
+        }
+    }
+    
+    return type;
+}
+
+//NGC MATCH
+s32 CrateBelow(struct obj_s *obj,CrateCubeGroup *group,CrateCube *crate) {
+  s32 i;
+  CrateCube *crate2;
+  
+  crate2 = Crate + group->iCrate;
+  for(i = 0; i < group->nCrates; i++, crate2++) {
+      if (((((crate2 != crate) && (crate2->on != 0)) && (GetCrateType(crate2,0) != 0)) &&
+          ((crate2->dx == crate->dx && (crate2->dz == crate->dz)))) && ((crate2->pos.y < crate->pos.y &&
+          (!(obj->objtop < crate2->pos.y || (obj->objbot > (crate2->pos.y + 0.5f) ) ) ) )) ) {
+        return 1;
+      }
+  }
+  return 0;
+}
+
+//NGC MATCH
+s32 CrateOff(CrateCubeGroup *group,CrateCube *crate,s32 kaboom,s32 chase) {
+  struct nuvec_s pos;
+  s32 type;
+  s32 i;
+  s32 sfx;
+  float fVar2;
+  
+  type = GetCrateType(crate,0);
+  if ((((type == -1) || (type - 0xdU < 2)) || (type == 0)) || ((type == 0xf || (type == 0x11) ))) {
+    return 0;
+  }
+  crate->on = 0;
+  if (crate->model != NULL) {
+    crate->model->draw = 0;
+  }
+  pos.x = (crate->pos).x;
+  pos.y = (crate->pos).y + 0.25f;
+  pos.z = (crate->pos).z;
+  if ((type != 7) && (crate->in_range != 0)) {
+    AddCrateExplosion(&crate->pos,type,group->angle,crate->colbox);
+  }
+  sfx = 0x25;
+  switch (type) {
+      case 2:
+          if ((((kaboom & 3U) == 0) && ((player->obj).dead == 0)) && (chase == 0)) {
+            i = 2;
+            if ((crate->flags & 0x40) != 0) {
+              i = 3;
+            }
+            AddExtraLife(&pos,i);
+            if ((TimeTrial == 0) && ((crate->flags & 0x40) == 0)) {
+              if ((crate->type1 == '\b') && (0 < crate->i)) {
+                SaveCrateTypeData(crate);
+                if (crate->i == 1) {
+                  crate->type3 = crate->type4;
+                }
+                crate->type4 = -1;
+              }
+              else if (crate->type1 == 2) {
+                SaveCrateTypeData(crate);
+                crate->type1 = 5;
+              }
+              else if ((crate->type1 == 0) && (crate->type3 == 2)) {
+                SaveCrateTypeData(crate);
+                crate->type3 = 5;
+              }
+            }
+          }
+      break;
+      case 7:
+          sfx = 0x17;
+          ResetCheckpoint((s32)crate->iRAIL,(s32)crate->iALONG,crate->fALONG,&crate->pos);
+          NewCrateAnimation(crate,7,0x34,0);
+      break;
+      case 3:
+          if ((((kaboom & 3U) == 0) && ((player->obj).dead == 0)) && (chase == 0)) {
+            mask_crates++;
+            vNEWMASK = crate->model->pos;
+            newmask_advise = 0;
+          }
+      break;
+      case 6:
+      break;
+      case 8:
+      break;
+      case 0x10:
+          AddKaboom(2,&pos,0.0f);
+          i = 6;
+          sfx = 0x3b;
+          AddGameDebris(i,&pos);
+      break;
+      case 9:
+            AddKaboom(1,&pos,0.0f);
+            i = 5;
+            sfx = 0x3b;
+            AddGameDebris(i,&pos);
+            
+      break;
+      case 0xc:
+          if (chase != 0) break;
+          fVar2 = 3.0f;
+            TimeTrialWait += fVar2;
+      break;
+      case 0xb:
+        if (chase != 0) break;
+        fVar2 = 2.0f;
+        TimeTrialWait += fVar2;
+      break;
+      case 10:
+        if (chase != 0) break;
+        fVar2 = 1.0f;
+        TimeTrialWait += fVar2;
+      break;
+      case 0x14:
+          if ((chase == 0) && ((kaboom == 0 || ((kaboom & 0xcU) != 0)))) {
+            plr_invisibility_time = 0.0f;
+            GameSfx(0x1e,NULL);
+          } 
+      break;
+      default:
+          if ((((kaboom & 3U) == 0) && (chase == 0)) &&
+             ((TimeTrial == 0 && (((player->obj).dead == 0 && ((crate->flags & 0x400) == 0)))))) {
+              if (type == 5) {
+                if (last_questionmark_extralife == 0) {
+                    i = last_questionmark_extralife;
+                  if (((Game.lives < 10) && ((crate->flags & 0x40) == 0)) &&
+                     (qrand() < (s32)(0x4000 - (Game.lives << 0xe) / 10))) {
+                    AddExtraLife(&pos,2);
+                    last_questionmark_extralife = 1;
+                    break;
+                  }
+                }
+              }
+              if (last_questionmark_extralife != 0) last_questionmark_extralife--;
+              if (CrateOnTop(group,crate) != 0) {
+                i = 1;
+                AddScreenWumpa(pos.x,pos.y,pos.z,i);
+              }
+              else {
+                if (type != 0x13) {
+                  i = qrand() / 0x3334 + 1;
+                }
+                else {
+                  i = 1;
+                }
+                if (((crate->flags & 0x1000) != 0) || ((VEHICLECONTROL == 1 && ((player->obj).vehicle != -1))) ) {
+                  AddScreenWumpa(pos.x,pos.y,pos.z,i);
+                } else {
+                    AddTempWumpa(pos.x,pos.y,pos.z,crate,i);
+                }
+              }
+        }
+      break;
+  }
+  GameSfx(sfx,((crate->flags & 0x400) == 0) ? &pos : NULL);
+  return 1;
+}
+
 //NGC MATCH
 CrateCube * CrateInSlot(CrateCubeGroup *group,s32 x,s32 y,s32 z) {
   CrateCube *crate;
@@ -414,6 +621,39 @@ void UpdateCrateExplosions(void) {
     }
   }
   return;
+}
+
+//NGC MATCH
+float CrateTopBelow(struct nuvec_s *pos) {
+  CrateCubeGroup *group;
+  CrateCube *crate;
+  s32 i;
+  s32 j;
+  float top;
+  float y;
+  struct nuvec_s vNew;
+  
+  y = 2000000.0f;
+  group = CrateGroup;
+  for(i = 0; i < CRATEGROUPCOUNT; i++, group++) {
+      if (((!(pos->x < group->minclip.x) && !(pos->x > (group->maxclip).x)) &&
+          !(pos->z < group->minclip.z)) && !(pos->z > (group->maxclip).z)) {
+        vNew.x = pos->x - (group->origin).x;
+        vNew.z = pos->z - (group->origin).z;
+        NuVecRotateY(&vNew,&vNew,-(u32)group->angle);
+        crate = &Crate[group->iCrate];
+        for (j = 0; j < group->nCrates; j++, crate++) {
+            if (((((crate->on != 0) && ( GetCrateType(crate,0) + 1U > 1)) &&
+                 ((top = (crate->pos.y + 0.5f), !(pos->y < top) &&
+                  ( !(vNew.x < (crate->dx * 0.5f) || (vNew.x > (crate->dx * 0.5f) + 0.5f))))))
+                && !(vNew.z < crate->dz * 0.5f)) &&
+               (!(vNew.z > (crate->dz * 0.5f) + 0.5f || ((y != 2000000.0f && !(top > y)))))) {
+              y = top;
+            }
+        }
+      }
+  }
+  return y;
 }
 
 //NGC MATCH
