@@ -21,7 +21,7 @@ void NuWindInit(void) {
 struct nuwindgrp_s* NuWindAllocateGrp(void) {
   if (NuWindGCount < 0x40) {
       NuWindGCount++;
-      return (NuWindGCount * 0xa) + &ropemat._12; //NuWindMtxs??
+      return &NuWindGroup[NuWindGCount]; //(NuWindGCount * 0xa) + &ropemat._12
   }
   return 0;
 }
@@ -84,48 +84,46 @@ void NuWindDraw(struct nugscn_s *scn) {
     return;
 }
 
-//NGC 98%
+//NGC MATCH // PS2 MATCH
 s32* NuWindCreate(struct nuinstance_s* instance, struct nuvec4_s* pos, short count, 
                     float wind, float height, s32 collide) {
     struct nuwindgrp_s *grp;
     struct numtx_s *mtx;
+    s32 lp;
     float minx;
     float maxx;
     float miny;
     float maxy;
     float minz;
     float maxz;
-    s32 lp;
     
     lp = count;
     minx = height;
     grp = (struct nuwindgrp_s *)NuWindAllocateGrp();
     mtx = NuWindAllocMtxs(count);
+
     if ((grp != NULL) && (mtx != NULL)) {
-        minx = -10000000.0f;
-        minz = -10000000.0f; 
-        miny = -10000000.0f;
-        maxy = 10000000.0f;
-        maxz =  10000000.0f;
-        grp->height = height;
+        minx = minz = miny = -10000000.0f;
+        maxx = maxy = maxz =  10000000.0f;
         grp->instance = instance;
+        grp->height = height;
         grp->collide = collide;
         grp->mtx = mtx;
         maxx =  10000000.0f;
         grp->objcount = count;
         grp->wind = wind;
-        for (lp = 0; lp < count; lp++) {
-                NuMtxSetIdentity(&mtx[lp]);
-                NuMtxPreRotateY(&mtx[lp],NuWindRand());
-                mtx[lp]._11 = pos[lp].w;
-                mtx[lp]._00 = mtx[lp]._00 * pos[lp].w;
-                mtx[lp]._02 = mtx[lp]._02 * pos[lp].w;
-                mtx[lp]._20 = mtx[lp]._20 * pos[lp].w;
-                mtx[lp]._22 = mtx[lp]._22 * pos[lp].w;
-                mtx[lp]._30 = pos[lp].x;
-                mtx[lp]._31 = pos[lp].y;
-                mtx[lp]._32 = pos[lp].z;
-                mtx[lp]._33 = (wind * pos[lp].w);
+        for (lp = 0; lp < count; lp++,mtx++) {
+                NuMtxSetIdentity(mtx);
+                NuMtxPreRotateY(mtx,NuWindRand());
+                mtx->_11 = pos[lp].w;
+                mtx->_00 = mtx->_00 * pos[lp].w;
+                mtx->_02 = mtx->_02 * pos[lp].w;
+                mtx->_20 = mtx->_20 * pos[lp].w;
+                mtx->_22 = mtx->_22 * pos[lp].w;
+                mtx->_30 = pos[lp].x;
+                mtx->_31 = pos[lp].y;
+                mtx->_32 = pos[lp].z;
+                mtx->_33 = (wind * pos[lp].w);
                 if (pos[lp].x < minx) {
                     minx = pos[lp].x;
                 }
@@ -149,13 +147,11 @@ s32* NuWindCreate(struct nuinstance_s* instance, struct nuvec4_s* pos, short cou
         grp->center.y = (maxy + miny) /2;
         grp->center.z = (maxz + minz) /2;
         grp->radius =  (grp->center.x * grp->center.x) + (grp->center.y * grp->center.y) + (grp->center.z * grp->center.z) + 1.0f;
-        return grp;
+        return (s32*)grp;
     }
-    else {
-        NuWindFreeGrp(grp);
-        NuWindFreeMtxs(mtx,count);
-        return NULL;
-    }
+    NuWindFreeGrp(grp);
+    NuWindFreeMtxs(mtx,count);
+    return NULL;
 }
 
 //73% NGC

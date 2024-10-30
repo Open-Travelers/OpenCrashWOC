@@ -1,5 +1,7 @@
 #include "../nu.h"
 
+#define RAND_MAX (2147483647)
+
 //NGC MATCH
 s32 SolveQuadratic(float a, float b, float c, float* t1, float* t2) {
     float x;
@@ -26,6 +28,507 @@ s32 SolveQuadratic(float a, float b, float c, float* t1, float* t2) {
         *t2 = (-b + x) / (a + a);
         return 1;
     }
+}
+
+//NGC MATCH
+struct uv1deb* GenDebIndex(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo) {
+    struct uv1deb* deb;
+    struct nuvec_s emit;
+
+    if ((current_deb_key->pointer) >= (current_deb_key->debcount)) {
+        current_deb_key->pointer = 0;
+    }
+    deb = current_deb_key->chunks[current_deb_key->pointer / 0x20]->debris;
+    deb = deb + (current_deb_key->pointer++ % 0x20);
+    deb->time = globaltime;
+    deb->etime = 64.0f / debinfo->etime;
+    emit.x = (float)(randy()) * (debinfo->variable_start_ranscale).x - (debinfo->variable_start).x;
+    emit.y = (float)randy() * (debinfo->variable_start_ranscale).y - (debinfo->variable_start).y;
+    emit.z = (float)randy() * (debinfo->variable_start_ranscale).z - (debinfo->variable_start).z;
+    NuVecMtxTransform(&emit, &emit, &current_deb_key->emitrotmtx);
+    deb->x = emit.x;
+    deb->y = emit.y;
+    deb->z = emit.z;
+    emit.x = (float)randy() * (debinfo->variable_emit_ranscale).x - (debinfo->variable_emit).x;
+    emit.y = ((float)randy() * (debinfo->variable_emit_ranscale).y - (debinfo->variable_emit).y) + debinfo->emitmag;
+    emit.z = randy() * (debinfo->variable_emit_ranscale).z - (debinfo->variable_emit).z;
+    NuVecMtxTransform(&emit, &emit, &current_deb_key->emitrotmtx);
+    deb->mx = emit.x;
+    deb->my = emit.y;
+    deb->mz = emit.z;
+    if (current_deb_key[0].genptr != NULL) {
+        (current_deb_key[0].genptr)(current_deb_key, debinfo, deb);
+    }
+    deb->x = deb->x + current_deb_key->toffx;
+    deb->y = deb->y + current_deb_key->toffy;
+    deb->z = deb->z + current_deb_key->toffz;
+    if (debinfo->DmaDebTypePointer == NULL) {
+        GenericDebinfoDmaTypeUpdate(debinfo);
+    }
+    return deb;
+}
+
+//NGC MATCH
+inline struct uv1deb* GenDebIndexRadial(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo) {
+    struct uv1deb* deb;
+    s32 ry;
+    s32 rz;
+    struct nuvec_s emit;
+
+    if (current_deb_key->pointer >= current_deb_key->debcount) {
+        current_deb_key->pointer = 0;
+    }
+    deb = current_deb_key->chunks[current_deb_key->pointer / 0x20]->debris;
+    deb = deb + (current_deb_key->pointer++ % 0x20);
+    deb->time = globaltime;
+    deb->etime = 64.0f / debinfo->etime;
+    ry = (randy() * (debinfo->variable_emit_ranscale).y - (debinfo->variable_emit).y) + (debinfo->variable_start).y;
+    rz = (randy() * (debinfo->variable_emit_ranscale).z - (debinfo->variable_emit).z) + (debinfo->variable_start).z;
+    emit.y = (debinfo->variable_start).x;
+    emit.x = emit.z = 0.0f;
+    NuVecRotateZ(&emit, &emit, rz);
+    NuVecRotateY(&emit, &emit, ry);
+    NuVecMtxTransform(&emit, &emit, &current_deb_key->emitrotmtx);
+    deb->x = emit.x;
+    deb->y = emit.y;
+    deb->z = emit.z;
+    emit.y = (randy() * (debinfo->variable_emit_ranscale).x - (debinfo->variable_emit).x) + debinfo->emitmag;
+    emit.x = emit.z = 0.0f;
+    NuVecRotateZ(&emit, &emit, rz);
+    NuVecRotateY(&emit, &emit, ry);
+    NuVecMtxTransform(&emit, &emit, &current_deb_key->emitrotmtx);
+    deb->mx = emit.x;
+    deb->my = emit.y;
+    deb->mz = emit.z;
+    if (current_deb_key->genptr != NULL) {
+        (current_deb_key->genptr)(current_deb_key, debinfo, deb);
+    }
+    deb->x = deb->x + current_deb_key->toffx;
+    deb->y = deb->y + current_deb_key->toffy;
+    (deb->z) = deb->z + current_deb_key->toffz;
+    if (debinfo->DmaDebTypePointer == NULL) {
+        GenericDebinfoDmaTypeUpdate(debinfo);
+    }
+    return deb;
+}
+
+//NGC MATCH
+inline struct uv1deb* GenDebIndexRadialRotor(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo) {
+    struct uv1deb* deb;
+    s32 rz;
+    s32 ry;
+    struct nuvec_s local_60;
+
+    if (current_deb_key->pointer >= current_deb_key->debcount) {
+        current_deb_key->pointer = 0;
+    }
+    deb = current_deb_key->chunks[current_deb_key->pointer / 0x20]->debris;
+    deb = deb + (current_deb_key->pointer++ % 0x20);
+    deb->time = globaltime;
+    deb->etime = 64.0f / debinfo->etime;
+    local_60.x = local_60.z = 0.0f;
+    local_60.y = (debinfo->variable_start).x;
+    ry = (s32)(current_deb_key->rotory + (debinfo->variable_start).y);
+    rz = current_deb_key->rotorz + (debinfo->variable_start).z;
+    NuVecRotateZ(&local_60, &local_60, rz);
+    NuVecRotateY(&local_60, &local_60, ry);
+    NuVecMtxTransform(&local_60, &local_60, &current_deb_key->emitrotmtx);
+    deb->x = local_60.x;
+    deb->y = local_60.y;
+    deb->z = local_60.z;
+    local_60.y =
+        ((float)(randy()) * (debinfo->variable_emit_ranscale).x - (debinfo->variable_emit).x) + debinfo->emitmag;
+    local_60.x = local_60.z = 0.0f;
+    NuVecRotateZ(&local_60, &local_60, rz);
+    NuVecRotateY(&local_60, &local_60, ry);
+    NuVecMtxTransform(&local_60, &local_60, &current_deb_key->emitrotmtx);
+    deb->mx = local_60.x;
+    deb->my = local_60.y;
+    deb->mz = local_60.z;
+    if (current_deb_key->genptr != NULL) {
+        (*current_deb_key->genptr)(current_deb_key, debinfo, deb);
+    }
+    deb->x = deb->x + current_deb_key->toffx;
+    deb->y = deb->y + current_deb_key->toffy;
+    deb->z = deb->z + current_deb_key->toffz;
+    if (debinfo->DmaDebTypePointer == NULL) {
+        GenericDebinfoDmaTypeUpdate(debinfo);
+    }
+    if ((debinfo->variable_emit).y == 0.0f) {
+        current_deb_key->rotory = 0;
+    } else {
+        current_deb_key->rotory = current_deb_key->rotory + (short)(s32)(debinfo->variable_emit).y;
+    }
+    if ((debinfo->variable_emit).z == 0.0f) {
+        current_deb_key->rotorz = 0;
+    } else {
+        current_deb_key->rotorz = current_deb_key->rotorz + (short)(s32)(debinfo->variable_emit).z;
+    }
+    return deb;
+}
+
+//NGC MATCH
+inline struct uv1deb* GenDebIndexSpheroid(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo) {
+    struct uv1deb* deb;
+    s32 ry;
+    s32 rz;
+    struct nuvec_s emit;
+    struct numtx_s sscale;
+
+    if (current_deb_key->pointer >= current_deb_key->debcount) {
+        current_deb_key->pointer = 0;
+    }
+    deb = current_deb_key->chunks[current_deb_key->pointer / 0x20]->debris;
+    deb = deb + (current_deb_key->pointer++ % 0x20);
+    deb->time = globaltime;
+    deb->etime = 64.0f / debinfo->etime;
+    emit.y = (float)(randy() * 1.0/(RAND_MAX + 1.0)); // 3e 00 00 00 00 00 00 00
+    emit.x = emit.z = 0.0f;
+    ry = (s32)(randy() * 0.0000152587890625);
+    rz = (s32)(randy() * 0.000030517578125);
+    NuVecRotateZ(&emit, &emit, rz);
+    NuVecRotateY(&emit, &emit, ry);
+    NuMtxSetIdentity(&sscale);
+    sscale._00 = (debinfo->variable_start).x;
+    sscale._11 = (debinfo->variable_start).y;
+    sscale._22 = (debinfo->variable_start).z;
+    NuVecMtxTransform(&emit, &emit, &sscale);
+    NuVecMtxTransform(&emit, &emit, &current_deb_key->emitrotmtx);
+    deb->x = emit.x;
+    deb->y = emit.y;
+    deb->z = emit.z;
+    emit.x = randy() * (debinfo->variable_emit_ranscale).x - (debinfo->variable_emit).x;
+    emit.y = (randy() * (debinfo->variable_emit_ranscale).y - (debinfo->variable_emit).y) + debinfo->emitmag;
+    emit.z = (float)randy() * (debinfo->variable_emit_ranscale).z - (debinfo->variable_emit).z;
+    NuVecMtxTransform(&emit, &emit, &current_deb_key->emitrotmtx);
+    deb->mx = emit.x;
+    deb->my = emit.y;
+    deb->mz = emit.z;
+    if (current_deb_key->genptr != NULL) {
+        (current_deb_key->genptr)(current_deb_key, debinfo, deb);
+    }
+    deb->x = deb->x + current_deb_key->toffx;
+    deb->y = deb->y + current_deb_key->toffy;
+    deb->z = deb->z + current_deb_key->toffz;
+    if (debinfo->DmaDebTypePointer == NULL) {
+        GenericDebinfoDmaTypeUpdate(debinfo);
+    }
+    return deb;
+}
+
+//NGC MATCH
+inline struct uv1deb* GenDebIndexBounceY(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo) {
+    struct uv1deb* deb;
+    struct rdata_s* chunk;
+    struct nuvec_s emit;
+    float quad1;
+    float quad2;
+
+    if (current_deb_key->pointer >= current_deb_key->debcount) {
+        current_deb_key->pointer = 0;
+    }
+    chunk = current_deb_key->chunks[current_deb_key->pointer / 0x20];
+    deb = &chunk->debris[current_deb_key->pointer % 0x20];
+    deb->time = globaltime;
+    deb->etime = 64.0f / debinfo->etime;
+    emit.x = (float)randy() * (debinfo->variable_start_ranscale).x - (debinfo->variable_start).x;
+    emit.y = (float)randy() * (debinfo->variable_start_ranscale).y - (debinfo->variable_start).y;
+    emit.z = (float)randy() * (debinfo->variable_start_ranscale).z - (debinfo->variable_start).z;
+    NuVecMtxTransform(&emit, &emit, &current_deb_key->emitrotmtx);
+    deb->x = emit.x;
+    deb->y = emit.y;
+    deb->z = emit.z;
+    emit.x = (float)randy() * (debinfo->variable_emit_ranscale).x - (debinfo->variable_emit).x;
+    emit.y = ((float)randy() * (debinfo->variable_emit_ranscale).y - (debinfo->variable_emit).y) + debinfo->emitmag;
+    emit.z = (float)randy() * (debinfo->variable_emit_ranscale).z - (debinfo->variable_emit).z;
+    NuVecMtxTransform(&emit, &emit, &current_deb_key->emitrotmtx);
+    deb->mx = emit.x;
+    deb->my = emit.y;
+    deb->mz = emit.z;
+
+    #define MAX(a, b) ((a) > (b) ? (a) : (b))
+    #define MIN(a, b) ((a) < (b) ? (a) : (b))
+    if ((SolveQuadratic(debinfo->grav, deb->my, deb->y - current_deb_key->refoff, &quad1, &quad2) != 0) &&
+        (MAX(quad1, quad2) > 0.0f) &&
+        (MAX(quad1, quad2) < debinfo->etime) && 
+        (freechunkcontrolsptr < 0x199)) {
+        
+        freechunkcontrols[freechunkcontrolsptr]->chunk = chunk;
+        freechunkcontrols[freechunkcontrolsptr]->delay = MAX(quad1, quad2) * 60;
+        freechunkcontrols[freechunkcontrolsptr]->action = DEBRIS_CHUNK_CONTROL_DO_BOUNCEY;
+        freechunkcontrols[freechunkcontrolsptr]->owner = NULL;
+        freechunkcontrols[freechunkcontrolsptr]->type = current_deb_key->type;
+        freechunkcontrols[freechunkcontrolsptr]->refroty = 0;
+        freechunkcontrols[freechunkcontrolsptr]->refrotz = 0;
+        freechunkcontrols[freechunkcontrolsptr]->refoff = current_deb_key->refoff;
+        freechunkcontrols[freechunkcontrolsptr]->refbounce = current_deb_key->refbounce;
+        freechunkcontrols[freechunkcontrolsptr]->ivariable = current_deb_key->pointer % 0x20;
+        freechunkcontrols[freechunkcontrolsptr]->fvariable = MAX(quad1, quad2);
+        AddChunkControlToStack(
+            freechunkcontrols[freechunkcontrolsptr], &debris_chunk_control_stack[debris_chunk_control_stack_index]
+        );
+        freechunkcontrolsptr++;
+        
+    }
+    
+    if (current_deb_key->genptr != NULL) {
+        (current_deb_key->genptr)(current_deb_key, debinfo, deb);
+    }
+    current_deb_key->pointer++;
+    deb->x = deb->x + current_deb_key->toffx;
+    deb->y = deb->y + current_deb_key->toffy;
+    deb->z = deb->z + current_deb_key->toffz;
+    if (debinfo->DmaDebTypePointer == NULL) {
+        GenericDebinfoDmaTypeUpdate(debinfo);
+    }
+    return deb;
+}
+
+struct nuvec_s lbl_80119E30 = {1.0f, 0.0f, 0.0f};
+
+//NGC MATCH
+inline struct uv1deb* GenDebIndexBounceXZ(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo) {
+    struct uv1deb* deb;
+    struct rdata_s* chunk;
+    struct nuvec_s emit;
+    struct nuvec_s normal;
+    struct nuvec_s poffset;
+    struct nuvec_s debend;
+    struct nuvec_s deboff0;
+    struct nuvec_s deboff1;
+    float dotp0;
+    float dotp1;
+    float timpact;
+
+    normal = lbl_80119E30;
+    if (current_deb_key->pointer >= current_deb_key->debcount) {
+        current_deb_key->pointer = 0;
+    }
+    chunk = current_deb_key->chunks[current_deb_key->pointer / 0x20];
+    deb = &chunk->debris[current_deb_key->pointer % 0x20];
+    deb->time = globaltime;
+    deb->etime = 64.0f / debinfo->etime;
+    emit.x = (float)randy() * (debinfo->variable_start_ranscale).x - (debinfo->variable_start).x;
+    emit.y = (float)randy() * (debinfo->variable_start_ranscale).y - (debinfo->variable_start).y;
+    emit.z = (float)randy() * (debinfo->variable_start_ranscale).z - (debinfo->variable_start).z;
+    NuVecMtxTransform(&emit, &emit, &current_deb_key->emitrotmtx);
+    deb->x = emit.x;
+    deb->y = emit.y;
+    deb->z = emit.z;
+    emit.x = (float)randy() * (debinfo->variable_emit_ranscale).x - (debinfo->variable_emit).x;
+    emit.y = ((float)randy() * (debinfo->variable_emit_ranscale).y - (debinfo->variable_emit).y) + debinfo->emitmag;
+    emit.z = (float)randy() * (debinfo->variable_emit_ranscale).z - (debinfo->variable_emit).z;
+    NuVecMtxTransform(&emit, &emit, &current_deb_key->emitrotmtx);
+    deb->mx = emit.x;
+    deb->my = emit.y;
+    deb->mz = emit.z;
+    NuVecRotateY(&normal, &normal, (s32)current_deb_key->refroty);
+    NuVecScale(&poffset, &normal, current_deb_key->refoff);
+    debend.x = debinfo->etime * deb->mx + deb->x;
+    debend.y = 0.0f;
+    debend.z = debinfo->etime * deb->mz + deb->z;
+    NuVecSub(&deboff0, &poffset, (struct nuvec_s*)&deb->x);
+    NuVecSub(&deboff1, &poffset, &debend);
+    dotp0 = (deboff0.x * normal.x + deboff0.z * normal.z);
+    dotp1 = (deboff1.x * normal.x + deboff1.z * normal.z);
+    if ((((dotp0 < 0.0f) && (0.0f < dotp1)) || ((0.0f < dotp0 && (dotp1 < 0.0f))))
+        && (timpact = debinfo->etime * ((0.0f - dotp0) / (dotp1 - dotp0)), freechunkcontrolsptr < 0x199))
+    {
+        freechunkcontrols[freechunkcontrolsptr]->chunk = chunk;
+        freechunkcontrols[freechunkcontrolsptr]->delay = (s32)(timpact * 60.0f);
+        freechunkcontrols[freechunkcontrolsptr]->action = DEBRIS_CHUNK_CONTROL_DO_BOUNCEXZ;
+        freechunkcontrols[freechunkcontrolsptr]->owner = NULL;
+        freechunkcontrols[freechunkcontrolsptr]->type = current_deb_key->type;
+        freechunkcontrols[freechunkcontrolsptr]->refroty = current_deb_key->refroty;
+        freechunkcontrols[freechunkcontrolsptr]->refrotz = 0;
+        freechunkcontrols[freechunkcontrolsptr]->refoff = current_deb_key->refoff;
+        freechunkcontrols[freechunkcontrolsptr]->refbounce = current_deb_key->refbounce;
+        freechunkcontrols[freechunkcontrolsptr]->ivariable = (s32)(current_deb_key->pointer % 0x20);
+        freechunkcontrols[freechunkcontrolsptr]->fvariable = timpact;
+        AddChunkControlToStack(
+            freechunkcontrols[freechunkcontrolsptr], &debris_chunk_control_stack[debris_chunk_control_stack_index]
+        );
+        freechunkcontrolsptr++;
+    }
+    if (current_deb_key->genptr != NULL) {
+        (current_deb_key->genptr)(current_deb_key, debinfo, deb);
+    }
+    current_deb_key->pointer++;
+    deb->x = deb->x + current_deb_key->toffx;
+    deb->y = deb->y + current_deb_key->toffy;
+    deb->z = deb->z + current_deb_key->toffz;
+    if (debinfo->DmaDebTypePointer == NULL) {
+        GenericDebinfoDmaTypeUpdate(debinfo);
+    }
+    return deb;
+}
+
+//NGC MATCH
+inline struct uv1deb*
+GenDebIndexPos(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo, struct nuvec_s* pos) {
+    struct uv1deb* deb;
+
+    if (current_deb_key->pointer >= current_deb_key->debcount) {
+        current_deb_key->pointer = 0;
+    }
+    deb = current_deb_key->chunks[current_deb_key->pointer / 0x20]->debris;
+    deb = deb + (current_deb_key->pointer++ % 0x20);
+    deb->time = globaltime;
+    deb->etime = 64.0f / debinfo->etime;
+    deb->x = (float)randy() * debinfo->rsx + debinfo->osx;
+    deb->y = (float)randy() * debinfo->rsy + debinfo->osy;
+    deb->z = (float)randy() * debinfo->rsz + debinfo->osz;
+    deb->mx = (float)randy() * debinfo->rvx + debinfo->ovx;
+    deb->my = (float)randy() * debinfo->rvy + debinfo->ovy;
+    deb->mz = (float)randy() * debinfo->rvz + debinfo->ovz;
+    if (current_deb_key->genptr != NULL) {
+        (current_deb_key->genptr)(current_deb_key, debinfo, deb);
+    }
+    if (debinfo->DmaDebTypePointer == NULL) {
+        GenericDebinfoDmaTypeUpdate(debinfo);
+    }
+    return deb;
+}
+
+//NGC MATCH
+inline void GenDebIndexSort(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo) {
+    GenDebIndex(current_deb_key, debinfo);
+    return;
+}
+
+//NGC MATCH
+inline struct uv1deb*
+GenDebIndexPosRandTime(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo, struct nuvec_s* pos) {
+    struct uv1deb* deb;
+
+    if (current_deb_key->pointer >= current_deb_key->debcount) {
+        current_deb_key->pointer = 0;
+    }
+    deb = current_deb_key->chunks[current_deb_key->pointer / 0x20]->debris;
+    deb = deb + (current_deb_key->pointer++ % 0x20);
+    deb->time = globaltime;
+    deb->etime = 64.0f / (debinfo->etime + (debinfo->etime * randy()) / 1.503239e+09f);
+    deb->x = (float)randy() * debinfo->rsx + debinfo->osx;
+    deb->y = (float)randy() * debinfo->rsy + debinfo->osy;
+    deb->z = (float)randy() * debinfo->rsz + debinfo->osz;
+    deb->mx = (float)randy() * debinfo->rvx + debinfo->ovx;
+    deb->my = (float)randy() * debinfo->rvy + debinfo->ovy;
+    deb->mz = (float)randy() * debinfo->rvz + debinfo->ovz;
+    if (current_deb_key->genptr != NULL) {
+        (current_deb_key->genptr)(current_deb_key, debinfo, deb);
+    }
+    if (debinfo->DmaDebTypePointer == NULL) {
+        GenericDebinfoDmaTypeUpdate(debinfo);
+    }
+    return deb;
+}
+
+//NGC MATCH
+inline struct uv1deb* GenDebIndexWaterFall(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo) {
+    float dist;
+    struct uv1deb* deb;
+
+    if (current_deb_key->pointer >= current_deb_key->debcount) {
+        current_deb_key->pointer = 0;
+    }
+    deb = current_deb_key->chunks[current_deb_key->pointer / 0x20]->debris;
+    deb = deb + (current_deb_key->pointer++ % 0x20);
+    deb->time = globaltime;
+    deb->etime = 64.0f / debinfo->etime;
+    dist = (randy() * 0.6 * (1.0/(RAND_MAX+1.0))) - 0.3f; //4.656612873077393e-10
+    deb->x = dist * NuTrigTable[14000];
+    deb->z = dist * NuTrigTable[30384];
+    dist = 1.0 + (randy() * 1.5 * (1.0/(RAND_MAX+1.0))); //4.656612873077393e-10
+    deb->mx = deb->x * 1.5f + dist * NuTrigTable[30000];
+    deb->mz = deb->z * 1.5f + dist * NuTrigTable[46384];
+    deb->y = (float)randy() * debinfo->rsy + debinfo->osy;
+    deb->my = (float)randy() * debinfo->rvy + debinfo->ovy;
+    if (current_deb_key->genptr != NULL) {
+        (current_deb_key->genptr)(current_deb_key, debinfo, deb);
+    }
+    if (debinfo->DmaDebTypePointer == NULL) {
+        GenericDebinfoDmaTypeUpdate(debinfo);
+    }
+    return deb;
+}
+
+//NGC MATCH
+inline struct uv1deb* GenDebIndexWaterFallSplash(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo) {
+    struct uv1deb* deb;
+    float x, y, z;
+
+    if (current_deb_key->pointer >= current_deb_key->debcount) {
+        current_deb_key->pointer = 0;
+    }
+    deb = current_deb_key->chunks[current_deb_key->pointer / 0x20]->debris;
+    deb = deb + (current_deb_key->pointer++ % 0x20);
+    deb->time = globaltime;
+    deb->etime = 64.0f / debinfo->etime;
+    x = randy() * (0.9-0.7)*(1/(RAND_MAX+1.0)) + 0.7; // random(0.7, 0.9)  //4.656612873077393e-10
+    y = randy() * ((49152.0-16384.0)*(1/(RAND_MAX+1.0))) + 16384.0; // random(16384.0, 49152.0) //1.52587890625e-05
+    z = randy() * (2.5 - 1.0) * (1.0/(RAND_MAX+1.0)) + 1.0; // random(1.0, 1.5) //4.656612873077393e-10
+    deb->mx = deb->x * 2;
+    deb->mz = deb->z * 2;
+    deb->y = (randy()* debinfo->rsy) + debinfo->osy;
+    deb->my = (randy() * debinfo->rvy) + debinfo->ovy;
+    if (current_deb_key->genptr != NULL) {
+        (current_deb_key->genptr)(current_deb_key, debinfo, deb);
+    }
+    if (debinfo->DmaDebTypePointer == NULL) {
+        GenericDebinfoDmaTypeUpdate(debinfo);
+    }
+    return deb;
+}
+
+//NGC MATCH
+inline void
+GenDebMomAdjFromPos(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo, struct uv1deb* deb) {
+    deb->mx = deb->x + deb->x;
+    deb->mz = deb->z + deb->z;
+    return;
+}
+
+//NGC MATCH
+inline void
+GenDebMomAdjFromPosAll(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo, struct uv1deb* deb) {
+    deb->mx = deb->x * 5.4f;
+    deb->my = deb->y * 5.4f;
+    deb->mz = deb->z * 5.4f;
+    return;
+}
+
+//NGC MATCH
+inline void
+GenDebMomAdjFromPosRev(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo, struct uv1deb* deb) {
+    deb->mx = -deb->x;
+    deb->mz = -deb->z;
+    return;
+}
+
+//NGC MATCH
+inline void
+GenDebMomAdjFromSplash(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo, struct uv1deb* deb) {
+    deb->mx = deb->x * 4.0f;
+    deb->mz = deb->z * 4.0f;
+    return;
+}
+
+//NGC MATCH
+inline void
+GenDebMomAdjFromAshRock(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo, struct uv1deb* deb) {
+    deb->mx = deb->x * 16.0f;
+    deb->mz = deb->z * 16.0f;
+    return;
+}
+
+//NGC MATCH
+inline void
+GenDebMomAdjFromPosRevTree(struct debkeydatatype_s* current_deb_key, struct debinftype* debinfo, struct uv1deb* deb) {
+    deb->mx += deb->x * -0.6f;
+    deb->mz += deb->z * -0.6f;
+    deb->y -= (float)(sqrt(deb->x * deb->x + deb->z * deb->z) * 0.4);
+    deb->etime = 64.0f / (debinfo->etime + (debinfo->etime * randy()) / 1.503239e+09f); //1.503239e+09f
+    return;
 }
 
 //NGC MATCH
@@ -791,6 +1294,100 @@ void DebrisDoSounds(struct debkeydatatype_s *debkey,s32 flag) {
           }
     }
   }
+  return;
+}
+
+//NGC MATCH
+void DebrisDraw(s32 pause) {
+  s32 ff;
+  s32 tt;
+  struct numtx_s mtx;
+  s32 lp;
+  struct nuvec_s tv;
+  s32 drawflag;
+  struct debinftype *dt;
+  struct nuvec_s minvec;
+  struct nuvec_s maxvec;
+  
+  if (render_debris_enabled == 0) {
+        return;
+  }
+    if (scaneffect != 0) {
+      testeffect++;
+    }
+    if (testeffect == -1) {
+      ff = 0;
+      tt = 0x100;
+    }
+    else {
+      ff = testeffect;
+      tt = ff + 1;
+    }
+    for(lp = ff; lp < tt; lp++) {
+        if (ParticleChunkRenderStack[lp].chunk != NULL) {
+            dt = ParticleChunkRenderStack[lp].debinfo;
+          if (dt->DmaDebTypePointer != NULL) {
+          drawflag = 1;
+          if (ParticleChunkRenderStack[lp].debdata != NULL) {
+                if ((dt->drawcutoff > 0.0f) && 
+                    (CameraEmitterDistance((struct nuvec_s*)&ParticleChunkRenderStack[lp].debdata->x) > dt->drawcutoff)) {
+                  drawflag = 0;
+                }
+                if (dt->gensort == 0) {
+                  if (dt->variable_key == -1 || &debkeydata[dt->variable_key] != ParticleChunkRenderStack[lp].debdata) {
+                      mtx = ParticleChunkRenderStack[lp].debdata->emitrotmtx;
+                      NuMtxTranslate(&mtx,((struct nuvec_s*)&ParticleChunkRenderStack[lp].debdata->x));
+                      maxvec.x = dt->variable_start.x + ((dt->emitmag + dt->variable_emit.x) * dt->etime);
+                      maxvec.y = dt->variable_start.y + (dt->emitmag + dt->variable_emit.y) * dt->etime;
+                      maxvec.z = dt->variable_start.z + (dt->emitmag + dt->variable_emit.z) * dt->etime;
+                      maxvec.x += (dt->maxsize / 10000.0f);
+                      maxvec.y += (dt->maxsize / 10000.0f);
+                      maxvec.z += (dt->maxsize / 10000.0f);
+                      maxvec.x += 0.2f;
+                      maxvec.y += 0.2f;
+                      maxvec.z += 0.2f;
+                      minvec.x = -maxvec.x;
+                      minvec.y = -maxvec.y;
+                      minvec.z = -maxvec.z;
+                      if (dt->grav > 0.0f) {
+                        maxvec.y += (dt->grav * dt->etime) * dt->etime;
+                      }
+                      else {
+                        if (dt->grav < 0.0f) {
+                          minvec.y += (dt->grav * dt->etime) * dt->etime;
+                        }  
+                      }
+                      if (NuCameraClipTestExtents(&minvec,&maxvec,&mtx) == 0) {
+                        drawflag = 0;
+                      }
+                    }
+                }
+              mtx = ParticleChunkRenderStack[lp].debdata->rotmtx;
+                tv.x = ParticleChunkRenderStack[lp].debdata->x;
+                tv.y = ParticleChunkRenderStack[lp].debdata->y;
+              tv.z = ParticleChunkRenderStack[lp].debdata->z;
+          }
+          else {
+                if (0.0f < dt->drawcutoff) {
+                    if (CameraEmitterDistance((struct nuvec_s*)&ParticleChunkRenderStack[lp].x) > dt->drawcutoff) {
+                       drawflag = 0;
+                    }
+                }
+                mtx = ParticleChunkRenderStack[lp].rotmtx;
+                tv.x = ParticleChunkRenderStack[lp].x;
+                tv.y = ParticleChunkRenderStack[lp].y;
+                tv.z = ParticleChunkRenderStack[lp].z;
+          }
+          if (drawflag != 0) {
+            NuMtxTranslate(&mtx,&tv);
+            NuRndrParticleGroup((struct _sceDmaTag *)ParticleChunkRenderStack[lp].chunk,
+                                ParticleChunkRenderStack[lp].debinfo->DmaDebTypePointer,
+                                DebMat[ParticleChunkRenderStack[lp].debinfo->mat],globaltime,
+                                &mtx);
+          }
+        }
+      }
+    }
   return;
 }
 

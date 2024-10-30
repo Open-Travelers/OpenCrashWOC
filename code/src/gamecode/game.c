@@ -3,7 +3,7 @@ TODO
 
 HubSelect
 HubLevelSelect
-HubDrawItems
+HubDrawItems  89%
 InitVehicleToggles
 ResetVehicleControl
 ToggleVehicle 73%
@@ -15,7 +15,6 @@ GemPathTransporter
 JonProbe  98%
 AddAward 99%
 DrawAwards 98%
-ResetWumpa 93%*
 UpdateWumpa 87%**
 UpdateMask  95%
 ProcMenu 99%
@@ -473,26 +472,29 @@ void AddScreenWumpa(float x,float y,float z,s32 count) {
   return;
 }
 
-//93.88% NGC
+//MATCH NGC
 void ResetWumpa(void) {
     struct wumpa_s* wump;
     s32 i;
-    s32 gempath_reset = 0;
+    s32 gempath_reset;
 
+    gempath_reset = 0;
     if ((Rail[7].type == 3)
         && (AheadOfCheckpoint((s32)gempath_RPos.iRAIL, (s32)gempath_RPos.iALONG, gempath_RPos.fALONG) != 0))
     {
         gempath_reset = 1;
     }
+    
     wump = Wumpa;
     for (i = 0; i < WUMPACOUNT; i++, wump++) {
         GetALONG(&wump->pos0, NULL, -1, -1, 1);
-        wump->pos1 = wump->pos0;
         wump->iRAIL = temp_iRAIL;
         wump->iALONG = temp_iALONG;
         wump->fALONG = temp_fALONG;
-        wump->pos = wump->pos0;
+        wump->pos1 = wump->pos0;
+        wump->pos = wump->pos1;
         wump->shadow = NewShadowMask(&wump->pos, 0.0, -1);
+        
         if (wump->shadow != 2000000.0f) {
             wump->surface_type = (char)ShadowInfo();
             FindAnglesZX(&ShadNorm);
@@ -503,27 +505,30 @@ void ResetWumpa(void) {
             wump->surface_xrot = 0;
             wump->surface_zrot = 0;
         }
-        if (wump->iRAIL != -1 && Rail[wump->iRAIL].type == 1 && Bonus == 4) {
+        
+        if ((wump->iRAIL != -1 && (Rail[wump->iRAIL].type == 1) && (Bonus == 4))) {
             if (wump->active != 2) {
                 wump->active = 0;
             }
-        } else {
-            //missing branch, gempath_reset condition
-            if ((wump->iRAIL != -1 && Rail[wump->iRAIL].type == 3 && gempath_reset)
-                || (AheadOfCheckpoint(wump->iRAIL, wump->iALONG, wump->fALONG) != 0)) {
-                wump->active = 2;
-            } else if (wump->active != 2) {
-                wump->active = 0;
-            }
+        } else if ((wump->iRAIL != -1 && Rail[wump->iRAIL].type == 3)) {
+            if(gempath_reset != 0) goto Reset;
+        } else if (AheadOfCheckpoint(wump->iRAIL, wump->iALONG, wump->fALONG) != 0) {
+Reset:
+            wump->active = 2;
+        } else if (wump->active != 2) {
+            wump->active = 0;
         }
     }
+    
     for (i; i < 0x140; i++) {
         wump->active = 0;
         wump++;
     }
+    
     for (i = 0; i < 0x20; i++) {
         NewWumpa[i].active = 0;
     }
+    
     for (i = 0; i < 0x20; i++) {
         WScr[i].timer = 0.0f;
     }

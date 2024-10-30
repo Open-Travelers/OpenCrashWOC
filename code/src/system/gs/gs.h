@@ -91,34 +91,33 @@ enum gs_texturetype_e
     GS_TEX_RGB16 = 0
 };
 
-// Size: 0x40, DWARF: 0x8E9296
-struct _GSMATRIX
+// Size: 0x40
+typedef struct _GSMATRIX
 {
-    float _11; // Offset: 0x0, DWARF: 0x8E92B4
-    float _12; // Offset: 0x4, DWARF: 0x8E92DA
-    float _13; // Offset: 0x8, DWARF: 0x8E9300
-    float _14; // Offset: 0xC, DWARF: 0x8E9326
-    float _21; // Offset: 0x10, DWARF: 0x8E934C
-    float _22; // Offset: 0x14, DWARF: 0x8E9372
-    float _23; // Offset: 0x18, DWARF: 0x8E9398
-    float _24; // Offset: 0x1C, DWARF: 0x8E93BE
-    float _31; // Offset: 0x20, DWARF: 0x8E93E4
-    float _32; // Offset: 0x24, DWARF: 0x8E940A
-    float _33; // Offset: 0x28, DWARF: 0x8E9430
-    float _34; // Offset: 0x2C, DWARF: 0x8E9456
-    float _41; // Offset: 0x30, DWARF: 0x8E947C
-    float _42; // Offset: 0x34, DWARF: 0x8E94A2
-    float _43; // Offset: 0x38, DWARF: 0x8E94C8
-    float _44; // Offset: 0x3C, DWARF: 0x8E94EE
-};
+    float _11; // Offset: 0x0
+    float _12; // Offset: 0x4
+    float _13; // Offset: 0x8
+    float _14; // Offset: 0xC
+    float _21; // Offset: 0x10
+    float _22; // Offset: 0x14
+    float _23; // Offset: 0x18
+    float _24; // Offset: 0x1C
+    float _31; // Offset: 0x20
+    float _32; // Offset: 0x24
+    float _33; // Offset: 0x28
+    float _34; // Offset: 0x2C
+    float _41; // Offset: 0x30
+    float _42; // Offset: 0x34
+    float _43; // Offset: 0x38
+    float _44; // Offset: 0x3C
+} _GSMATRIX;
 
-// Size: 0xC, DWARF: 0x8E9114
-struct _GS_VECTOR3
+typedef struct _GS_VECTOR3 
 {
-    float x; // Offset: 0x0, DWARF: 0x8E9134
-    float y; // Offset: 0x4, DWARF: 0x8E9158
-    float z; // Offset: 0x8, DWARF: 0x8E917C
-};
+    float x; // Offset: 0x0
+    float y; // Offset: 0x4
+    float z; // Offset: 0x8
+} _GS_VECTOR3;
 
 // Size: 0x10, DWARF: 0x8E91C3
 struct _GS_VECTOR4
@@ -266,28 +265,27 @@ struct _GS_VERTEXSKIN
     float v; // Offset: 0x34, DWARF: 0x8E9D01
 };
 
-// Size: 0x18, DWARF: 0x8E98AB
-struct _GS_VERTEXNORM
-{
-    float x; // Offset: 0x0, DWARF: 0x8E98CE
-    float y; // Offset: 0x4, DWARF: 0x8E98F2
-    float z; // Offset: 0x8, DWARF: 0x8E9916
-    float nx; // Offset: 0xC, DWARF: 0x8E993A
-    float ny; // Offset: 0x10, DWARF: 0x8E995F
-    float nz; // Offset: 0x14, DWARF: 0x8E9984
-};
+// total size: 0x18
+typedef struct _GS_VERTEXNORM {
+    float x; // offset 0x0, size 0x4
+    float y; // offset 0x4, size 0x4
+    float z; // offset 0x8, size 0x4
+    float nx; // offset 0xC, size 0x4
+    float ny; // offset 0x10, size 0x4
+    float nz; // offset 0x14, size 0x4
+} _GS_VERTEXNORM;
 
-// Size: 0x1C, DWARF: 0x8E9762
-struct _GS_VERTEXTL
+// Size: 0x1C
+typedef struct _GS_VERTEXTL
 {
-    float x; // Offset: 0x0, DWARF: 0x8E9783
-    float y; // Offset: 0x4, DWARF: 0x8E97A7
-    float z; // Offset: 0x8, DWARF: 0x8E97CB
-    float rhw; // Offset: 0xC, DWARF: 0x8E97EF
-    int diffuse; // Offset: 0x10, DWARF: 0x8E9815
-    float u; // Offset: 0x14, DWARF: 0x8E983F
-    float v; // Offset: 0x18, DWARF: 0x8E9863
-};
+    float x; // Offset: 0x0
+    float y; // Offset: 0x4
+    float z; // Offset: 0x8
+    float rhw; // Offset: 0xC
+    int diffuse; // Offset: 0x10
+    float u; // Offset: 0x14
+    float v; // Offset: 0x18
+} _GS_VERTEXTL;
 
 // Size: 0x14, DWARF: 0x8E9F47
 struct _GS_VERTEXPSTL

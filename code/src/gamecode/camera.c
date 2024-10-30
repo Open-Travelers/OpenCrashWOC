@@ -1,12 +1,8 @@
 #include "gamecode/camera.h"
 
 /*
-	InitRails	    97% ??
-	BestRailPosition    86%*
-	MoveRailPosition    79%
-	RailInfo	    70%
-	InSplineArea 	    57%*
-	MoveGameCamera	    22%*
+	RailInfo	    73%*
+	MoveGameCamera	    22%**
 */
 
 //MATCH NGC
@@ -55,20 +51,18 @@ void BlendGameCamera(struct cammtx_s *cam,float time) {
     return;
 }
 
-//96%
+//NGC MATCH
 void InitRails(void) {
-    s32 n;
+    struct rail_s* rail;
     s32 i;
     s16 camlen;
     s16 leftlen; 
     s16 rightlen;
-    struct rail_s* rail;
-
     
     nRAILS = 0;
     if (world_scene[0] != NULL) {
-        for (i = 0, n = 8; n != 0;  n--, i++) {
-            rail = &Rail[i];
+        rail = Rail;
+        for (i = 0; i < 8;  i++, rail++) {
             rail->in_distance = 25.0f;
             rail->out_distance = 25.0f;
             rail->type = -1;
@@ -79,12 +73,12 @@ void InitRails(void) {
             rail->pRIGHT = NULL;
             rail->pOUTCAM = NULL;
             rail->pOUTPLAT = NULL;
-            rail->circuit = '\0';
+            rail->circuit = 0;
             sprintf(tbuf,"%s%s",tCamRail,tRailExt[i]);
             rail->pCAM = NuSplineFind(world_scene[0],tbuf);
             if (rail->pCAM != NULL) {
                 camlen = rail->pCAM->len;
-                if (1 < camlen) {
+                if (camlen > 1) {
                     sprintf(tbuf,"%s%s",tLeftRail,tRailExt[i]);
                     rail->pLEFT = NuSplineFind(world_scene[0],tbuf);
                     if (rail->pLEFT != NULL) {
@@ -95,7 +89,7 @@ void InitRails(void) {
                             if (rail->pRIGHT != NULL) {
                                 rightlen = rail->pRIGHT->len; 
                                 if (rightlen == leftlen) {
-                                    rail->edges = rightlen + -1;
+                                    rail->edges = rightlen - 1;
                                     sprintf(tbuf,"%s%s",tInPlatRail,tRailExt[i]);
                                     rail->pINPLAT = NuSplineFind(world_scene[0],tbuf);
                                     if (rail->pINPLAT != NULL) {
@@ -111,23 +105,22 @@ void InitRails(void) {
                                     sprintf(tbuf,"%s%s",tOutCamRail,tRailExt[i]);
                                     rail->pOUTCAM = NuSplineFind(world_scene[0],tbuf);
                                     if (strcmp(tRailExt[i],"bonus") == 0) {
-                                        rail->type = '\x01';
+                                        rail->type = 1;
                                     }
                                     else {
                                         if (strcmp(tRailExt[i],"death") == 0) {
-                                            rail->type = '\x02';
+                                            rail->type = 2;
                                         }
                                         else {
                                             if (strcmp(tRailExt[i],"gem") == 0) {
-                                                rail->type = '\x03';
+                                                rail->type = 3;
                                             }
                                             else {
-                                                rail->type = '\0';
+                                                rail->type = 0;
                                             }
                                         }
                                     }
                                     nRAILS++;
-                                    
                                 }
                             }
                         }
@@ -139,51 +132,41 @@ void InitRails(void) {
     return;
 }
 
-
-//86%
-float BestRailPosition(struct NuVec* pos, struct RPos_s* rpos, s32 iRAIL, s32 iALONG) {
-    struct NuVec local_a0;
-    struct NuVec local_90;
-    struct NuVec local_80;
-    struct NuVec local_70;
-    struct NuVec local_60;
-    struct NuVec* pcVar6;
-    struct NuVec* pcVar15;
-    BOOL bVar2;
+//NGC MATCH
+float BestRailPosition(struct nuvec_s* pos, struct RPos_s* rpos, s32 iRAIL, s32 iALONG) {
+    struct nuvec_s v;
+    struct nuvec_s v0;
+    struct nuvec_s v1;
+    struct nuvec_s v2;
+    struct nuvec_s v3;
+    struct nuvec_s* p0;
+    struct nuvec_s* p1;
+    struct nuvec_s* p3;
+    struct nuvec_s* p2;
+    s32 iVar1;
+    s32 iVar2;
     s32 iVar3;
+    s32 iVar4;
     s32 iVar5;
+    s32 iVar6;
     s32 iVar7;
     s32 iVar8;
-    s32 iVar9;
-    s32 unaff_r20;
-    u32 uVar10;
-    u32 uVar11;
-    s32 iVar12;
-    s32 iVar13;
-    s32 iVar14;
-    float dbest;
+    s32 bVar2;
     float d;
+    float dbest;
     float y;
     struct rail_s* rail;
-    int r28;
-    int r24;
-    int r23;
-    int r22;
-    int r21;
-    int r20;
-    int r19;
-    int r18;
 
     bVar2 = 0;
     if ((Level == 6) || (Level == 0x22)) {
         bVar2 = 1;
     }
-    if (bVar2) {
-        local_a0.x = -pos->y;
-        local_a0.y = pos->x;
-        local_a0.z = pos->z;
+    if (bVar2 != 0) {
+        v.x = -pos->y;
+        v.y = pos->x;
+        v.z = pos->z;
     } else {
-        local_a0 = *pos;
+        v = *pos;
     }
     rail = &Rail[iRAIL];
     // dbest = 0.0f;
@@ -196,124 +179,118 @@ float BestRailPosition(struct NuVec* pos, struct RPos_s* rpos, s32 iRAIL, s32 iA
     }
 
     if (iALONG == -1) {
-        r23 = (s32)rail->edges / 2;
+        iVar3 = (s32)rail->edges / 2;
     } else {
-        r23 = iALONG;
+        iVar3 = iALONG;
     }
-    r18 = r23 + 1;
-    r19 = r23 - 1;
-    r22 = 0;
-    r21 = 0;
-    uVar11 = 0;
-    uVar10 = 0;
-    while (1) {
-        if (r22 == 0) {
-            r28 = r23;
-        } else if (r22 == 1) {
-            r28 = r18;
-            r18++;
-        } else {
-            r28 = r19;
-            r19--;
+    iVar8 = iVar3 + 1;
+    iVar7 = iVar3 - 1;
+    iVar4 = 0;
+    iVar5 = 0;
+Loop:
+    if (iVar4 == 0) {
+        iVar1 = iVar3;
+    } else if (iVar4 == 1) {
+        iVar1 = iVar8;
+        iVar8++;
+    } else {
+         iVar1 = iVar7;
+        iVar7--;
+    }
+    if (iVar1 >= 0 && iVar1 < rail->edges) {
+        iVar2 = iVar1 + 1;
+        if ((iVar2 == rail->edges) && (rail->circuit != 0)) {
+            iVar2 = 0;
         }
-        if (r28 >= 0 && r28 < rail->edges) {
-            struct NuVec* r5;
-            struct NuVec* r12;
-            struct NuVec* r9;
-            struct NuVec* r30;
-            r24 = r28 + 1;
-            if ((r24 == rail->edges) && (rail->circuit != 0)) {
-                r24 = 0;
-            }
-            r12 = (char*)rail->pRIGHT->pts + (r28 * rail->pRIGHT->ptsize);
-            r30 = (char*)rail->pRIGHT->pts + (r24 * rail->pRIGHT->ptsize);
-            r5 = (char*)rail->pLEFT->pts + (r24 * rail->pLEFT->ptsize);
-            r9 = (char*)rail->pLEFT->pts + (r28 * rail->pLEFT->ptsize);
-            if (bVar2) {
-                local_90.x = -r9->y;
-                local_90.y = r9->x;
-                local_90.z = r9->z;
+        p0 =  (struct nuvec_s*) (rail->pLEFT->pts + (iVar1 * rail->pLEFT->ptsize));
+        p1 =  (struct nuvec_s*) (rail->pLEFT->pts + (iVar2 * rail->pLEFT->ptsize));
+        p2 = (struct nuvec_s*) (rail->pRIGHT->pts + (iVar2 * rail->pRIGHT->ptsize));
+        p3 = (struct nuvec_s*) (rail->pRIGHT->pts + (iVar1 * rail->pRIGHT->ptsize));
+        if (bVar2 != 0) {
+            v0.x = -p0->y;
+             v0.y = p0->x;
+             v0.z = p0->z;
 
-                local_80.x = -r5->y;
-                local_80.y = r5->x;
-                local_80.z = r5->z;
+               v1.x = -p1->y;
+               v1.y = p1->x;
+               v1.z = p1->z;
 
-                local_70.x = -r30->y;
-                local_70.y = r30->x;
-                local_70.z = r30->z;
+               v2.x = -p2->y;
+               v2.y = p2->x;
+               v2.z = p2->z;
 
-                local_60.x = -r12->y;
-                local_60.y = r12->x;
-                local_60.z = r12->z;
-            } else {
-                local_90 = *r9;
-                local_80 = *r5;
-                local_70 = *r30;
-                local_60 = *r12;
-            }
-            if ((((0.0f <= (local_a0.x - local_90.x) * (local_80.z - local_90.z)
-                       + (local_a0.z - local_90.z) * (local_90.x - local_80.x))
-                  && (0.0f <= (local_a0.x - local_80.x) * (local_70.z - local_80.z)
-                          + (local_a0.z - local_80.z) * (local_80.x - local_70.x)))
-                 && (0.0f <= (local_a0.x - local_70.x) * (local_60.z - local_70.z)
-                         + (local_a0.z - local_70.z) * (local_70.x - local_60.x)))
-                && (0.0f <= (local_a0.x - local_60.x) * (local_90.z - local_60.z)
-                        + (local_a0.z - local_60.z) * (local_60.x - local_90.x)))
-            {
-                d = NuFabs(((local_90.y + local_80.y + local_70.y + local_60.y) * 0.25f - local_a0.y));
-                if (iALONG == -1 && (rpos->iALONG == -1 || d < dbest)) {
+              v3.x = -p3->y;
+              v3.y = p3->x;
+              v3.z = p3->z;
+          } else {
+               v0 = *p0;
+               v1 = *p1;
+              v2 = *p2;
+              v3 = *p3;
+          }
+          if ((((0.0f <= (v.x - v0.x) * (v1.z - v0.z)
+                     + (v.z - v0.z) * (v0.x - v1.x))
+                && (0.0f <= (v.x - v1.x) * (v2.z - v1.z)
+                        + (v.z - v1.z) * (v1.x - v2.x)))
+                && (0.0f <= (v.x - v2.x) * (v3.z - v2.z)
+                        + (v.z - v2.z) * (v2.x - v3.x)))
+             && (0.0f <= (v.x - v3.x) * (v0.z - v3.z)
+                    + (v.z - v3.z) * (v3.x - v0.x)))
+        {
+            d = NuFabs(((v0.y + v1.y + v2.y + v3.y) * 0.25f - v.y));
+            if (iALONG == -1) {
+                if  (rpos->iALONG == -1 || d < dbest) {
                     dbest = d;
-                    r20 = 1;
-                } else {
-                    dbest = d;
-                    r20 = 2;
+                    iVar6 = 1;
                 }
-                if (r20 != 0) {
-                    rpos->iALONG = r28;
-                    rpos->iRAIL = iRAIL;
-                    rpos->i1 = r24;
-                    rpos->i2 = r24 + 1;
-                    if ((rpos->i2 == rail->edges) && (rail->circuit != 0)) {
-                        rpos->i2 = 0;
-                    }
-                    rpos->fALONG = RatioBetweenEdges(&local_a0, &local_60, &local_90, &local_70, &local_80);
-                    rpos->fACROSS = RatioBetweenEdges(&local_a0, &local_90, &local_80, &local_60, &local_70);
-                    if (r20 == 2) {
-                        break;
-                    }
+             } else {
+                dbest = d;
+                 iVar6 = 2;
+            }
+            if (iVar6 != 0) {
+                rpos->iALONG = iVar1;
+                rpos->iRAIL = iRAIL;
+                rpos->i1 = iVar2;
+                rpos->i2 = iVar2 + 1;
+                 if ((rpos->i2 == rail->edges) && (rail->circuit != 0)) {
+                    rpos->i2 = 0;
+                }
+                rpos->fALONG = RatioBetweenEdges(&v, &v3, &v0, &v2, &v1);
+                rpos->fACROSS = RatioBetweenEdges(&v, &v0, &v1, &v3, &v2);
+                if (iVar6 == 2) {
+                    goto Finish;
                 }
             }
-        } else {
-            r21 |= r22;
         }
-        if (r21 == 3) {
-            break;
-        }
-        r22 = (r22 == 1) ? 2 : 1;
+    } else {
+        iVar5 |= iVar4;
     }
+    if (iVar5 == 3) {
+        goto Finish;
+    }
+    iVar4 = (iVar4 == 1) ? 2 : 1;
+    goto Loop;
+
+Finish:
     temp_iRAIL = rpos->iRAIL;
     temp_iALONG = rpos->iALONG;
     temp_fALONG = rpos->fALONG;
     temp_fACROSS = rpos->fACROSS;
 
     if ((rpos->iRAIL != -1) && (temp_iALONG != -1)) {
-        iVar3 = (s32)rpos->i2;
-        iVar12 = (s32)rpos->i1;
-        rpos->vertical = '\0';
-        if ((iVar3 == iVar12) || (rail->edges <= iVar3)) {
-            iVar8 = (s32)(rail->pLEFT)->ptsize;
-            iVar7 = iVar3 * iVar8;
-            iVar8 = iVar12 * iVar8;
-            if ((pcVar6[iVar8].x == pcVar6[iVar7].x) && (pcVar6[iVar8].z == pcVar6[iVar7].z)) {
-                iVar7 = (s32)(rail->pRIGHT)->ptsize;
-                iVar3 = iVar3 * iVar7;
-                iVar12 = iVar12 * iVar7;
-                if ((pcVar6[iVar12].x == pcVar6[iVar3].x) && (pcVar6[iVar12].z == pcVar6[iVar3].z)) {
-                    rpos->vertical = '\x01';
+        rpos->vertical = 0;
+        if ((rpos->i2 != rpos->i1) && (rpos->i2 < rail->edges) && (bVar2 == 0)) {
+            p0 = (struct nuvec_s*) (rail->pLEFT->pts + (rpos->i1 * rail->pLEFT->ptsize));
+            p1 = (struct nuvec_s*) (rail->pLEFT->pts + (rpos->i2 * rail->pLEFT->ptsize));
+            if ((p0->x == p1->x) && (p0->z == p1->z)) {
+                p0 = (struct nuvec_s*) (rail->pRIGHT->pts + (rpos->i1 * rail->pRIGHT->ptsize));
+                p1 = (struct nuvec_s*) (rail->pRIGHT->pts + (rpos->i2 * rail->pRIGHT->ptsize));
+                if ((p0->x == p1->x) && (p0->z == p1->z)) {
+                    rpos->vertical = 1;
                 }
             }
         }
-        if (bVar2) {
+        if (bVar2 != 0) {
             RailInfo(rpos, &rpos->pos, NULL, &rpos->cam_angle, NULL);
         } else {
             RailInfo(rpos, &rpos->pos, &rpos->angle, &rpos->cam_angle, &rpos->mode);
@@ -394,13 +371,85 @@ void ComplexRailPosition(struct NuVec *pos,s32 iRAIL,s32 iALONG,struct RPos_s *r
     return;
 }
 
-void MoveRailPosition(struct nuvec_s *dst,struct RPos_s *rpos,float distance,int direction)
-
-{
-
-//TODO
-
+//NGC MATCH
+void MoveRailPosition(struct nuvec_s *dst,struct RPos_s *rpos,float distance,s32 direction) {
+    struct rail_s* rail; 
+    struct RPos_s RPos;
+    struct nuvec_s *p0;
+    struct nuvec_s *p1;
+    struct nuvec_s *p;
+    float f;
+    float d;
+    s32 i0;
+    s32 i1;
+    
+    d = distance;
+    if (d == 0.0f) {
+        d = 0.5f;
+    }
+    temp_rail_end = 0;
+    TempRPos = RPos = *rpos;
+    if ((RPos.iRAIL == -1) || ((s32)RPos.iALONG == -1)) {
+        return;
+    }
+    *dst = RPos.pos;
+    rail = &Rail[RPos.iRAIL];
+Loop: 
+    i1 = RPos.iALONG; 
+    i0 = i1 + 1;
+    if ((i0 == rail->edges) && (rail->circuit != 0)) {
+        i0 = 0;
+    }
+    p0 = (struct nuvec_s *)rail->pCAM->pts;
+    p1 = (struct nuvec_s *)(rail->pCAM->pts + (i1 * rail->pCAM->ptsize));
+    p  = (struct nuvec_s *)(rail->pCAM->pts + (i0 * rail->pCAM->ptsize));
+    if (direction == 0) {
+        p1 = p;
+    }
+    f = NuVecDist(dst,p1,NULL);
+    if (d > f) {
+        d = (d - f);
+        *dst = *p1;
+        if (direction != 0) {
+            if (rail->circuit != 0) {
+                RPos.iALONG++;
+                if (RPos.iALONG == rail->edges) {
+                    RPos.iALONG = direction;
+                }
+                goto Loop;
+             }
+            else {
+                if (RPos.iALONG < rail->edges) {
+                    RPos.iALONG++;
+                    goto Loop;
+                }
+                temp_rail_end = 1;
+                goto LAB_8000a950;
+            }
+         }
+        if (rail->circuit != 0) {
+            RPos.iALONG--;
+            if (RPos.iALONG == -1) {
+                RPos.iALONG = rail->edges;
+                RPos.iALONG--;
+            }
+            goto Loop;
+        }
+        if (RPos.iALONG > 0) {
+            RPos.iALONG--;
+            goto Loop;
+        }
+        temp_rail_end = 2;
+    } else {
+        dst->x = (p1->x - dst->x) * (d / f) + dst->x;
+        dst->y = (p1->y - dst->y) * (d / f) + dst->y;
+        dst->z = (p1->z - dst->z) * (d / f) + dst->z;
+    }
+LAB_8000a950:
+    TempRPos = RPos;
+    return;
 }
+
 /*
 //70% NGC
 void RailInfo(struct RPos_s* RPos, struct nuvec_s* pos, u16* yrot, u16* cam_yrot, u8* mode) {
@@ -511,6 +560,7 @@ void RailInfo(struct RPos_s* RPos, struct nuvec_s* pos, u16* yrot, u16* cam_yrot
     }
     return;
 }
+*/
 
 //MATCH NGC
 float LookUpDownRail(struct obj_s *obj,u16 yrot,s32 mode) {
@@ -559,31 +609,27 @@ else if ((Level == 0x11) && ((mode & 2U) != 0)) {
   return pos;
 }
 
-
-//58% NGC
-s32 InSplineArea(struct NuVec* pos, struct nugspline_s* spl) {
-    struct NuVec* p0;
-    struct NuVec* p1;
+//MATCH NGC
+s32 InSplineArea(struct nuvec_s *pos, struct nugspline_s *spl) {
+    struct nuvec_s *p0;
+    struct nuvec_s *p1;
     s32 i;
     s32 j;
-
-
-    for (i = 1; i < (s32)spl->len; i++) {
-        p0 = (struct NuVec*)spl->pts;
-        p1 = (struct NuVec*)((int)spl->pts + (i * spl->ptsize));
+    
+    for (i = 1; i < spl->len; i++) {
+        p1 = (struct nuvec_s*)((s32)spl->pts + (i * spl->ptsize));
         j = i + 1;
-        if (i == (s32)spl->len) {
+        if (j == spl->len) {
             j = 1;
         }
-        j = j * spl->ptsize;
-        if ((pos[i].x - (p1->x + p0->x)) * (p0[j].z - (p1->z + p0->x))
-             + (pos[i].z - (p1->z + p0->x)) * ((p1->x + p0->x) - p0[j].x) >= 0.0f)
-        {
+        p0 = (struct nuvec_s*)((s32)spl->pts + (j * spl->ptsize));
+        if (!((pos->x - p1->x) * (p0->z - p1->z)
+              + (pos->z - p1->z) * (p1->x - p0->x) >= 0.0f)) {
             return 0;
         }
     }
     return 1;
-}*/
+}
 
 void MoveGameCamera(struct cammtx_s *GameCamera,struct obj_s *obj)
 

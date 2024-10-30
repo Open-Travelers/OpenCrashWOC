@@ -262,15 +262,9 @@ void instNuGCutSceneSetEndCallback(struct instNUGCUTSCENE_s *icutscene,void(*fn)
   return;
 }
 
-
-inline static void instNuGCutSceneClipTest(struct instNUGCUTSCENE_s *icutscene)
-{
-    struct NUGCUTBBOX_s *bbox; //temp
-    struct numtx_s *wm; //temp
-    
+//PS2 MATCH //NGC MATCH
+inline static void instNuGCutSceneClipTest(struct instNUGCUTSCENE_s *icutscene) {
     struct NUGCUTSCENE_s *cutscene;
-    float distsqr;
-    int r;
 
     cutscene = icutscene->cutscene;
     icutscene->is_visible = 1;
@@ -286,26 +280,205 @@ inline static void instNuGCutSceneClipTest(struct instNUGCUTSCENE_s *icutscene)
         }
     }
     
-    if ((icutscene->checkbboxclip))
+    if (!icutscene->checkbboxclip)
     {
-        if (icutscene->has_mtx)
-        {
-            bbox = cutscene->bbox;
-            wm = &icutscene->mtx;
+        return;
+    }
+    
+    if (icutscene->has_mtx) {
+        if (NuCameraClipTestExtents(&cutscene->bbox->min, &cutscene->bbox->max, &icutscene->mtx) == 0) {
+            icutscene->is_visible = 0;
         }
-        else {
-            bbox = cutscene->bbox;
-            wm = &numtx_identity;
+    } else if (NuCameraClipTestExtents(&cutscene->bbox->min, &cutscene->bbox->max, &numtx_identity) == 0) {
+        icutscene->is_visible = 0;
+    }
+    
+}
+
+//NGC MATCH
+static void instNuGCutRigidSysUpdate(struct instNUGCUTSCENE_s* icutscene, float current_frame) {   
+    struct NUGCUTRIGID_s *rigid; 
+    struct instNUGCUTRIGID_s *irigid;
+    s32 i;
+    s32 j;
+    struct numtx_s mtx;
+    struct NUGCUTSCENE_s *cutscene;
+    struct NUGCUTRIGIDSYS_s *rigidsys;
+    struct instNUGCUTRIGIDSYS_s *irigidsys;
+    s8 newvisibilitystate;
+    struct NUGCUTLOCATORSYS_s *locatorsys;
+    struct instNUGCUTLOCATORSYS_s *ilocatorsys;
+    s32 locix;
+    // ------------------------------------------
+    struct NUGCUTLOCATOR_s *locator;
+    struct instNUGCUTLOCATOR_s *iloctemp;
+
+    
+    cutscene = icutscene->cutscene;
+    irigidsys = icutscene->irigids;
+    rigidsys = cutscene->rigids;
+    
+    for(i = 0; i < rigidsys->nrigids; i++)
+    {
+        rigid = &rigidsys->rigids[i];
+        irigid = &irigidsys->irigids[i];
+
+        if ((rigid->flags & 2)) {
+            continue;
         }
         
-        if (NuCameraClipTestExtents(&bbox->min, &bbox->max, wm) == 0) {
-            icutscene->is_visible = 0;
+        if ((rigid->flags & 4) == 0) {
+            continue;
+        }
+        
+        if ((rigid->visibiltyanim != NULL) &&
+        (StateAnimEvaluate(rigid->visibiltyanim,&irigid->visibleframeix, (u8 *)&newvisibilitystate,current_frame) != 0)) {
+            if (newvisibilitystate != 0) {
+                ((irigid->special).special)->instance->flags.visible = 1;
+            }
+            else {
+                ((irigid->special).special)->instance->flags.visible = 0;
+            }
+        }
+        
+        if ( ((irigid->special).special)->instance->flags.visible != 0)
+        {
+            NuGCutRigidCalcMtx(rigid, current_frame, &mtx);
+            
+            if ((icutscene->has_mtx) != 0)
+            {
+                NuMtxMul(&mtx, &mtx, &icutscene->mtx);
+            }
+            
+            (irigid->special.special)->instance->mtx = mtx;
+
+            if (((((irigid->special).special)->instance->flags.visible) != 0) && (rigid->first_locator != 0xff)) {
+                locatorsys = cutscene->locators;
+                ilocatorsys = icutscene->ilocators;
+                
+                for (j = 0; j < rigid->nlocators; j++) {
+                    locator = &locatorsys->locators[rigid->first_locator + j];
+                    iloctemp = &ilocatorsys->ilocators[rigid->first_locator + j];
+                    instNuGCutLocatorUpdate(icutscene, locatorsys,  iloctemp, locator, current_frame, &mtx);
+                }
+            }
         }
     }
     return;
 }
 
-//PS2
+//NGC MATCH // PS2 MATCH
+static void instNuGCutCamSysUpdate(struct instNUGCUTSCENE_s *icutscene, float current_frame) {
+    struct instNUGCUTCAMSYS_s *icamsys;
+    struct NUGCUTCAMSYS_s *camsys;
+    struct nuanimtime_s atime;
+    struct NUGCUTCAM_s *cutcam;
+    struct instNUGCUTCAM_s *icutcam;
+    struct NUGCUTCAMTGT_s *cutcamtgt;
+    struct numtx_s aim_mtx;
+    float lerp_factor;
+    float nframes;
+    struct nuquat_s q_from;
+    struct nuquat_s q_to;
+    struct nuquat_s q_result;
+    s32 lerp_out;
+    struct nuvec_s campos;
+    u8 camchange;
+    struct nuanimcurve2_s* curves;
+    s8* curveflags;
+    s32 curvesetflags;
+
+    
+    camsys = icutscene->cutscene->cameras;
+    icamsys = icutscene->icameras;
+    if ((camsys->camchanges != NULL) && (StateAnimEvaluate(camsys->camchanges, &icamsys->next_switch, &camchange, current_frame) != 0)) {
+        icamsys->current_camera = camchange;
+    }
+    
+    for(; (icamsys->next_tgt_ix < icamsys->ntgts) && current_frame >= icamsys->tgts[icamsys->next_tgt_ix].frame; icamsys->next_tgt_ix++) {
+            cutcamtgt = &icamsys->tgts[icamsys->next_tgt_ix];
+            icutcam = &icamsys->icutcams[camsys->remap_table[cutcamtgt->camid]];
+            icutcam->flags |= 2;
+            icutcam->tgt_ix = icamsys->next_tgt_ix;
+    }
+
+    for(; (icamsys->next_tgt_ix) != 0 && current_frame < icamsys->tgts[icamsys->next_tgt_ix - 1].frame;) {
+            icamsys->next_tgt_ix--;
+            cutcamtgt = &icamsys->tgts[icamsys->next_tgt_ix];
+            icutcam = &icamsys->icutcams[camsys->remap_table[cutcamtgt->camid]];
+            icutcam->flags |= 2;
+            icutcam->tgt_ix = icamsys->next_tgt_ix;
+    }
+    
+    if (icamsys->current_camera < 0) {
+        return;
+    }
+    
+    if ((s32)icamsys->current_camera >= (s32)camsys->ncutcams) {
+        NuErrorProlog("..\\nu2.ps2\\gamelib\\gcutscn.c", 0x2e3)("instNuGCutCamSysUpdate: internal error");
+    }
+    
+    icutcam = &icamsys->icutcams[icamsys->current_camera];
+    cutcam = &camsys->cutcams[icamsys->current_camera];
+    if (((cutcam->flags & 1) != 0) && (cutcam->anim_ix < camsys->camanim->nnodes)) {
+        NuAnimData2CalcTime(camsys->camanim, current_frame, &atime);
+        curves = &camsys->camanim->curves[(s32)camsys->camanim->ncurves * (s32)cutcam->anim_ix];
+        curveflags = &camsys->camanim->curveflags[(s32)camsys->camanim->ncurves * (s32)cutcam->anim_ix];
+        curvesetflags = camsys->camanim->curvesetflags[cutcam->anim_ix];
+        NuAnimCurve2SetApplyToMatrix(curves, curveflags, curvesetflags, &atime, &cutscenecammtx);
+    } else {
+        cutscenecammtx = cutcam->mtx;
+    }
+    
+    if ((icutscene->has_mtx) != 0) {
+        NuMtxMul(&cutscenecammtx, &cutscenecammtx, &icutscene->mtx);
+    }
+    
+    set_cutscenecammtx = 1;
+    if ((icutcam->flags & 2) != 0) {
+        lerp_out = 0;
+        cutcamtgt = icamsys->tgts + icutcam->tgt_ix;
+        nframes = NuFabs(cutcamtgt->nframes);
+        
+        if ((NuFsign(cutcamtgt->nframes) < 0.0f)) {
+            lerp_out = 1;
+        }
+
+        if ((lerp_out) && ((current_frame >= cutcamtgt->frame + nframes))) {
+            icutcam->flags = icutcam->flags & 0xFD;
+            return;
+        }
+        
+        campos = *(struct nuvec_s*)&cutscenecammtx._30;
+        aim_mtx = cutscenecammtx;
+        
+        NuMtxLookAtZ(&aim_mtx, cutcamtgt->tgt);
+        if (0.01f < nframes) {
+            lerp_factor = (current_frame - cutcamtgt->frame) / nframes;
+            if (1.0f < lerp_factor) {
+                lerp_out = 1;
+            }
+            else if (lerp_factor < 0.0f) {
+                lerp_out = 0;
+            }
+        }
+        else {
+            lerp_factor = 1.0f;
+        }
+        if (lerp_out) {
+            lerp_factor = 1.0f - lerp_factor;
+        }
+        
+        NuMtxToQuat(&aim_mtx, &q_to);
+        NuMtxToQuat(&cutscenecammtx, &q_from);
+        NuQuatSlerp(&q_result, &q_from, &q_to, lerp_factor);
+        NuQuatToMtx(&q_result, &cutscenecammtx);
+        *(struct nuvec_s*)&cutscenecammtx._30 = campos;
+    }
+    return;
+}
+
+//PS2 MATCH
 static void instNuGCutSceneUpdate(struct instNUGCUTSCENE_s *icutscene,s32 paused)
 {
     /*
@@ -348,8 +521,7 @@ static void instNuGCutSceneUpdate(struct instNUGCUTSCENE_s *icutscene,s32 paused
             if (1.0f > dt) {
                 icutscene->cframe = 1.0f;
             } else {
-                if (dt >= (cutscene->nframes + 1.0f) - 1.0f) 
-                {
+                if (dt >= (cutscene->nframes + 1.0f) - 1.0f) {
                     if (icutscene->endfn != NULL) {
                         void(*old)(void*) = icutscene->endfn;
                         icutscene->endfn = NULL;
@@ -373,8 +545,7 @@ static void instNuGCutSceneUpdate(struct instNUGCUTSCENE_s *icutscene,s32 paused
                         return;
                     }
                     
-                    if ((icutscene->looping) != 0) //0x20
-                    {
+                    if ((icutscene->looping) != 0) {
                         dt2 = (icutscene->cframe - ((cutscene->nframes + 1.0f) - 1.0f));
                         if (cutscene->nframes < dt2) {
                             dt2 = 0.0f;
@@ -389,7 +560,7 @@ static void instNuGCutSceneUpdate(struct instNUGCUTSCENE_s *icutscene,s32 paused
             }
         }
     }
-    else{
+    else {
         icutscene->played_first_frame = 1;
     }
 
@@ -404,33 +575,6 @@ static void instNuGCutSceneUpdate(struct instNUGCUTSCENE_s *icutscene,s32 paused
     }
     
     return;
-}
-
-//PS2 (change bifields from s32 to s16 type)
-static void instNuGCutSceneRender(struct instNUGCUTSCENE_s *icutscene)
-{
-    
-    if (icutscene->is_disabled) {
-        return;
-    }
-    
-    if (!icutscene->is_playing) {
-        return;
-    }
-    
-    if (!icutscene->is_visible){
-        return;
-    }
-    
-    if ((do_rigids != 0) && (icutscene->irigids != NULL)) {
-        instNuGCutRigidSysRender(icutscene, icutscene->cframe);
-    }
-    if ((do_chars != 0) && (icutscene->ichars != NULL)) {
-        instNuGCutCharSysRender(icutscene, icutscene->cframe);
-    }
-    if ((do_locator != 0) && (icutscene->ilocators != NULL)) {
-        instNuGCutLocatorSysUpdate(icutscene, icutscene->cframe);
-    }
 }
 
 //PS2
@@ -490,134 +634,6 @@ struct instNUGCUTCAMSYS_s * instNuCGutCamSysCreate(struct NUGCUTCAMSYS_s *camera
     memset(icameras->icutcams,0,cameras->ncutcams << 2);
   }
   return icameras;
-}
-
-
-//PS2
-static void instNuGCutCamSysUpdate(struct instNUGCUTSCENE_s *icutscene, float current_frame)
-{
-    struct instNUGCUTCAMSYS_s *icamsys;
-    struct NUGCUTCAMSYS_s *camsys;
-    struct nuanimtime_s atime;
-    struct NUGCUTCAM_s *cutcam;
-    struct instNUGCUTCAM_s *icutcam;
-    struct instNUGCUTCAM_s *icutcam2;
-    struct NUGCUTCAMTGT_s *cutcamtgt;
-    struct numtx_s aim_mtx;
-    float lerp_factor;
-    float nframes;
-    struct nuquat_s q_from;
-    struct nuquat_s q_to;
-    struct nuquat_s q_result;
-    s32 lerp_out;
-    struct NuVec campos;
-    u8 camchange;
-    struct nuanimcurve2_s* curves;
-    s8* curveflags;
-    s32 curvesetflags;
-    //////////////////////////////////////////////////
-    s32 curve_ix;
-
-    
-    camsys = icutscene->cutscene->cameras;
-    icamsys = icutscene->icameras;
-    if ((camsys->camchanges != NULL) && (StateAnimEvaluate(camsys->camchanges, &icamsys->next_switch, &camchange, current_frame) != 0)) {
-        icamsys->current_camera = camchange;
-    }
-    
-    if (icamsys->next_tgt_ix < icamsys->ntgts) {
-        
-        for(; icamsys->tgts[icamsys->next_tgt_ix].frame <= current_frame; )
-        {
-            cutcamtgt = &icamsys->tgts[icamsys->next_tgt_ix];
-            icutcam = &icamsys->icutcams[camsys->remap_table[cutcamtgt->camid]];
-            icutcam->flags |= 2;
-            icutcam->tgt_ix = icamsys->next_tgt_ix;
-            icamsys->next_tgt_ix++;
-            if (icamsys->ntgts <= icamsys->next_tgt_ix) break;
-        } 
-    }
-
-    
-    if (icamsys->next_tgt_ix != 0){
-        for(; current_frame < icamsys->tgts[icamsys->next_tgt_ix].frame;)
-        {
-            icamsys->next_tgt_ix--;
-            cutcamtgt = &icamsys->tgts[icamsys->next_tgt_ix];
-            icutcam = &icamsys->icutcams[camsys->remap_table[cutcamtgt->camid]];
-            icutcam->flags |= 2;
-            icutcam->tgt_ix = icamsys->next_tgt_ix;
-            if (icamsys->next_tgt_ix == 0) break;
-        }
-    }
-    
-    if (icamsys->current_camera < 0) {
-        return;
-    }
-    
-    if (icamsys->current_camera >= camsys->ncutcams) {
-        NuErrorProlog("..\\nu2.ps2\\gamelib\\gcutscn.c", 0x378)("instNuGCutCamSysUpdate: internal error");
-    }
-    
-    icutcam2 = &icamsys->icutcams[icamsys->current_camera];
-    cutcam = camsys->cutcams + icamsys->current_camera;
-    if (((cutcam->flags & 1) != 0) && (cutcam->anim_ix < camsys->camanim->nnodes)) {
-        NuAnimData2CalcTime(camsys->camanim, current_frame, &atime);
-        curve_ix = (int)camsys->camanim->ncurves * (u32)cutcam->anim_ix;
-        curves = &camsys->camanim->curves[curve_ix];
-        curveflags = &camsys->camanim->curveflags[curve_ix];
-        curvesetflags = camsys->camanim->curvesetflags[cutcam->anim_ix];
-        NuAnimCurve2SetApplyToMatrix(curves, curveflags, curvesetflags, &atime, &cutscenecammtx);
-    } else {
-        memcpy(&cutscenecammtx, &cutcam->mtx, sizeof(struct numtx_s));    
-    }
-    
-    if ((icutscene->has_mtx) != 0) {
-        NuMtxMul(&cutscenecammtx, &cutscenecammtx, &icutscene->mtx);
-    }
-    
-    set_cutscenecammtx = 1;
-    if ((icutcam2->flags & 2) != 0) {
-        lerp_out = 0;
-        cutcamtgt = icamsys->tgts + icutcam2->tgt_ix;
-        lerp_factor = NuFabs(cutcamtgt->nframes);
-        
-        if ((NuFsign(cutcamtgt->nframes) < 0.0f)){
-            lerp_out = 1;
-        }
-
-        if ((lerp_out) && ((current_frame >= cutcamtgt->frame + lerp_factor))){
-            icutcam2->flags = icutcam2->flags & 0xFD;
-            return;
-        }
-        
-        memcpy(&campos, &cutscenecammtx._30, sizeof(struct NuVec));
-        memcpy(&aim_mtx, &cutscenecammtx, sizeof(struct numtx_s));
-        
-        NuMtxLookAtZ(&aim_mtx, cutcamtgt->tgt);
-        if (0.01f < lerp_factor) {
-            lerp_factor = (current_frame - cutcamtgt->frame) / lerp_factor;
-            if (1.0f < lerp_factor) {
-                lerp_out = 1;
-            }
-            else if (lerp_factor < 0.0f) {
-                lerp_out = 0;
-            }
-        }
-        else {
-            lerp_factor = 1.0f;
-        }
-        if (lerp_out) {
-            lerp_factor = 1.0f - lerp_factor;
-        }
-        
-        NuMtxToQuat(&aim_mtx, &q_to);
-        NuMtxToQuat(&cutscenecammtx, &q_from);
-        NuQuatSlerp(&q_result, &q_from, &q_to, lerp_factor);
-        NuQuatToMtx(&q_result, &cutscenecammtx);
-        memcpy(&cutscenecammtx._30, &campos, sizeof(struct NuVec));
-    }
-    return;
 }
 
 //PS2
@@ -725,7 +741,7 @@ void NuGCutLocatorCalcMtx
 }
 
 
-//PS2
+//NGC MATCH //PS2
 s32 NuGCutLocatorIsVisble
               (struct NUGCUTLOCATOR_s *locator,float current_frame,struct nuanimtime_s *atime,float *rate)
 {
@@ -737,10 +753,9 @@ s32 NuGCutLocatorIsVisble
   if (locator->anim != NULL) {
     curveflags = locator->anim->curveflags;
     curves = locator->anim->curves;
-    is_visible = (s32)NuAnimCurve2CalcVal((struct nuanimcurve2_s *)(curves + 7),atime,(s32)curveflags[7 ]);;
+    is_visible = (s32)NuAnimCurve2CalcVal((struct nuanimcurve2_s *)(curves + 7),atime,(s32)curveflags[7]);
     if ((is_visible != 0) && (rate != NULL)) {
-      *rate = NuAnimCurve2CalcVal((struct nuanimcurve2_s *)(curves + 6),atime,
-                                  (s32)curveflags[6]);
+      *rate = NuAnimCurve2CalcVal((struct nuanimcurve2_s *)(curves + 6),atime,(s32)curveflags[6]);
     }
   }
   else {
@@ -772,6 +787,26 @@ struct instNUGCUTLOCATORSYS_s * NuCGutLocatorSysCreateInst(struct NUGCUTLOCATORS
     memset(iloc->ilocators,0,((u32)locators->nlocators << 3));
   }
   return iloc;
+}
+
+//PS2 MATCH
+void instNuGCutLocatorUpdate
+               (struct instNUGCUTSCENE_s *icutscene,struct NUGCUTLOCATORSYS_s *locatorsys,
+               struct instNUGCUTLOCATOR_s *ilocator,struct NUGCUTLOCATOR_s *locator,
+                float current_frame,struct numtx_s * wm)
+{
+    struct NUGCUTLOCATORTYPE_s* loctype;
+    
+    loctype = &locatorsys->locator_types[locator->locator_type];
+    
+    if ((loctype->flags & 1U) != 0) {
+        instNuGCutDebrisLocatorUpdate(locatorsys, ilocator, locator, current_frame, wm);
+    }
+    else if (((loctype->flags & 2U) != 0) && (loctype->ix != 0xffff)) {
+        (locatorfns[loctype->ix].fn)(icutscene, locatorsys, ilocator, locator, current_frame, wm);
+    }
+    
+    return;
 }
 
 //PS2
@@ -859,47 +894,80 @@ static void NuGCutLocatorSysFixUp(struct NUGCUTLOCATORSYS_s *locatorsys)
   return;
 }
 
-//PS2
-void instNuGCutLocatorUpdate
-               (struct instNUGCUTSCENE_s *icutscene,struct NUGCUTLOCATORSYS_s *locatorsys,
-               struct instNUGCUTLOCATOR_s *ilocator,struct NUGCUTLOCATOR_s *locator,
-                float current_frame,struct numtx_s * wm)
-{
-    struct NUGCUTLOCATORTYPE_s* loctype;
-    
-    loctype = &locatorsys->locator_types[locator->locator_type];
-    
-    if ((loctype->flags & 1U) != 0) {
-        instNuGCutDebrisLocatorUpdate(locatorsys, ilocator, locator, current_frame, wm);
+//NGC-PS2 MATCH
+void CalculateLocatorDirection(enum locdir ldir, struct numtx_s* mtx, struct nuvec_s* dir) {
+    s32 calc_rots;
+
+    calc_rots = 0;
+    switch (ldir) {
+    case LOCATOR_NO_DIRECTION:
+    case LOCATOR_UP:
+        dir->x = dir->z = 0.0f;
+        dir->y = 1.0f;
+        break;
+    case LOCATOR_DOWN:
+        dir->x = dir->z = 0.0f;
+        dir->y = -1.0f;
+        break;
+    case LOCATOR_X:
+        dir->x = 1.0f;
+        dir->y = 0.0f;
+        dir->z = 0.0f;
+        calc_rots = 1;
+        break;
+    case LOCATOR_NEGX:
+        dir->x = -1.0f;
+        dir->y = 0.0f;
+        dir->z = 0.0f;
+        calc_rots = 1;
+        break;
+    case LOCATOR_Y:
+        dir->x = 0.0f;
+        dir->y = 1.0f;
+        dir->z = 0.0f;
+        calc_rots = 1;
+        break;
+    case LOCATOR_NEGY:
+        dir->x = 0.0f;
+        dir->y = -1.0f;
+        dir->z = 0.0f;
+        calc_rots = 1;
+        break;
+    case LOCATOR_Z:
+        dir->x = 0.0f;
+        dir->y = 0.0f;
+        dir->z = 1.0f;
+        calc_rots = 1;
+        break;
+    case LOCATOR_NEGZ:
+        dir->x = 0.0f;
+        dir->y = 0.0f;
+        dir->z = -1.0f;
+        calc_rots = 1;
+        break;
     }
-    else if (((loctype->flags & 2U) != 0) && (loctype->ix != 0xffff)) {
-        (locatorfns[loctype->ix].fn)(icutscene, locatorsys, ilocator, locator, current_frame, wm);
+    if (calc_rots != 0) {
+        NuVecMtxRotate(dir, dir, mtx);
     }
-    
-    return;
 }
 
-
 //NGC MATCH
-static void instNuGCutDebrisLocatorUpdate(struct NUGCUTLOCATORSYS_s* locatorsys, struct instNUGCUTLOCATOR_s* ilocator, struct NUGCUTLOCATOR_s* locator, float current_frame, struct numtx_s* wm)
-{
+static void instNuGCutDebrisLocatorUpdate(struct NUGCUTLOCATORSYS_s* locatorsys, struct instNUGCUTLOCATOR_s* ilocator, struct NUGCUTLOCATOR_s* locator, float current_frame, struct numtx_s* wm) {
+
     struct numtx_s mtx;
     float rate;
     s32 num_shots;
     struct NUGCUTLOCATORTYPE_s* loctypes;
-    u8 flag;
+    u8 debtype;
     s16 roty;
     s16 rotz;
     struct nuanimtime_s atime;
-    struct NuVec dir;
-    float fVar3; //temp?
-    s32 local_34; //temp?
-
-     char pad [5];
+    struct nuvec_s dir;
+    s32 key_; //temp?
     
-    loctypes = locatorsys->locator_types; //loctypes->flags
-    flag = loctypes[locator->locator_type].ix;
-    if (flag != 0xff) { //0x7 ?? --> ix
+    loctypes = locatorsys->locator_types;
+    debtype = loctypes[locator->locator_type].ix;
+    if (debtype != 0xff) { //0x7 ?? --> ix
         if (locator->anim != NULL) {
             NuAnimData2CalcTime(locator->anim,current_frame,&atime);
         }
@@ -921,22 +989,19 @@ static void instNuGCutDebrisLocatorUpdate(struct NUGCUTLOCATORSYS_s* locatorsys,
                         NuMtxMul(&mtx,&mtx,wm);
                     }
                     CalculateLocatorDirection(locator->direction,&mtx,&dir);
-                    fVar3 = NuAtan2(dir.x,dir.z);
-                    roty = NuAngSub((fVar3 * 10430.378f),0x4000);
-                    fVar3 = NuFsqrt(dir.x * dir.x + dir.z * dir.z);
-                    fVar3 = NuAtan2(fVar3,-dir.y);
-                    rotz = (s16)(fVar3 * 10430.378f);
+                    roty = NuAngSub((NuAtan2(dir.x,dir.z) * 10430.378f),0x4000);
+                    rotz = (s16)(NuAtan2(NuFsqrt(dir.x * dir.x + dir.z * dir.z),-dir.y) * 10430.378f);
                     if ((locator->flags & 0x10) != 0) {
-                        local_34 = -1;
-                        AddFiniteShotDebrisEffect(&local_34,flag,(struct NuVec *)&mtx._30,num_shots);
-                        DebrisEmitterOrientation(local_34,rotz,roty);
+                        key_ = -1;
+                        AddFiniteShotDebrisEffect(&key_,debtype,(struct nuvec_s *)&mtx._30,num_shots);
+                        DebrisEmitterOrientation(key_,rotz,roty);
                     }
                     else {
-                        if ((((flag == 0x23) || (flag == 10)) || (flag == 0x24)) ||
-                           (((flag == 9 || (flag == 0x19)) || (flag == 0x25)))) {
+                        if ((((debtype == 0x23) || (debtype == 10)) || (debtype == 0x24)) ||
+                           (((debtype == 9 || (debtype == 0x19)) || (debtype == 0x25)))) {
                             num_shots = num_shots / 2;
                         }
-                        AddVariableShotDebrisEffect(flag,(struct NuVec *)&mtx._30,num_shots,rotz,roty );
+                        AddVariableShotDebrisEffect(debtype,(struct nuvec_s *)&mtx._30,num_shots,rotz,roty );
                     }
                 }
             }
@@ -947,7 +1012,6 @@ static void instNuGCutDebrisLocatorUpdate(struct NUGCUTLOCATORSYS_s* locatorsys,
     }
     return;
 }
-
 
 //PS2
 static void NuGCutRigidSysFixPtrs(struct NUGCUTSCENE_s* cutscene, s32 address_offset)
@@ -1135,127 +1199,34 @@ static void instNuGCutRigidSysStart(struct instNUGCUTRIGIDSYS_s *irigidsys,struc
   }
 }
 
-//PS2
-static void instNuGCutRigidSysUpdate(struct instNUGCUTSCENE_s* icutscene, float current_frame)
-{
-    struct NUGCUTRIGID_s *rigid; 
-    struct instNUGCUTRIGID_s *irigid;
+//NGC MATCH
+static void instNuGCutRigidSysRender(struct instNUGCUTSCENE_s *icutscene,float current_frame) {
+
     s32 i;
     s32 j;
     struct numtx_s mtx;
+    struct instNUGCUTRIGIDSYS_s *irigidsys;
     struct NUGCUTSCENE_s *cutscene;
     struct NUGCUTRIGIDSYS_s *rigidsys;
-    struct instNUGCUTRIGIDSYS_s *irigidsys;
-    s8 newvisibilitystate;
-    struct NUGCUTLOCATORSYS_s *locatorsys;
-    struct instNUGCUTLOCATORSYS_s *ilocatorsys;
-    s32 locix;
-    // ------------------------------------------
-    struct NUGCUTLOCATOR_s *locator;
-    struct instNUGCUTLOCATOR_s *iloctemp;
-    struct NUGCUTLOCATORTYPE_s* loctype;
-
-    
-    cutscene = icutscene->cutscene;
-    irigidsys = icutscene->irigids;
-    rigidsys = cutscene->rigids;
-    
-    for(i = 0; i < rigidsys->nrigids; i++)
-    {
-        rigid = &rigidsys->rigids[i];
-        irigid = &irigidsys->irigids[i];
-
-        if ((rigid->flags & 2)) {
-            continue;
-        }
-        
-        if ((rigid->flags & 4) == 0) {
-            continue;
-        }
-        
-        if ((rigid->visibiltyanim != NULL) &&
-        (StateAnimEvaluate(rigid->visibiltyanim,&irigid->visibleframeix, (u8 *)&newvisibilitystate,current_frame) != 0)) {
-            if (newvisibilitystate != '\0') {
-                ((irigid->special).special)->instance->flags.visible = 1;
-            }
-            else {
-                ((irigid->special).special)->instance->flags.visible = 0;
-            }
-        }
-        
-        if ( ((irigid->special).special)->instance->flags.visible != 0) // & 1
-        {
-            NuGCutRigidCalcMtx(rigid, current_frame, &mtx);
-            
-            if ((icutscene->has_mtx) != 0) //& 0x10 
-            {
-                NuMtxMul(&mtx, &mtx, &icutscene->mtx);
-            }
-            
-            (irigid->special.special)->instance->mtx = mtx;
-
-            if (((((irigid->special).special)->instance->flags.visible) != 0) //& 1
-            && (rigid->first_locator != 0xff)) {
-                locatorsys = cutscene->locators;
-                ilocatorsys = icutscene->ilocators;
-                
-                for (j = 0; j < rigid->nlocators; j++)
-                {
-                    iloctemp = &ilocatorsys->ilocators[(u32)rigid->first_locator + j];
-                    locator = &locatorsys->locators[(u32)rigid->first_locator + j];
-                    loctype = &locatorsys->locator_types[locator->locator_type];
-                    
-                    if ((loctype->flags & 1) != 0) {
-                        instNuGCutDebrisLocatorUpdate(locatorsys, iloctemp, locator, current_frame, &mtx);
-                    }
-                    else {
-                        if ((loctype->flags & 2) != 0) {
-                            locix = locatorsys->locator_types[locator->locator_type].ix;
-                            if (locix != 0xffff) {
-                                (locatorfns[locix].fn)(icutscene, locatorsys, iloctemp, locator, current_frame, &mtx);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return;
-}
-
-//PS2
-static void instNuGCutRigidSysRender(struct instNUGCUTSCENE_s *icutscene,float current_frame)
-{
-    s32 i;
-    s32 j;
-    struct numtx_s mtx;
-    struct NUGCUTSCENE_s *cutscene;
-    struct NUGCUTRIGIDSYS_s *rigidsys;
-    struct instNUGCUTRIGIDSYS_s *irigidsys;
     char newvisibilitystate;
     struct NUGCUTLOCATORSYS_s *locatorsys;
     struct instNUGCUTLOCATORSYS_s *ilocatorsys;
     s32 locix;
-
     // --------------------------------------
     struct NUGCUTRIGID_s *rigidtemp;
     struct NUGCUTLOCATOR_s *loctemp1;
     struct instNUGCUTLOCATOR_s *iloctemp2;
     struct instNUGCUTRIGID_s *irigidtemp;
-    struct NUGCUTLOCATORTYPE_s* loctype;
-    s32 local_cc;
     
-    cutscene = icutscene->cutscene;
     irigidsys = icutscene->irigids;
+    cutscene = icutscene->cutscene;
     rigidsys = cutscene->rigids;
     
-    for(i = 0; i < rigidsys->nrigids; i++)
-    {
+    for(i = 0; i < rigidsys->nrigids; i++) {
         rigidtemp = &rigidsys->rigids[i];
         irigidtemp = &irigidsys->irigids[i];
 
-        if ((rigidtemp->flags & 2) == 0)
-        {
+        if ((rigidtemp->flags & 2) == 0) {
             continue;
         }
         
@@ -1265,7 +1236,7 @@ static void instNuGCutRigidSysRender(struct instNUGCUTSCENE_s *icutscene,float c
         
         if ((rigidtemp->visibiltyanim != NULL) &&
             (StateAnimEvaluate(rigidtemp->visibiltyanim, &irigidtemp->visibleframeix, &newvisibilitystate, current_frame) != 0)) {
-                if (newvisibilitystate != '\0') {
+                if (newvisibilitystate != 0) {
                     ((irigidtemp->special).special)->instance->flags.visible = 1;
                 }
                 else {
@@ -1273,50 +1244,57 @@ static void instNuGCutRigidSysRender(struct instNUGCUTSCENE_s *icutscene,float c
                 }
             }
         
-        if ((((irigidtemp->special).special)->instance->flags.visible))
-        {
+        if ((((irigidtemp->special).special)->instance->flags.visible)) {
             NuGCutRigidCalcMtx(rigidtemp, current_frame, &mtx);
             
-            if (icutscene->has_mtx != 0)
-            {
+            if (icutscene->has_mtx != 0) {
                 NuMtxMul(&mtx, &mtx, &icutscene->mtx);
-            }
-            
-            if (local_cc != 0) {
-                NuSpecialDrawAt(irigidtemp, &mtx);
             }
             
             if (NuCutSceneRigidCollisionCheck != NULL) {
                 (*NuCutSceneRigidCollisionCheck)(rigidtemp, &mtx);
             }
             
-            if (rigidtemp->first_locator != 0xff) 
-            {
+            if (rigidtemp->first_locator != 0xff) {
                 locatorsys = cutscene->locators;
                 ilocatorsys = icutscene->ilocators;
                 
-                for (j = 0; j < rigidtemp->nlocators; j++)
-                {
-                    iloctemp2 = &ilocatorsys->ilocators[(u32)rigidtemp->first_locator + j];
-                    loctemp1 = &locatorsys->locators[(u32)rigidtemp->first_locator + j];
-                    loctype = &locatorsys->locator_types[loctemp1->locator_type];
-                    
-                    if ((loctype->flags & 1) != 0) {
-                        instNuGCutDebrisLocatorUpdate(locatorsys, iloctemp2, loctemp1, current_frame, &mtx);
-                    }
-                    else { 
-                        if ((loctype->flags & 2) != 0) {
-                            locix = loctype->ix;
-                            if (locix != 0xffff) {
-                                (locatorfns[locix].fn)(icutscene, locatorsys, iloctemp2, loctemp1, current_frame, &mtx);
-                            }
-                        }
-                    }
+                for (j = 0; j < rigidtemp->nlocators; j++) {
+                    iloctemp2 = &ilocatorsys->ilocators[rigidtemp->first_locator + j];
+                    loctemp1 = &locatorsys->locators[rigidtemp->first_locator + j];
+                    instNuGCutLocatorUpdate(icutscene, locatorsys,  iloctemp2, loctemp1, current_frame, &mtx);
                 }
             }
         }
     }
     return;
+}
+
+//PS2 (change bifields from s32 to s16 type)
+static void instNuGCutSceneRender(struct instNUGCUTSCENE_s *icutscene)
+{
+    
+    if (icutscene->is_disabled) {
+        return;
+    }
+    
+    if (!icutscene->is_playing) {
+        return;
+    }
+    
+    if (!icutscene->is_visible){
+        return;
+    }
+    
+    if ((do_rigids != 0) && (icutscene->irigids != NULL)) {
+        instNuGCutRigidSysRender(icutscene, icutscene->cframe);
+    }
+    if ((do_chars != 0) && (icutscene->ichars != NULL)) {
+        instNuGCutCharSysRender(icutscene, icutscene->cframe);
+    }
+    if ((do_locator != 0) && (icutscene->ilocators != NULL)) {
+        instNuGCutLocatorSysUpdate(icutscene, icutscene->cframe);
+    }
 }
 
 
@@ -1676,65 +1654,6 @@ static void instNuGCutTriggerSysStart(struct instNUGCUTSCENE_s *icutscene)
       icuttrig->next_ix = '\0';
     }
   return;
-}
-
-//PS2 87%
-void CalculateLocatorDirection(enum locdir ldir, struct numtx_s* mtx, struct NuVec* dir) {
-    int calc_rots;
-
-    calc_rots = 0;
-    switch (ldir) {
-    case LOCATOR_NO_DIRECTION:
-    case LOCATOR_UP:
-        dir->x = 0.0f;
-        dir->y = 1.0f; //var_f0
-        dir->z = 0.0f;
-        break;
-    case LOCATOR_DOWN:
-        dir->x = 0.0f;
-        dir->y = -1.0f; //var_f0
-        dir->z = 0.0f;
-        break;
-    case LOCATOR_X:
-        dir->x = -1.0f; //var_f0_2
-        dir->y = 0.0f;
-        dir->z = 0.0f;
-        calc_rots = 1;
-        break;
-    case LOCATOR_NEGX:
-        dir->x = 1.0f; //var_f0_2
-        dir->y = 0.0f;
-        dir->z = 0.0f;
-        calc_rots = 1;
-        break;
-    case LOCATOR_Y:
-        dir->x = 0.0f;
-        dir->y = -1.0f;
-        dir->z = 0.0f;
-        calc_rots = 1;
-        break;
-    case LOCATOR_NEGY:
-        dir->x = 0.0f;
-        dir->y = 1.0f;
-        dir->z = 0.0f;
-        calc_rots = 1;
-        break;
-    case LOCATOR_Z:
-        dir->x = 0.0f;
-        dir->y = 0.0f;
-        dir->z = 1.0f; //var_f0_3
-        calc_rots = 1;
-        break;
-    case LOCATOR_NEGZ:
-        dir->x = 0.0f;
-        dir->y = 0.0f;
-        dir->z = -1.0f;
-        calc_rots = 1;
-        break;
-    }
-    if (calc_rots != 0) {
-        NuVecMtxRotate(dir, dir, mtx);
-    }
 }
 
 //PS2

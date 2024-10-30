@@ -35,10 +35,8 @@ s32 wtimer;
 /*
 	AddDeb3Ang     73%
 	AddDeb3           65%
-	JonExtraDraw    94%
 	LaunchObjects  86%
 	ProcDeb3       92%
-	DrawDeb3      99%
 */
 
 //NGC MATCH
@@ -255,4 +253,211 @@ void InitDeb3(void) {
 //NGC MATCH
 s32 JonMaskFPS(s32 val,s32 add) {
     return add * 0x3c + val <= 0x3c0000 ? val + add * 0x3c : (add * 0x3c + val) - 0x3c0000;
+}
+
+//NGC MATCH
+void JonExtraDraw(void) {
+    ELEC* pt;
+    s32 i;
+    s32 d;
+    s32 col;
+    struct nuvec_s vec;
+
+    if (Level == 0x19) {
+        switch (cmask) {
+            default:
+                i = -1;
+                d = 0x7e;
+                break;
+            case 1:
+                i = CRemap[85];
+                d = 0x7e;
+                break;
+            case 2:
+                i = CRemap[87];
+                d = 0x7f;
+                break;
+            case 3:
+                i = CRemap[86];
+                d = 0x80;
+                break;
+            case 4:
+                i = CRemap[88];
+                d = 0x81;
+                break;
+        }
+        vec.x = 0.0f;
+        vec.y = 5.0f - NuTrigTable[(u16)(maskoff / 0x3c)] * 3.0f;
+        vec.z = 2.87f;
+        vec.x = NuTrigTable[(u16)(maskx / 0x3c)] * 1.5f + vec.x;
+        vec.y += (NuTrigTable[(u16)(masky / 0x3c)] * 0.75f);
+        vec.z = NuTrigTable[(u16)((maskx / 0x3c) + 0x4000)] * 3.0f + vec.z;
+        if (i != -1) {
+            Draw3DCharacter(&vec, 0, (u16)(NuTrigTable[(u16)(maskrot / 0x3c)] * 8192.0f), 0, &CModel[i], -1, 1.0f, 1.0f, 0);
+            vec.y += 0.2f;
+            if (Paused == 0) {
+                AddVariableShotDebrisEffect(GDeb[d].i, &vec, 1, 0, 0);
+            }
+        }
+    }
+    if (Level != 2) {
+        return;
+    }
+    pt = (ELEC*)&H2OElec[0];
+    if (Paused != 0) {
+        return;
+    }
+        for (pt; (pt->start).x != 99999.0f; pt++) {
+            vec.x = (pt->start).x - (player->obj).pos.x;
+            vec.z = pt->start.z - (player->obj).pos.z;
+            if ((vec.x * vec.x + vec.z * vec.z) < 625.0f) {
+                pt->time = pt->time - 0x3c;
+                if (pt->time < 0) {
+                    pt->time = ((qrand() & 0xff) + 0x3c) * 0x3c;
+                    pt->ang = qrand() & 0xffff;
+                }
+                if (pt->time < 0x960) {
+                    if (qrand() < 0x4000) {
+                        GameSfx(0x89, &pt->start);
+                    }
+                    if (pt->time > 0x5a0) {
+                        col = ((0x28 - pt->time) << 4) / 0x3c;
+                    } else if (pt->time < 0x3c0) {
+                        col = (pt->time << 4) / 0x3c;
+                    } else {
+                        col = 0x80;
+                    }
+                    col = col << 0x18;
+                    vec.x = NuTrigTable[pt->ang & 0xffff] * 0.47999999f;
+                    vec.y = 0.0f;
+                    vec.z = NuTrigTable[(pt->ang + 0x4000U) & 0x3fffc / 4] * 0.47999999f;
+                    NuLgtArcLaser( 0, &pt->start, &pt->end, &vec, 0.05f, 0.1f, 0.01f, 0.1f, col + 0x00FF7F00);
+                    NuLgtArcLaser(0, &pt->start, &pt->end, &vec, 0.4f, 0.3f, 0.001f, 0.1f, col | 0x800000);
+                    AddVariableShotDebrisEffect(GDeb[143].i, &pt->end, 1, 0, 0);
+                }
+            }
+        }
+    return;
+}
+
+//NGC MATCH
+static void DrawDeb3() {
+  struct nuvec_s pos;
+  struct deb3_s *deb;
+  float r;
+  s32 i;
+  s32 j;
+  
+  JonExtraDraw();
+  deb = deb3;
+  for(i = 0; i < 0x40; i++, deb++) {
+    if (deb->timer != 0) {
+      if (ObjTab[deb->info->type].obj.special != NULL) {
+        NuSpecialDrawAt(&ObjTab[deb->info->type].obj,&deb->mtx);
+        if ((deb->info->info & 0x10U) != 0) {
+          if (deb->shadow != 2000000.0f) {
+            pos.x = deb->mtx._30;
+            pos.y = deb->shadow;
+            pos.z = deb->mtx._32;
+            r = (deb->info->size * 0.75f);
+            if (0.0f < r) {
+              NuRndrAddShadow(&pos,r,0x7f,0,0,0);
+            }
+          }
+        }
+      }
+    }
+  }
+  if (rockpt == HotRocks) {
+    i = (s32)(pVIS - world_scene[0]->splines);
+    if ((i == 1) && (iVIS < 0x8d)) {
+      if (ObjTab[i + 0x3e].obj.special != NULL) {
+        NuSpecialDrawAt(&ObjTab[i + 0x3e].obj,&(ObjTab[i + 0x3e].obj.special)->mtx);
+      }
+    }
+    else if (((i == 6 || i == 7) || (i == 9))) {
+        i = 64;
+        if ((ObjTab[i].obj.special != NULL))  {
+            NuSpecialDrawAt(&ObjTab[i].obj,&(ObjTab[i].obj.special)->mtx);
+        }
+    }
+  }
+}
+
+//NGC MATCH PART OF DRAWDEB3
+void RockSpark(struct deb3_s *deb) {
+  s32 key;
+  struct nuvec_s vec;
+  
+  vec.x = (deb->mtx)._30;
+  vec.y = (deb->mtx)._31;
+  vec.z = (deb->mtx)._32;
+  key = -1;
+  deb->data--;
+  if (deb->data < 0) {
+    deb->timer = 1;
+  }
+  else {
+    AddFiniteShotDebrisEffect(&key,GDeb[33].i,&vec,1);
+    GameSfx(0x5f,&vec);
+  }
+  return;
+}
+
+//NGC MATCH PART OF DRAWDEB3
+void CoalSpark(struct deb3_s *deb) {
+  s32 key;
+  struct nuvec_s vec;
+  
+  vec.x = (deb->mtx)._30;
+  vec.y = (deb->mtx)._31;
+  vec.z = (deb->mtx)._32;
+  key = -1;
+  deb->data--;
+  if (deb->data < 0) {
+    deb->timer = 1;
+  }
+  else {
+    AddFiniteShotDebrisEffect(&key,GDeb[35].i,&vec,1);
+  }
+  return;
+}
+
+//NGC MATCH PART OF DRAWDEB3
+void RockBreak(struct deb3_s *deb) {
+  s32 key;
+  struct nuvec_s vec;
+  
+  vec.x = (deb->mtx)._30;
+  vec.y = (deb->mtx)._31;
+  vec.z = (deb->mtx)._32;
+  key = -1;
+  AddFiniteShotDebrisEffect(&key,GDeb[33].i,&vec,1);
+  GameSfx(0x5f,&vec);
+  return;
+}
+
+//NGC MATCH PART OF DRAWDEB3
+void CoalBreak(struct deb3_s *deb) {
+  s32 key;
+  struct nuvec_s vec;
+  
+  vec.x = (deb->mtx)._30;
+  vec.y = (deb->mtx)._31;
+  vec.z = (deb->mtx)._32;
+  key = -1;
+  AddFiniteShotDebrisEffect(&key,GDeb[36].i,&vec,1);
+  return;
+}
+
+//NGC MATCH PART OF DRAWDEB3
+void DynaBreak(struct deb3_s *deb) {
+  struct nuvec_s pos;
+  
+  pos.x = (deb->mtx)._30;
+  pos.y = (deb->mtx)._31;
+  pos.z = (deb->mtx)._32;
+  AddGameDebris(0x44,&pos);
+  GameSfx(0x3b,&pos);
+  return;
 }

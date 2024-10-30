@@ -395,6 +395,36 @@ void DrawJeepTrails(void) {
 }
 
 //NGC MATCH
+void DrawFireBoss(struct FIREBOSSSTRUCT *Boss) {
+  struct nuvec_s P0;
+  struct nuvec_s P1;
+  struct nuvec_s Rel;
+  
+  NuMtxSetScale(&mTEMP,&FIREBOSSSCALE);
+  NuMtxRotateY(&mTEMP,(s32)((Boss->AngleY + 180.0f) * 182.0444f));
+  NuMtxTranslate(&mTEMP,&Boss->Position);
+  Boss->DrawMtx = mTEMP;
+  if (Boss->Action == 5) {
+      Boss->Seen = MyDrawModelNew(&Boss->ExplodeDraw,&mTEMP,Boss->Locator);
+  } else {
+      Boss->Seen = MyDrawModelNew(&Boss->MainDraw,&mTEMP,Boss->Locator);
+  }
+  if ((WallOfFireOn != 0) && (0 < FireBoss.HitPoints)) {
+    if (Paused == 0) {
+      P0 = WallOfFirePosition;
+      P0.y += 0.5f;
+      AddVariableShotDebrisEffect(GDeb[0x95].i,&P0,4,0,(short)WallOfFireAngleY);
+    }
+    NuVecRotateY(&P0,SetNuVecPntr(4.0f,0.0f,0.0f),(s32)(WallOfFireAngleY * 182.0444f));
+    NuVecRotateY(&P1,SetNuVecPntr(-4.0f,0.0f,0.0f),(s32)(WallOfFireAngleY * 182.0444f));
+    NuVecAdd(&P0,&WallOfFirePosition,&P0);
+    NuVecAdd(&P1,&WallOfFirePosition,&P1);
+    NuVecSub(&Rel,&P1,&P0);
+  }
+  return;
+}
+
+//NGC MATCH
 void JonnySteam(struct FIREBOSSSTRUCT *Boss) {
   struct nuvec_s vec;
   
@@ -404,6 +434,44 @@ void JonnySteam(struct FIREBOSSSTRUCT *Boss) {
     AddVariableShotDebrisEffect(GDeb[162].i,&vec,1,0,0);
   }
   return;
+}
+
+//NGC MATCH
+s32 CheckAgainstFireBoss(struct nuvec_s *Position,struct nuvec_s *Move,float RAD) {
+  float RAD2;
+  struct nuvec_s Rel;
+  struct nuvec_s Pos;
+  s32 Ret;
+  float Dist;
+  float Dist2;
+  
+  RAD2 = RAD * RAD;
+  Ret = 0;
+  if (Level != 0x16) {
+    return 0;
+  }
+  else {
+    if (Move != NULL) {
+      NuVecAdd(&Pos,Position,Move);
+    }
+    else {
+      Pos = *Position;
+    }
+    NuVecSub(&Rel,&Pos,&FireBoss.Position);
+    Rel.y = 0.0f;
+    Dist = NuVecMagSqr(&Rel);
+    if (Dist < RAD2) {
+      if (Move != NULL) {
+        DotProduct(&Rel,Move); // ?
+        Dist2 = NuFsqrt(Dist);
+        NuVecScale(&Rel,&Rel,(RAD / Dist2));
+        NuVecAdd(&Pos,&FireBoss.Position,&Rel);
+        NuVecSub(Move,&Pos,Position);
+      }
+      Ret = 1;
+    }
+  }
+  return Ret;
 }
 
 //NGC MATCH

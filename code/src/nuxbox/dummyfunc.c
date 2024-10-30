@@ -360,47 +360,40 @@ float ** NuHGobjEvalDwa2(int nlayers,short *layers,struct nuanimdata2_s *vtxanim
 
 union variptr_u vpdmatag_curr;
 /*
-union variptr_u vpDmaTag_RetEx(union variptr_u ptr)
-{
-  struct _sceDmaTag dmatag174;
-  union variptr_u *in_r4;
-  union variptr_u dtag;
-  struct _sceDmaTag *next;
 
-  next = dmatag174.next;
-  dtag = (variptr_u)in_r4->dmatag;
-  vpdmatag_curr = dtag;
-  *dtag.u32 = dmatag174._0_4_;
-  (dtag.dmatag)->next = next;
-  *ptr.u32 = (uint)&(dtag.vec3)->z;
-  return (variptr_u)ptr.voidptr;
+//MATCH NGC
+static union variptr_u vpDmaTag_RetEx(union variptr_u ptr) {
+    static struct _sceDmaTag dmatag = {0, 0, 1, NULL};
+
+    vpdmatag_curr = ptr;
+    
+    *ptr.dmatag = dmatag;
+
+    ptr.dmatag++;
+    
+    return ptr;
 }
 
-union variptr_u vpDmaTag_Close(union variptr_u ptr)
-{
-  uint *in_r4;
-  uint qwc;
+//MATCH NGC
+static union variptr_u vpDmaTag_Close(union variptr_u ptr) {
 
-  qwc = *in_r4;
   if (vpdmatag_curr.voidptr == NULL) {
     NuErrorProlog("C:/source/crashwoc/code/nuxbox/dummyfunc.c",0x23a)("Attempted to DmaTag_End without Begin or Add");
   }
   vpdmatag_curr.voidptr = NULL;
-  *ptr.u32 = qwc;
-  return (union variptr_u)ptr.voidptr;
+  return ptr;
 }
 
-//78% NGC
-struct _sceDmaTag * CreateDmaParticleSet(void *buffer,s32 *size) {
+//MATCH NGC
+struct sceDmaTag * CreateDmaParticleSet(void *buffer,s32 *size) {
     s32 lp;
     union variptr_u buff;
     struct debris_s *temp;
 
     buff.voidptr = buffer;
-    vpDmaTag_RetEx(buff);
-    //lp = 0x20;
+    buff = vpDmaTag_RetEx(buff);
     temp = (struct debris_s*)buff.voidptr;
-    for (lp = 0; lp < 0x20; lp++, temp++){
+    for (lp = 0; lp < 0x20; lp++, temp++) {
         temp->x = 1.0f;
         temp->y = 2.0f;
         temp->z = 3.0f;
@@ -411,8 +404,9 @@ struct _sceDmaTag * CreateDmaParticleSet(void *buffer,s32 *size) {
         temp->etime = 128.0f;
     }
     buff.voidptr = temp;
-    *size = (s32)vpDmaTag_Close(buff).voidptr - (s32)buffer;
-    return (struct _sceDmaTag *)buffer;
+    buff = vpDmaTag_Close(buff);
+    *size = (s32)buff.voidptr - (s32)buffer;
+    return (struct sceDmaTag *)buffer;
 }
 
 //MATCH NGC
@@ -509,9 +503,7 @@ s32 NuPs2PadDemoEnd(void)
 }
 */
 
-s32 DeadZoneValue(s32 dx)
-
-{
+s32 DeadZoneValue(s32 dx) {
   if (dx < 1) {
     if (dx < -0x1f) {
       return ((dx + 0x20) * 0xff) / 0xdf;

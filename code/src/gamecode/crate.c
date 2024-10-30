@@ -299,9 +299,9 @@ void AddExtraLife(struct nuvec_s *pos,int pdeb) {
   return;
 }
 
-//99% NGC
+//NGC MATCH
 s32 GetCrateType(CrateCube* crate, s32 flags) {
-    s32 type;
+    u32 type;
 
     if (TimeTrial != 0) {
         type = crate->type2;
@@ -313,28 +313,17 @@ s32 GetCrateType(CrateCube* crate, s32 flags) {
         type = crate->newtype;
     }
     
-    if (flags & 2) {
-        if (type == 8) {
-            if (crate->newtype != -1) {
-                goto block_12;
-            } else {
-                goto block_20;
-            }
+    if ((flags & 2) && type == 8) {
+        if (crate->newtype != -1) {
+            goto block_12;
         }
     }
-    
-    if (crate->newtype != -1) {
+    else if (crate->newtype != -1) {
 block_12:
-        if (TimeTrial != 0 && (type != 9) || crate->subtype == -1) {
-            type = crate->newtype;
-            goto block_20;
-        }
-        //goto block_1;
+        type = (TimeTrial == 0 || type == 9) ? (crate->subtype != -1 ? crate->subtype : crate->newtype) : crate->newtype;
     } else if (TimeTrial == 0 || type == 9) {
-block_1:
         type = (crate->subtype != -1) ? crate->subtype : type;
     }
-block_20:
 
     if (!(flags & 1)) {
         if (type == 22 || type == 23 || type == 24) {
