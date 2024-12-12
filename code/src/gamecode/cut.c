@@ -464,11 +464,11 @@ void InitGameCut(void) {
     return;
 }
 
-//98% NGC (regswap)
+//NGC MATCH
 void UpdateGameCut(void) {
+    float dt;
     struct CharacterModel* model;
-    float f;
-    int i;
+    s32 i;
 
     if (((GameMode != 1) && (gamecut_start != 0)) && ((Level == 0x25 || (Level == 0x28)))) {
         new_mode = 1;
@@ -484,19 +484,19 @@ void UpdateGameCut(void) {
         }
         if (gamecut_finished == 0) {
             model = NULL;
-            if (((u16)pCutAnim->character < 0xbf) && (CRemap[pCutAnim->character] != -1)) {
+            if ((pCutAnim->character >= 0) && (pCutAnim->character < 0xbf) && (CRemap[pCutAnim->character] != -1)) {
                 model = &CModel[CRemap[pCutAnim->character]];
             }
             CutAnim.oldaction = CutAnim.action;
             CutAnim.newaction = pCutAnim->action;
             if (model != NULL) {
                 if (((gamecut_hold != 0) && (gamecut_sfx != -1)) && (NuSoundKeyStatus(4) != 1)) {
-                    f = 0.0f;
+                    dt = 0.0f;
                 } else {
-                    f = 0.5f;
+                    dt = 0.5f;
                     gamecut_hold = 0;
                 }
-                UpdateAnimPacket(model, &CutAnim, f, 0.0f);
+                UpdateAnimPacket(model, &CutAnim, dt, 0.0f);
             }
             UpdateTimer(&CutTimer);
             if (fadeval == 0) {
@@ -505,7 +505,7 @@ void UpdateGameCut(void) {
                     if (Level == 0x28) {
                         new_level = gamecut_newlevel;
                     } else {
-                        new_mode = fadeval;
+                        new_mode = 0;
                     }
                 }
             }
@@ -535,10 +535,12 @@ void UpdateGameCut(void) {
             }
         }
         if (Level == 0x28) {
-            if (CRemap[183] != -1) {
+            i = CRemap[183];
+            if (i != -1) {
+                model = &CModel[i];
                 CutVortexAnim.oldaction = CutVortexAnim.action;
                 CutVortexAnim.newaction = 0x22;
-                UpdateAnimPacket(&CModel[CRemap[183]], &CutVortexAnim, 0.5f, 0.0f);
+                UpdateAnimPacket(model, &CutVortexAnim, 0.5f, 0.0f);
             }
             GameSfxLoop(0xcd, NULL);
         }
@@ -548,8 +550,7 @@ void UpdateGameCut(void) {
     }
     if (new_mode == 0) {
         last_hub = -1;
-        tumble_duration = 0.0f;
-        tumble_time = 0.0f;
+        tumble_time = tumble_duration = 0.0f;
     }
     return;
 }
