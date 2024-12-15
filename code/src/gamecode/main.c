@@ -72,8 +72,7 @@ char* tLOADING[6]; //text.c
 
 
 //NGC MATCH
-void ResetSuperBuffer(void)
-{
+void ResetSuperBuffer(void) {
   if (superbuffersize != (double)0x4156eb851eb851ec) {
     if (superbuffer_base.voidptr != NULL) {
       NuMemFree(superbuffer_base.voidptr);
@@ -89,36 +88,25 @@ void ResetSuperBuffer(void)
     }
   }
   superbuffer_ptr = superbuffer_reset_base;
-  return;
 }
 
-/*
-//78%
+//NGC MATCH
 void ResetSuperBuffer2(void) {
-    double dVar1;
-
     if (superbuffersize != (double)6008340.48) {
         if (superbuffer_base.voidptr != NULL) {
             NuMemFree(superbuffer_base.voidptr);
         }
         superbuffer_base.voidptr = NuMemAlloc(0x5bae14);
         superbuffersize = 0x5bae14;
-        if ((double)0x4156eb851eb851ec <= superbuffersize + 6008340) {
-            superbuffer_end.intaddr = (int)(0x4156eb851eb851ec);
-        }
-        else {
-            superbuffer_end.intaddr = (uint)dVar1;
-        }
-        superbuffer_reset_base.voidptr = superbuffer_base.voidptr;
+        superbuffer_reset_base = superbuffer_base;
+        superbuffer_end.intaddr = (superbuffer_base.intaddr + 6008340.48);
         if (superbuffer_base.voidptr == NULL) {
             NuErrorProlog("C:/source/crashwoc/code/gamecode/main.c",0x5e2)
             ("unable to allocate super buffer");
         }
     }
     superbuffer_ptr = superbuffer_reset_base;
-    return;
 }
-*/
 
 void InitTexAnimScripts(void)	//PS2
 {

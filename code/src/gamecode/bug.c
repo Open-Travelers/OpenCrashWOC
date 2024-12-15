@@ -71,65 +71,56 @@ void ResetBug(void) {
   return;
 }
 
-
-void UpdateBugLight(creature_s *c)		//TODO
-
-{
-  int iVar1;
-  uint uVar2;
-  double dVar3;
-  double dVar4;
-  double dVar5;
-  double dVar6;
-  double dVar7;
-  double dVar8;
-  double dVar9;
-  nuvec_s oldpos;
-  nuvec_s local_c8;
-  nuvec_s nStack_b8;
-  nuvec_s nStack_a8;
-  nuvec_s pos;
-  float fadetime;
+//NGC MATCH
+void UpdateBugLight(struct creature_s *c) {
+  struct nuvec_s oldpos;
+  struct nuvec_s v;
+  struct nuvec_s v0;
+  struct nuvec_s v1;
+  struct nuvec_s pos;
+  float f;
+  float r;
+  float r0;
+  float r1;
+  float d;
+  float d0;
+  float d1;
+  float dr;
+  u16 a;
+  s32 i;
   
-  bug_fade = 0.0;
-  if ((LBIT._4_4_ & 0x88100000) == 0) {
-    bug_fade = 0.0;
+  bug_fade = 0.0f;
+  if ((LBIT & 0x88100000) == 0) {
     return;
   }
-  if (((Level != 0x14) || (fadetime = BUGFADETIME, GemPath == 0)) &&
-     ((iVar1 = InBugArea((int)(c->obj).RPos.iRAIL,(int)(c->obj).RPos.iALONG,(c->obj).RPos.fALONG),
-      iVar1 == -1 ||
-      ((fadetime = BUGFADETIME, (LBIT._4_4_ & 0x80100000) != 0 && (VEHICLECONTROL != 1)))))) {
-    fadetime = 0.0;
+  if (((Level == 0x14) && (GemPath != 0)) || ((InBugArea((s32)(c->obj).RPos.iRAIL,(s32)(c->obj).RPos.iALONG,(c->obj).RPos.fALONG) != -1 &&
+      (((LBIT & 0x80100000) == 0 || (VEHICLECONTROL == 1)))))) {
+     f = BUGFADETIME;
+  } else  {
+        f = 0.0f;
   }
-  dVar6 = (double)fadetime;
-  iVar1 = qrand();
-  if (iVar1 < 0) {
-    iVar1 = iVar1 + 0x3f;
-  }
-  buglight_ang[3] = buglight_ang[3] + (short)((iVar1 >> 6) << 2) + (short)(iVar1 >> 6);
-  if ((LBIT._4_4_ & 0x80100000) != 0) {
-    dVar5 = (double)mechlight_fade;
-    if (dVar5 <= dVar6) {
-      if ((dVar6 <= dVar5) ||
-         (mechlight_fade = (float)(dVar5 + 0.01666666753590107), (double)mechlight_fade <= dVar6))
-      goto LAB_800093bc;
+  buglight_ang[3] += qrand() / 0x40 * 5;
+  if ((LBIT & 0x80100000) != 0) {
+    if (mechlight_fade > f) {
+      mechlight_fade -= 0.016666668f;
+        if(mechlight_fade < f) {
+            mechlight_fade = f;
+        }
     }
-    else {
-      mechlight_fade = (float)(dVar5 - 0.01666666753590107);
-      if (dVar6 <= (double)mechlight_fade) goto LAB_800093bc;
+    else if (mechlight_fade < f) {
+        mechlight_fade += 0.016666668f;
+        if(mechlight_fade > f) {
+            mechlight_fade = f;
+        }
     }
-    mechlight_fade = (float)dVar6;
-LAB_800093bc:
-    if (0.0 < mechlight_fade) {
+    if (mechlight_fade > 0.0f) {
       bug_pos.x = (player->obj).pos.x;
       bug_pos.y = (player->obj).top * (player->obj).SCALE + (player->obj).pos.y;
       bug_pos.z = (player->obj).pos.z;
-      uVar2 = NuAtan2D(bug_pos.x - GameCam.pos.x,bug_pos.z - GameCam.pos.z);
-      bug_pos.x = NuTrigTable[uVar2 & 0xffff] * mechlight_distance + bug_pos.x;
-      bug_pos.z = *(float *)((int)NuTrigTable + (((uVar2 & 0xffff) + 0x4000) * 4 & 0x3fffc)) *
-                  mechlight_distance + bug_pos.z;
-      bug_scale = 1.5;
+      a = NuAtan2D(bug_pos.x - GameCam[0].pos.x,bug_pos.z - GameCam[0].pos.z);
+      bug_pos.x = NuTrigTable[a & 0xffff] * mechlight_distance + bug_pos.x;
+      bug_pos.z = NuTrigTable[((a & 0xffff) + 0x4000) & 0x2ffff] *  mechlight_distance + bug_pos.z;
+      bug_scale = 1.5f;
     }
     bug_fade = mechlight_fade;
     qrand();
@@ -138,103 +129,100 @@ LAB_800093bc:
   if (Level != 0x1b) {
     return;
   }
-  oldpos.x = bug_pos.x;
-  oldpos.z = bug_pos.z;
-  oldpos.y = bug_pos.y;
-  if (SplTab[70].spl == (nugspline_s *)0x0) {
+  f = 2.0f;
+  oldpos = bug_pos;
+  if (SplTab[70].spl != NULL) {
+      pos = (player->obj).pos;
+      if (best_cRPos != NULL) {
+        r = buglight_distance;
+        if ((best_cRPos->mode & 0xc) != 0) {
+          r = buglight_distance * 0.333f;
+        }
+        pos.x = NuTrigTable[best_cRPos->angle] * r + pos.x;
+        pos.z = NuTrigTable[(best_cRPos->angle + 0x4000) & 0x2ffff] * r + pos.z;
+      }
+      d0 = bug_splratio;
+      PointAlongSpline(SplTab[70].spl,d0,&v,NULL,NULL);
+      r = NuVecDistSqr(&pos,&v,NULL);
+      dr = 0.001f;
+      if (c->sprint != 0) {
+        dr += dr;
+      }
+      r0 = (bug_splratio - dr);
+      if (r0 < 0.0f) {
+        r0 = 0.0f;
+      }
+      PointAlongSpline(SplTab[70].spl,r0,&v0,NULL,NULL);
+      d = NuVecDistSqr(&pos,&v0,NULL);
+      r1 = (bug_splratio + dr);
+      if (r1 > 1.0f) {
+        r1 = 1.0f;
+      }
+      PointAlongSpline(SplTab[70].spl,r1,&v1,NULL,NULL);
+      d1 = NuVecDistSqr(&pos,&v1,NULL);
+      if ((((d < r) && (d < d1)))) {
+        d0 = r0;
+      } else {
+        if ((d1 < r) && (d1 < d)) {
+            d0 = r1;
+        }
+      }
+      if (bug_splratio > d0) {
+        bug_splratio = (bug_splratio - ((dr * 0.016666668f) * 10.0f));
+        if (bug_splratio < d0) {
+          bug_splratio = d0;
+        }
+      }
+      else if (bug_splratio < d0) {
+          bug_splratio = (dr * 0.016666668f) * 10.0f + bug_splratio;
+              if (bug_splratio > d0) {
+                  bug_splratio = d0;
+              }
+      }
+      PointAlongSpline(SplTab[70].spl,bug_splratio,&pos,NULL,NULL);
+      bug_splpos.x = (pos.x - bug_splpos.x) * 0.25f + bug_splpos.x;
+      bug_splpos.y = (pos.y - bug_splpos.y) * 0.25f + bug_splpos.y;
+      bug_splpos.z = (pos.z - bug_splpos.z) * 0.25f + bug_splpos.z;
+      bug_pos = bug_splpos;
+  } else {
     bug_pos.x = (player->obj).pos.x;
     bug_pos.y = (player->obj).top * (player->obj).SCALE + (player->obj).pos.y;
     bug_pos.z = (player->obj).pos.z;
-    uVar2 = NuAtan2D(bug_pos.x - GameCam.pos.x,bug_pos.z - GameCam.pos.z);
-    bug_pos.x = NuTrigTable[uVar2 & 0xffff] * buglight_distance + bug_pos.x;
-    bug_pos.z = *(float *)((int)NuTrigTable + (((uVar2 & 0xffff) + 0x4000) * 4 & 0x3fffc)) *
-                buglight_distance + bug_pos.z;
-    goto LAB_800097dc;
+    a = NuAtan2D(bug_pos.x - GameCam[0].pos.x,bug_pos.z - GameCam[0].pos.z);
+    bug_pos.x = NuTrigTable[a & 0xffff] * buglight_distance + bug_pos.x;
+    bug_pos.z = NuTrigTable[((a & 0xffff) + 0x4000) & 0x2ffff] * buglight_distance + bug_pos.z;
   }
-  pos.x = (player->obj).pos.x;
-  pos.z = (player->obj).pos.z;
-  pos.y = (player->obj).pos.y;
-  if (best_cRPos != (RPos_s *)0x0) {
-    fadetime = buglight_distance;
-    if ((best_cRPos->mode & 0xc) != 0) {
-      fadetime = buglight_distance * 0.333;
-    }
-    pos.x = NuTrigTable[best_cRPos->angle] * fadetime + pos.x;
-    pos.z = *(float *)((int)NuTrigTable + ((best_cRPos->angle + 0x4000) * 4 & 0x3fffc)) * fadetime  +
-            pos.z;
-  }
-  dVar8 = (double)bug_splratio;
-  PointAlongSpline(SplTab[70].spl,bug_splratio,&local_c8,(ushort *)0x0,(ushort *)0x0);
-  fadetime = NuVecDistSqr(&pos,&local_c8,(nuvec_s *)0x0);
-  dVar6 = (double)fadetime;
-  dVar5 = 0.001000000047497451;
-  if (c->sprint != '\0') {
-    dVar5 = 0.002000000094994903;
-  }
-  dVar7 = (double)(float)((double)bug_splratio - dVar5);
-  if ((double)(float)((double)bug_splratio - dVar5) < 0.0) {
-    dVar7 = 0.0;
-  }
-  PointAlongSpline(SplTab[70].spl,(float)dVar7,&nStack_b8,(ushort *)0x0,(ushort *)0x0);
-  fadetime = NuVecDistSqr(&pos,&nStack_b8,(nuvec_s *)0x0);
-  dVar3 = (double)fadetime;
-  dVar9 = (double)(float)((double)bug_splratio + dVar5);
-  if (1.0 < (double)(float)((double)bug_splratio + dVar5)) {
-    dVar9 = 1.0;
-  }
-  PointAlongSpline(SplTab[70].spl,(float)dVar9,&nStack_a8,(ushort *)0x0,(ushort *)0x0);
-  fadetime = NuVecDistSqr(&pos,&nStack_a8,(nuvec_s *)0x0);
-  dVar4 = (double)fadetime;
-  if ((((dVar6 <= dVar3) || (dVar4 <= dVar3)) && (dVar7 = dVar8, dVar4 < dVar6)) && (dVar4 < dVar3 ))
-  {
-    dVar7 = dVar9;
-  }
-  dVar6 = (double)bug_splratio;
-  if (dVar6 <= dVar7) {
-    if ((dVar6 < dVar7) &&
-       (bug_splratio = (float)((double)(float)(dVar5 * 0.01666666753590107) * 10.0 + dVar6),
-       dVar7 < (double)bug_splratio)) goto LAB_800096c8;
-  }
-  else {
-    bug_splratio = (float)(dVar6 - (double)((float)(dVar5 * 0.01666666753590107) * 10.0));
-    if ((double)bug_splratio < dVar7) {
-LAB_800096c8:
-      bug_splratio = (float)dVar7;
-    }
-  }
-  PointAlongSpline(SplTab[70].spl,bug_splratio,&pos,(ushort *)0x0,(ushort *)0x0);
-  bug_pos.z = (pos.z - bug_splpos.z) * 0.25 + bug_splpos.z;
-  bug_pos.x = (pos.x - bug_splpos.x) * 0.25 + bug_splpos.x;
-  bug_pos.y = (pos.y - bug_splpos.y) * 0.25 + bug_splpos.y;
-  bug_splpos.x = bug_pos.x;
-  bug_splpos.y = bug_pos.y;
-  bug_splpos.z = bug_pos.z;
-LAB_800097dc:
-  bug_pos.x = *(float *)((int)NuTrigTable + ((buglight_ang[0] + 0x20d) * 4 & 0x3fffc)) * 0.45 +
-              bug_pos.x;
-  bug_pos.y = *(float *)((int)NuTrigTable + ((buglight_ang[1] + 0x127) * 4 & 0x3fffc)) * 0.45 +
-              bug_pos.y;
-  buglight_ang[0] = (ushort)(buglight_ang[0] + 0x20d);
-  bug_pos.z = *(float *)((int)NuTrigTable + ((buglight_ang[2] + 0x366) * 4 & 0x3fffc)) * 0.45 +
-              bug_pos.z;
-  buglight_ang[1] = (ushort)(buglight_ang[1] + 0x127);
-  buglight_ang[2] = (ushort)(buglight_ang[2] + 0x366);
-  NuVecSub(&local_c8,&bug_pos,&oldpos);
-  dVar6 = (double)local_c8.y;
-  fadetime = NuFsqrt(local_c8.x * local_c8.x + local_c8.z * local_c8.z);
-  iVar1 = NuAtan2D((float)dVar6,fadetime);
-  bug_xrot = SeekRot(bug_xrot,(ushort)iVar1,3);
-  iVar1 = NuAtan2D(local_c8.x,local_c8.z);
-  bug_yrot = SeekRot(bug_yrot,(ushort)iVar1,3);
+  buglight_ang[0] = (buglight_ang[0] + 0x20d);
+  buglight_ang[1] = (buglight_ang[1] + 0x127);
+  buglight_ang[2] = (buglight_ang[2] + 0x366);
+  bug_pos.x = NuTrigTable[buglight_ang[0] & 0x2ffff] * 0.45f + bug_pos.x;
+  bug_pos.y = NuTrigTable[buglight_ang[1] & 0x2ffff] * 0.45f + bug_pos.y;
+  bug_pos.z = NuTrigTable[buglight_ang[2] & 0x2ffff] * 0.45f + bug_pos.z;
+
+  NuVecSub(&v,&bug_pos,&oldpos);
+  a = NuAtan2D(v.y,NuFsqrt(v.x * v.x + v.z * v.z));
+  bug_xrot = SeekRot(bug_xrot,a,3);
+  a = NuAtan2D(v.x,v.z);
+  bug_yrot = SeekRot(bug_yrot,a,3);
   if (CRemap[174] != -1) {
     BugAnim.oldaction = BugAnim.action;
-    UpdateAnimPacket(CModel + CRemap[174],&BugAnim,0.5,0.0);
+    UpdateAnimPacket(&CModel[CRemap[174]],&BugAnim,0.5f,0.0f);
   }
-  bug_fade = 2.0;
-  buglight_fade = 2.0;
-  bug_scale = 2.0;
-  iVar1 = qrand();
-  if (0x7fff < iVar1) {
+  if (buglight_fade > f) {
+      buglight_fade -= 0.016666668f;
+      if (buglight_fade < f) {
+          buglight_fade = f;
+      }
+  } else if (buglight_fade < f) {
+      buglight_fade += 0.016666668f;
+      if (buglight_fade > f) {
+          buglight_fade = f;
+      }
+  }    
+  buglight_fade = 2.0f;
+  bug_scale = 2.0f;
+  bug_fade = 2.0f;
+  if (0x7fff < qrand()) {
     return;
   }
   AddGameDebris(0x9c,&bug_pos);

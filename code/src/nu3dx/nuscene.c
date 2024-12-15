@@ -4,21 +4,18 @@
 
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 
-//NGC 97%
+//NGC MATCH
 void ReadNuIFFTextureSet(s32 handle,struct nuscene_s *scene) {
   s32 count;
   s32 i;
-  s32 size;
   s32 pal_size;
-  s32 imsize = 0;
+  s32 imsize;
   struct nutex_s nuTex;
-  s32* new_bits;
-  u8* bits8;
 
-  NuFileBeginBlkRead(handle,0x30485354);
+  NuFileBeginBlkRead(handle,0x30485354); //"0HST"
   count = NuFileReadInt(handle);
   NuFileEndBlkRead(handle);
-  scene->numtids = bits8;
+  scene->numtids = 0; // = count??
   if (count != 0) {
     scene->tids = (s16 *)NuMemAlloc(count << 1);
     scene->tids[0] = 0;
@@ -27,7 +24,7 @@ void ReadNuIFFTextureSet(s32 handle,struct nuscene_s *scene) {
     scene->tids = NULL;
   }
     for(i = 0; i < count; i++) {
-      NuFileBeginBlkRead(handle,0x304d5854);
+      NuFileBeginBlkRead(handle,0x304d5854); //"0MXT"
       nuTex.type = NuFileReadInt(handle);
       nuTex.width = NuFileReadInt(handle);
       nuTex.height = NuFileReadInt(handle);
@@ -35,19 +32,16 @@ void ReadNuIFFTextureSet(s32 handle,struct nuscene_s *scene) {
       nuTex.pal = NULL;
       nuTex.bits = NULL;
       nuTex.decal = 0;
-      if ((nuTex.type & 0x80) == 0) {
-        imsize = NuTexImgSize(nuTex.type,nuTex.width,nuTex.height);
-      }
-      nuTex.bits = malloc_x(imsize);
+      imsize = ((nuTex.type & 0x80) == 0) ? NuTexImgSize(nuTex.type,nuTex.width,nuTex.height) : nuTex.mmcnt;
+      nuTex.bits = (void*)malloc_x(imsize);
       NuFileRead(handle,nuTex.bits,imsize);
       pal_size = NuTexPalSize(nuTex.type);
       if (pal_size != 0) {
-        nuTex.pal = (int *)malloc_x(pal_size);
+        nuTex.pal = (s32 *)malloc_x(pal_size);
         NuFileRead(handle,nuTex.pal,pal_size);
       }
-      size = NuTexCreate(&nuTex);
-      scene->tids[scene->numtids++] = (s16)size;
-
+      scene->tids[scene->numtids++] = (s16)NuTexCreate(&nuTex);
+      
       if (nuTex.pal != NULL) {
         free_x(nuTex.pal);
         nuTex.pal = NULL;
@@ -58,7 +52,6 @@ void ReadNuIFFTextureSet(s32 handle,struct nuscene_s *scene) {
       }
       NuFileEndBlkRead(handle);
     }
-  return;
 }
 
 //NGC MATCH

@@ -734,22 +734,20 @@ float RatioDifferenceAlongLine(float r0,float r1,struct nuvec_s *p0,struct nuvec
   return d;
 }
 
+//NGC MATCH
+s32 FindAILabel(struct creatcmd_s *cmd,s32 i) {
+  s32 j = 0;
 
-int FindAILabel(creatcmd_s *cmd,int i)
-
-{
-  int j;
-  
-  j = 0;
-  while( true ) {
+  while(1) { 
     if (cmd->cmd == 0x90) {
-      return 0;
+        return 0; 
     }
-    if ((cmd->cmd == 0x8b) && (cmd->i == i)) break;
-    cmd = cmd + 1;
-    j = j + 1;
+    if((cmd->cmd == 0x8b) && (cmd->i == i)) {
+        return j;
+    }
+    cmd++;
+    j++;
   }
-  return j;
 }
 
 
