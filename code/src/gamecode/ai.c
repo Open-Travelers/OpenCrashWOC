@@ -131,91 +131,77 @@ void ResetDRAINDAMAGE(void) {
   drain_ang[2] = qrand();
 }
 
-
-void UpdateDRAINDAMAGE(void)
-
-{
-  int i;
-  int xrot;
-  int yrot;
-  creature_s *crunch;
-  double Y_vec;
-  float fVar1;
-  float x;
-  float y;
-  float z;
-  nuvec_s v;
+//NGC MATCH
+void UpdateDRAINDAMAGE(void) {
+  struct creature_s *crunch;
+  u16 xrot;
+  u16 yrot;
+  struct nuvec_s pos;
+  struct nuvec_s v;
+  s32 i;
   
-  FindNearestCreature(&(player->obj).pos,0x7f,(nuvec_s *)0x0);
-  if (temp_creature_i == -1) {
-    crunch = (creature_s *)0x0;
+  FindNearestCreature(&(player->obj).pos,0x7f,NULL);
+  if (temp_creature_i != -1) {
+    crunch = &Character[temp_creature_i];
   }
   else {
-    crunch = Character + temp_creature_i;
+    crunch = NULL;
   }
-  drain_wawa_model = (CharacterModel *)0x0;
-  i = (int)CRemap[87];
+  drain_wawa_model = NULL;
+  i = (s32)CRemap[87];
   if (i != -1) {
-    drain_wawa_model = CModel + i;
-    if ((CModel[i].anmdata[0xc] == (nuAnimData_s *)0x0) ||
-       (CModel[i].anmdata[0xd] == (nuAnimData_s *)0x0)) {
-      drain_wawa_model = (CharacterModel *)0x0;
-    }
-    else {
+    drain_wawa_model = &CModel[i];
+    if ((drain_wawa_model->anmdata[0xc] != NULL) && (drain_wawa_model->anmdata[0xd] != NULL)) {
       drain_ang[0] = drain_ang[0] + 0x6bd;
       drain_ang[1] = drain_ang[1] + 0x492;
       drain_ang[2] = drain_ang[2] + 0x8e8;
-      if (crunch == (creature_s *)0x0) {
+      if (crunch == NULL) {
         if (drain_wawa_ok == 0) {
-          drain_wawa_ok = (int)crunch;
-          return;
+            goto jump;
         }
       }
       else {
-        x = (crunch->obj).pos.x - NuTrigTable[(crunch->obj).hdg] * 3.0;
-        y = (crunch->obj).pos.y + DRAINWAWADY;
-        z = (crunch->obj).pos.z -
-            *(float *)((int)NuTrigTable + (((crunch->obj).hdg + 0x4000) * 4 & 0x3fffc)) * 3.0;
+        pos.x = crunch->obj.pos.x - (NuTrigTable[crunch->obj.hdg] * 3.0f);
+        pos.y = crunch->obj.pos.y + DRAINWAWADY;
+        pos.z = crunch->obj.pos.z - (NuTrigTable[(crunch->obj.hdg + 0x4000) & 0xFFFF] * 3.0f);
       }
-      NuVecSub(&v,&GameCam.pos,&drain_wawa_pos);
-      Y_vec = (double)v.y;
-      fVar1 = NuFsqrt(v.x * v.x + v.z * v.z);
-      xrot = NuAtan2D((float)Y_vec,fVar1);
+      NuVecSub(&v,&GameCam[0].pos,&drain_wawa_pos);
+      xrot = NuAtan2D(v.y,NuFsqrt(v.x * v.x + v.z * v.z));
       yrot = NuAtan2D(v.x,v.z);
       if (drain_wawa_ok == 0) {
-        drain_wawa_pos.x = x;
         drain_wawa_ok = 1;
-        drain_wawa_pos.y = y;
-        drain_wawa_pos.z = z;
-        drain_wawa_xrot = (ushort)xrot;
-        drain_wawa_yrot = (ushort)yrot;
+        drain_wawa_pos = pos;
+        drain_wawa_xrot = xrot;
+        drain_wawa_yrot = yrot;
         ResetAnimPacket(&drain_wawa_anim,0xc);
         GameSfx(0x1e,&drain_wawa_pos);
       }
       else {
-        drain_wawa_xrot = SeekRot(drain_wawa_xrot,(ushort)xrot,3);
-        drain_wawa_yrot = SeekRot(drain_wawa_yrot,(ushort)yrot,3);
+        drain_wawa_xrot = SeekRot(drain_wawa_xrot,xrot,3);
+        drain_wawa_yrot = SeekRot(drain_wawa_yrot,yrot,3);
       }
       drain_wawa_anim.oldaction = drain_wawa_anim.action;
-      UpdateAnimPacket(CModel + i,&drain_wawa_anim,0.5,0.0);
-      if ((drain_wawa_anim.flags & 1) != 0) {
-        if (drain_wawa_anim.action == 0xc) {
-          if ((crunch == (creature_s *)0x0) ||
-             (fVar1 = NuVecDistSqr(&drain_wawa_pos,&(crunch->obj).pos,(nuvec_s *)0x0), 25.0 < fVar 1)
-             ) {
-            drain_wawa_anim.newaction = 0xd;
-            GameSfx(0x21,&drain_wawa_pos);
-          }
-        }
-        else {
-          drain_wawa_ok = 0;
-        }
+      UpdateAnimPacket(CModel + i,&drain_wawa_anim,0.5f,0.0f);
+      if ((drain_wawa_anim.flags & 1) == 0) {
+          return;
       }
+        if (drain_wawa_anim.action == 0xc) {
+          if ((crunch == NULL) || (NuVecDistSqr(&drain_wawa_pos,&crunch->obj.pos,NULL) > 25.0f)) {
+              drain_wawa_anim.newaction = 0xd;
+              GameSfx(0x21,&drain_wawa_pos);
+          }
+          return;
+        }
+        drain_wawa_ok = 0;
+        return;
+jump:
+        drain_wawa_ok = 0;
+        return;
     }
+      drain_wawa_model = NULL;
   }
   return;
 }
-
 
 void DrawDRAINDAMAGE(void)		//TODO
 

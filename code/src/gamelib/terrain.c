@@ -2522,143 +2522,98 @@ void CubeImpact(numtx_s *mat,numtx_s *nmat,nuvec_s *norm,float size,nuvec_s *imp
 	//TODO
 }
 
-
-
-void NewTerrainScaleY(nuvec_s *vpos,nuvec_s *vvel,uchar *flags,int terid,float stopflag,float siz e, float yscale) //Need Correction!!
-{
-  short sVar1;
-  nuvec_s *v;
-  double dVar2;
-  short sStack_22;
-  nuvec_s local_14;
-  TerrI *Terr;
-  float tmp;
+//NGC MATCH
+void NewTerrainScaleY(struct nuvec_s *vpos,struct nuvec_s *vvel,u8 *flags,s32 terid,float stopflag,float size,float yscale) {
+  s32 cnt;
+  s32 local_14;
+  s32 plathitcnt;
   
-  if (CurTerr != (TempTerr *)0x0) {
+  if (CurTerr == NULL) {
+      return;
+  }
     plathitid = -1;
     TerrPolyObj = -1;
-    TerrPoly = (hitdata *)0x0;
+    TerrPoly = NULL;
     PlatCrush = 0;
     terrhitflags = 0;
     CurTrackInfo = ScanTerrId(flags);
-    TerI = (TerrI *)NuScratchAlloc32(0x930);
+    TerI = (struct teri_s *)NuScratchAlloc32(0x930);
     TerI->yscale = yscale;
     TerI->yscalesq = TerI->yscale * TerI->yscale;
-    TerI->inyscale = 1.0 / yscale;
+    TerI->inyscale = 1.0f / yscale;
     TerI->inyscalesq = TerI->inyscale * TerI->inyscale;
     TerI->size = size;
-    TerI->sizediv = 1.0 / TerI->size;
+    TerI->sizediv = 1.0f / TerI->size;
     TerI->sizesq = TerI->size * TerI->size;
-    Terr = TerI;
-    tmp = vpos->x;
-    (TerI->curpos).x = tmp;
-    (Terr->origpos).x = tmp;
-    Terr = TerI;
-    tmp = TerI->size * yscale + vpos->y;
-    (TerI->curpos).y = tmp;
-    (Terr->origpos).y = tmp;
-    Terr = TerI;
-    tmp = vpos->z;
-    (TerI->curpos).z = tmp;
-    (Terr->origpos).z = tmp;
-    Terr = TerI;
-    tmp = vvel->x;
-    (TerI->curvel).x = tmp;
-    (Terr->origvel).x = tmp;
-    Terr = TerI;
-    tmp = vvel->y;
-    (TerI->curvel).y = tmp;
-    (Terr->origvel).y = tmp;
-    Terr = TerI;
-    tmp = vvel->z;
-    (TerI->curvel).z = tmp;
-    (Terr->origvel).z = tmp;
-    sStack_22 = (short)terid;
-    TerI->id = sStack_22;
+    (TerI->origpos).x = (TerI->curpos).x = vpos->x;
+    (TerI->origpos).y = (TerI->curpos).y = vpos->y + (TerI->size * yscale);
+    (TerI->origpos).z = (TerI->curpos).z = vpos->z;
+    (TerI->origvel).x = (TerI->curvel).x = vvel->x;
+    (TerI->origvel).y = (TerI->curvel).y = vvel->y;
+    (TerI->origvel).z = (TerI->curvel).z = vvel->z;
+    TerI->id = terid;
     TerI->stopflag = stopflag;
     TerI->flags = flags;
     TerI->scanmode = 0;
-    TerI->timeadj = 0.01;
+    TerI->timeadj = 0.01f;
     TerI->impactadj = 1e-05;
     ScanTerrain(1,0);
-    if (flags[1] != '\0') {
-      dVar2 = (double)vvel->x;
-      NuFabs(vvel->x);
-      if (dVar2 < (double)stopflag) {
-        dVar2 = (double)vvel->y;
-        NuFabs(vvel->y);
-        if (dVar2 < (double)stopflag) {
-          dVar2 = (double)vvel->z;
-          NuFabs(vvel->z);
-          if ((dVar2 < (double)stopflag) && (platinrange == 0)) {
-            NuScratchRelease();
-            TerrFlush();
-            return;
-          }
-        }
-      }
+    if ((((flags[1] != 0) && (NuFabs(vvel->x) < stopflag)) 
+        && (NuFabs(vvel->y) < stopflag)) && ((NuFabs(vvel->z) < stopflag && (platinrange == 0)))) {
+      NuScratchRelease();
+      TerrFlush();
+      return;
     }
-    (TerI->curpos).y = (TerI->curpos).y * TerI->inyscale;
-    (TerI->curvel).y = (TerI->curvel).y * TerI->inyscale;
-    *flags = '\0';
-    flags[1] = '\0';
-    v = (nuvec_s *)PlatformChecks(4,vvel);
-    local_14.x = (float)v;
-    do {
-      DerotateMovementVector();
-      v = (nuvec_s *)HitTerrain(v);
-      StorePlatImpact();
-      if (((TerI->hittype < 0x11) || (TerI->hitterrno == -1)) ||
-         (CurTerr->terr[TerI->hitterrno].type != TERR_TYPE_PLATFORM)) {
-        local_14.y = 1.401298e-45;
-      }
-      else {
-        local_14.x = (float)((int)local_14.x + -1);
-        v = (nuvec_s *)TerrainPlatformEmbedded(vvel);
-        local_14.y = (float)v;
-      }
-      if (local_14.y != 0.0) {
-        local_14.x = (float)((int)local_14.x + -1);
-        TerrainImpactNorm();
-        if (TerI->hittype != 0) {
-          ShadNorm.x = (TerI->uhitnorm).x;
-          ShadNorm.y = (TerI->uhitnorm).y;
-          ShadNorm.z = (TerI->uhitnorm).z;
-          if (((0.707 < (TerI->uhitnorm).y) && (-1 < TerI->hitterrno)) &&
-             (CurTerr->terr[TerI->hitterrno].type == TERR_TYPE_PLATFORM)) {
-            sVar1 = CurTerr->terr[TerI->hitterrno].info;
-            CurTerr->platdat[sVar1].status =
-                 (platattrib)((uint)CurTerr->platdat[sVar1].status | 0x40000000);
-          }
-        }
-        if (TerrShapeAdjCnt == 0) {
-          v = vpos;
-          TerrainImpact(vpos,vvel,flags);
+      (TerI->curpos).y = (TerI->curpos).y * TerI->inyscale;
+      (TerI->curvel).y = (TerI->curvel).y * TerI->inyscale;
+      *flags = 0;
+      flags[1] = 0;
+      cnt = PlatformChecks(4,vvel);
+      plathitcnt = 0;
+      do {
+        DerotateMovementVector();
+        HitTerrain();
+        StorePlatImpact();
+        if (((TerI->hittype > 0x10) && (TerI->hitterrno != -1)) && (CurTerr->terr[TerI->hitterrno].type == TERR_TYPE_PLATFORM)) {
+            cnt--;
+            local_14 = TerrainPlatformEmbedded(vvel);
         }
         else {
-          v = (nuvec_s *)TerrShapeSideStep(vpos,vvel,flags);
-          if (v != (nuvec_s *)0x0) {
-            v = vpos;
+            local_14 = 1;
+        }
+        if (local_14 != 0) {
+          cnt--;
+          TerrainImpactNorm();
+          if (TerI->hittype != 0) {
+            ShadNorm = (TerI->uhitnorm);
+            if (((0.707f < (TerI->uhitnorm).y) && (TerI->hitterrno >= 0)) &&
+               (CurTerr->terr[TerI->hitterrno].type == TERR_TYPE_PLATFORM)) {
+              CurTerr->platdata[CurTerr->terr[TerI->hitterrno].info].status.hit = 1;
+            }
+          }
+          if (TerrShapeAdjCnt != 0) {
+            if (TerrShapeSideStep(vpos,vvel,flags) != NULL) {
+              TerrainImpact(vpos,vvel,flags);
+            }
+          }
+          else {
             TerrainImpact(vpos,vvel,flags);
           }
         }
+      } while (((TerI->hittype != 0) && (0 < cnt)) &&
+              ((TerI->hitnorm).x * (TerI->hitnorm).x + (TerI->hitnorm).y * (TerI->hitnorm).y +
+               (TerI->hitnorm).z * (TerI->hitnorm).z <= 1.5f));
+      if (TerI->hittype != 0) {
+        vpos->x = (TerI->curpos).x;
+        vpos->y = (TerI->curpos).y * TerI->yscale - TerI->size * TerI->yscale;
+        vpos->z = (TerI->curpos).z;
       }
-    } while (((TerI->hittype != 0) && (0 < (int)local_14.x)) &&
-            ((TerI->hitnorm).x * (TerI->hitnorm).x + (TerI->hitnorm).y * (TerI->hitnorm).y +
-             (TerI->hitnorm).z * (TerI->hitnorm).z <= 1.5));
-    if (TerI->hittype != 0) {
-      vpos->x = (TerI->curpos).x;
-      vpos->y = (TerI->curpos).y * TerI->yscale - TerI->size * TerI->yscale;
-      vpos->z = (TerI->curpos).z;
-    }
-    if (testlock != 0) {
-      vpos->x = (TerI->origpos).x;
-      vpos->z = (TerI->origpos).z;
-    }
-    NuScratchRelease();
-    TerrFlush();
-  }
-  return;
+      if (testlock != 0) {
+        vpos->x = (TerI->origpos).x;
+        vpos->z = (TerI->origpos).z;
+      }
+      NuScratchRelease();
+      TerrFlush();
 }
 
 //NGC MATCH

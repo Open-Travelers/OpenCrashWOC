@@ -1,3 +1,4 @@
+#define rate_val 1.0f
 short RO_640460[8];
 
 //NGC MATCH
@@ -372,17 +373,19 @@ static void AppCutSceneFindCharacters(struct NUGCUTSCENE_s *cutscene)
     return;
 }
 
-//79% NGC
-void SetCutMovieRate(void) {
-
+//NGC MATCH //PS2 MATCH
+void SetCutMovieRate() {
     CutInst[cutworldix]->rate = 0.5f;
-    if ((cutmovie == 3 || cutmovie == 4) && (cutworldix == 0)) {
-        CutInst[cutworldix]->rate = CutInst[cutworldix]->rate * 0.8f;
+
+    if ((cutmovie == 3 || cutmovie == 4) && cutworldix == 0) {
+        CutInst[cutworldix]->rate *= 0.8f;
     }
-    if (cutratefrig != 0.0f) {
+
+    CutInst[cutworldix]->rate *= rate_val;
+    
+    if (cutratefrig != 0) {
         CutInst[cutworldix]->rate = cutratefrig;
     }
-    return;
 }
 
 //NGC MATCH
