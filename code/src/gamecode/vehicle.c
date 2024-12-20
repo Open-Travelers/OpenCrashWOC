@@ -298,7 +298,6 @@ void InitEarthBoss(void) {
 
 void InitRumblePanel(void) {
   NumRockPanel = 0;
-  return;
 }
 
 void DrawEarthBossLevelExtra(void) {
@@ -308,12 +307,12 @@ void DrawEarthBossLevelExtra(void) {
   return;
 }
 
+//NGC MATCH
 void ProcessEarthBossVortex(void) {
   if (EarthBossVortexOpen != 0) {
     CheckAtlasVortex(&EarthBoss);
     CheckAtlasVortex(&PlayerAtlas);
   }
-  return;
 }
 
 //NGC MATCH
@@ -602,6 +601,26 @@ void DeadGliderCoco(GLIDERSTRUCT *Glider) {
   return;
 }
 
+struct nuvec_s lbl_8011833C = {0.0f, 0.0f, 1.0f};
+
+//NGC MATCH
+static s32 SafePosition(struct nuvec_s *Pos) {
+  struct nuvec_s Rel;
+  struct nuvec_s Temp;
+  struct nuvec_s local_18;
+  
+  NuVecSub(&Rel,Pos,(struct nuvec_s *)&GameCam[0].m._30);
+  if (NuVecMag(&Rel) < 10.0f) {
+    return 0;
+  }
+  local_18 = lbl_8011833C;
+  NuVecMtxRotate(&local_18,&local_18,&GameCam[0].m);
+  if (NuVecDot(&Rel,&Temp) < 0.0f) {
+       return 0;
+  }
+  return SafeFromCollisions(Pos); 
+}
+
 //NGC MATCH
 static ZOFFASTRUCT * FindFreeZoffa(void) {
   s32 i;
@@ -803,6 +822,31 @@ void DrawHovaBlimp(HOVASTRUCT *Hova) {
   NuMtxTranslate(&mTEMP,&Hova->Position);
   MyDrawModelNew(&Hova->MainDraw,&mTEMP,NULL);
   return;
+}
+
+//NGC MATCH
+SATELLITESTRUCT * InitSatellite(SPACESTATIONSTRUCT *SpaceStation,float AngleY) {
+  SATELLITESTRUCT *Satellite;
+
+    Satellite = &SatelliteList[SatelliteCharacterId++];
+    if (Satellite->Active != 0) {
+      return NULL;
+    }
+    memset(Satellite,0,0x124);
+    if (MyInitModelNew(&Satellite->MainDraw,0x8d,0x1b,0,NULL,&Satellite->Position) == 0) {
+     return NULL;
+    }
+    Satellite->SpaceStation = SpaceStation;
+    Satellite->Position = SpaceStation->Position;
+    Satellite->AngleY = AngleY;
+    Satellite->TiltX = 0.0f;
+    Satellite->TiltZ = 0.0f;
+    Satellite->DestTiltX = 0.0f;
+    Satellite->DestTiltZ = 0;
+    Satellite->Active = 1;
+    Satellite->HitPoints = 0x10;
+    Satellite->Velocity = v000;
+    return Satellite;
 }
 
 //NGC MATCH
@@ -1012,6 +1056,641 @@ struct nuvec_s * GetWeatherBossPos(void) {
 }
 
 //NGC MATCH
+void InitWeatherBoss(void) {
+  InitWeatherBoss_a();
+}
+
+//NGC MATCH
+void DrawBazookaToken(void) {
+  if (BazookaIconOn != 0) {
+    NuMtxSetTranslation(&mTEMP,&BazookaTokenCurrentPos);
+    MyDrawModelNew(&IconMainDraw,&mTEMP,NULL);
+  }
+}
+
+//NGC MATCH
+void ProcessWeatherBoss(void) {
+  if (WeatherBoss.Active != 0) {
+    ProcessWeatherBoss_a(&WeatherBoss);
+  }
+}
+
+//NGC MATCH
+void DrawWeatherBoss(void) {
+  if (WeatherBoss.Active != 0) {
+    DrawWeatherBoss_a(&WeatherBoss);
+  }
+}
+
+//NGC MATCH
+void ProcessCrashteroidsIntro(void) {
+    ProcessFireFlyIntro();
+}
+
+//NGC MATCH
+s32 GetCurrentFireFlyObjectives(void) {
+  s32 i;
+  s32 j;
+  
+  for(i = 0, j = 0; i < 6; i++) {
+    if ((BattleShipList[i].Active != 0) && (0 < BattleShipList[i].HitPoints)) {
+      j++;
+    }
+  }
+  return j;
+}
+
+//NGC MATCH
+void DrawWeatherResearchLevelExtra(void) {
+    DrawGliderBullets();
+    DrawBigGuns();
+    DrawGliderBombs();
+    DrawTorpedoTarget();
+}
+
+//NGC MATCH
+void ProcessWeatherResearchLevel(struct nupad_s *Pad) {
+    ProcessGliderBullets();
+    ProcessGliderBombs();
+    ProcessBigGuns();
+}
+
+//NGC MATCH
+s32 GetCurrentWeatherResearchObjectives(void) {
+  s32 i;
+  s32 j;
+  
+  for(i = 0, j = 0; i < 0xc; i++) {
+    if ((BigGunList[i].Active != 0) && (BigGunList[i].Action != 2)) {
+      j++;
+    }
+  }
+  return j;
+}
+
+//NGC MATCH
+s32 GetCurrentSpaceArenaObjectives(void) {
+  s32 j;
+  s32 i;
+  
+  for(i = 0, j = 0; i < 3; i++) {
+    if (SpaceStationList[i].Active != 0) {
+      j++;
+    }
+  }
+  return j;
+}
+
+//NGC MATCH
+void InitLighteningHail(void) {
+  memset(&HailList,0,0x438);
+  NuMtxSetScale(&BoltMtxC,SetNuVecPntr(0.5f,1.5f,0.5f));
+}
+
+//NGC MATCH
+struct WBBOLT * FindFreeWBBoltOfType(s32 Type) {
+  s32 i;
+  struct WBBOLT *Bolt;
+  
+  Bolt = BoltList;
+  for (i = 0; i < 0x78; i++, Bolt++) {
+    if ((Bolt->Mode != 0 && (Bolt->Type == Type))) {
+      return Bolt;
+    }
+  }
+  return NULL;
+}
+
+//NGC MATCH
+struct WBBOLT * FindFreeWBBolt(void) {
+  s32 i;
+  struct WBBOLT *Bolt;
+  
+  Bolt = BoltList;
+  for(i = 0; i < 0x78; i++, Bolt++) {
+    if (Bolt->Mode == 0) {
+      return Bolt;
+    }
+  }
+  return NULL;
+}
+
+//NGC MATCH
+void SetWeatherStartPos(struct creature_s *Cre) {
+  PlayerGlider.Position = WeatherStartPos = Cre->obj.pos;
+}
+
+//NGC MATCH
+void InitWBIntro(void) {
+  short Temps;
+  
+  WBIntroOn = 0;
+  WeatherBossIntroSpline.Spline = SplTab[0x48].spl;
+  if (SplTab[0x48].spl != NULL) {
+    WeatherBossIntroSpline.Cur = 0.0f;
+    WeatherBossIntroSpline.Inc = 0.000019999999f;
+    WeatherBossIntroSpline.Nex = 0.0f;
+    PointAlongSpline(WeatherBossIntroSpline.Spline,0.0f,&WBIntroGliderPos,&Temps,NULL);
+    WeatherBossIntroSpline.NexPos = WeatherBossIntroSpline.CurPos = WBIntroGliderPos;
+    WeatherBossIntroSpline.LookaheadDist = 0.0f;
+    WeatherBoss.Distance = WBBOSSINTRODIST;
+    WeatherBossTargetAppearTimer = WeatherBossTargetAppearTime;
+    WBIntroTweenTimer = WBIntroTweenTime;
+    WeatherBoss.DistanceDest = WBBOSSINTRODIST;
+    WBIntroOn = 1;
+  }
+}
+
+//NGC MATCH
+void DrawWeatherBossLevelExtra(void) {
+  DrawGliderBullets();
+  DrawWeatherBoss();
+  DrawWeatherBossTarget();
+  DrawLighteningHail();
+  DrawWBBolts();
+  DrawVehMasks();
+  DrawBazookaToken();
+}
+
+//NGC MATCH
+void ProcessWeatherBossLevel(struct nupad_s *Pad) {
+  ProcessWBIntro();
+  if (WBIntroOn == 0) {
+    AtmosphericPressureHackedZ -= 1.6f;
+    if (AtmosphericPressureHackedZ < -1200.0f) {
+      AtmosphericPressureHackedZ += 1200.0f;
+    }
+  }
+  else {
+    AtmosphericPressureHackedZ = WBIntroGliderPos.z;
+    if (WBIntroGliderPos.z < -1200.0f) {
+      AtmosphericPressureHackedZ += 1200.0f;
+    }
+    if (AtmosphericPressureHackedZ > 0.0f) {
+      AtmosphericPressureHackedZ -= 1200.0f;
+    }
+  }
+  ProcessGliderBullets();
+  ProcessWeatherBoss();
+  ProcessLighteningHail();
+  ProcessWBBolts();
+  ProcessVehMasks();
+  ProcessBazookaToken();
+}
+
+//NGC MATCH
+s32 GetCurrentWeatherBossObjectives(void) {
+  s32 j;
+  s32 i;
+  
+  if (WeatherBoss.Active != 0) {
+    for(i = 0, j = 0; i < 4; i++) {
+      if (WeatherBoss.HitPoints[i] > 0) {
+        j += WeatherBoss.HitPoints[i];
+      }
+    }
+    i = j + 3;
+    if (i < 0) {
+      i = j + 6;
+    }
+    return i >> 2;
+  }
+  return 0;
+}
+
+//NGC MATCH
+void ProcessVehicleLevel(struct nupad_s *Pad) {
+    switch (Level) {
+    case 13:
+        ProcessFarmLevel(Pad);
+        break;
+    case 18:
+        ProcessFireFlyLevel(Pad);
+        break;
+    case 36:
+        ProcessWeatherResearchLevel(Pad);
+        break;
+    case 24:
+        ProcessWeatherBossLevel(Pad);
+        break;
+    case 26:
+        ProcessSpaceArenaLevel(Pad);
+        break;
+    case 3:
+        ProcessWesternArenaLevel(Pad);
+        break;
+    case 21:
+        ProcessEarthBossLevel(Pad);
+        break;
+    case 22:
+        ProcessFireBossLevel(Pad);
+        break;
+    }
+   switch(Level) {
+        case 0x18:
+        case 0xD:
+        case 0x12:
+        case 0x1A:
+        case 0x24:
+          if (GetCurrentLevelObjectives() == 0) {
+            VehicleLevelImmune = 1;
+            FlyingLevelExtro = 1;
+            ProcessTimer(&FlyingLevelCompleteTimer);
+          }
+        break;
+    }
+    return;
+}
+
+//NGC MATCH
+void EarthBossReset(void) {
+  EarthBossDeathTimer = 0;
+  EarthBossJustEntered = 0;
+  EarthBossDeathEffect = 0;
+  EarthBossVortexOpen = 0;
+  ChrisBigBossDead = 0;
+  RumbleDisplayMode = 0;
+  InitVehMasks();
+  InitVehMask(0,0x55);
+  InitVehMask(1,3);
+  InitEarthBoss();
+  InitJeepRocks();
+  InitRumblePanel();
+}
+
+//NGC MATCH
+void ResetVehicleLevel(s32 PlayerDead) {
+  FlyingLevelCompleteTimer = 1.5f;
+  FireFlyIntroOldAction = -1;
+  VehicleLevelImmune = 0;
+  FlyingLevelExtro = 0;
+  FlyingLevelVictoryDance = 0;
+  FlyingLevelVictoryDanceTimer = 0;
+  FireFlyIntroTween = 0.0f;
+  FireFlyIntroAction = 0;
+  FireFlyIntroOn = 0;
+  GliderIntroInterest = v000;
+  GliderIntroCamPos = v000;
+    switch (Level) {
+    case 13:
+        FarmReset(PlayerDead);
+        break;
+    case 18:
+        FireFlyReset(PlayerDead);
+        break;
+    case 36:
+        WeatherResearchReset(PlayerDead);
+        break;
+    case 26:
+        SpaceArenaReset(PlayerDead);
+        break;
+    case 24:
+        WeatherBossReset(PlayerDead);
+        break;
+    case 3:
+        WesternArenaReset(PlayerDead);
+        break;
+    case 22:
+        FireBossReset(PlayerDead);
+        break;
+    case 21:
+        EarthBossReset(PlayerDead);
+        break;
+    }
+  if (Level == 0x12) {
+    ProcessFireFlyIntro();
+  }
+  if (Level == 0x1a) {
+    ProcessCrashteroidsIntro();
+  }
+}
+
+//NGC MATCH
+s32 GetMaxLevelObjectives(void) {
+    switch (Level) {
+    case 18:
+    case 13:
+        return 6;
+    case 24:
+        return 0x64;
+    case 36:
+        return 0xC;
+    case 22:
+        return GetTotalFireBossObjectives();
+    case 26:
+    case 21:
+        return 3;
+    case 25:
+        return GetTotalSpaceBossObjectives();
+    default:
+        return 1;
+    }
+}
+
+//NGC MATCH
+s32 GetCurrentLevelObjectives(void) {
+    switch (Level) {
+    case 13:
+        return GetCurrentFarmObjectives();
+    case 18:
+        return GetCurrentFireFlyObjectives();
+    case 26:
+        return GetCurrentSpaceArenaObjectives();
+    case 24:
+        return GetCurrentWeatherBossObjectives();
+    case 36:
+        return GetCurrentWeatherResearchObjectives();
+    case 22:
+        return GetCurrentFireBossObjectives();
+    case 21:
+        return GetCurrentRumbleObjectives();
+    case 25:
+        return GetCurrentSpaceBossObjectives();
+    default:
+        return 0;
+    }
+}
+
+//NGC MATCH
+void UnembedRayCastAtlas(struct ATLASSTRUCT *Atlas,short *TerrHandle) {
+  struct nuvec_s Up = {0.0f, 1.0f, 0.0f};
+
+  if (TryUnembeddPointDir(&Atlas->Position,&ShadNorm,&Up,Atlas->Radius,TerrHandle) == 0) {
+    TryUnembeddPointSafe(&Atlas->Position,&Atlas->OldPosition,Atlas->Radius,TerrHandle);
+  }
+}
+
+//NGC MATCH
+s32 UnembedRayCastAtlasSimple(struct ATLASSTRUCT *Atlas,short *TerrHandle) {
+  struct nuvec_s Up = {0.0f, 1.0f, 0.0f};
+    
+  return TryUnembeddPointDirSimple(&Atlas->Position,&Up,Atlas->Radius,TerrHandle,0.03f,5);
+}
+
+//NGC MATCH
+void ObjectToAtlas(struct obj_s *obj,struct creature_s *c) {
+  struct ATLASSTRUCT *atlas;
+  
+  atlas = (struct ATLASSTRUCT *)c->Buggy;
+  atlas->Position.x = obj->pos.x;
+  atlas->Position.y = obj->pos.y + CData[0x53].radius;
+  atlas->Position.z = obj->pos.z;
+  if (temp_xzmomset != 0) {
+    atlas->Velocity.x = obj->mom.x / 0.01666667f;
+    atlas->Velocity.z = obj->mom.z / 0.01666667f;
+  }
+  if (obj->boing != 0) {
+    obj->mom.y = 3.333333f;
+  }
+  atlas->Velocity.y = obj->mom.y;
+}
+
+//NGC MATCH
+void DrawEarthBoss(void) {
+  struct nuvec_s Scale;
+  float Temp;
+  
+  if (EarthBoss.Dead == 0) {
+    DrawJonny();
+    if (EarthBoss.DrawCrunch != 0) {
+      NuMtxSetRotationY(&mTEMP,(int)(EarthBoss.CrunchY * 182.0444f));
+      NuMtxTranslate(&mTEMP,&EarthBoss.Position);
+      mTEMP._31 = mTEMP._31 - EarthBoss.Radius;
+      MyDrawModelNew(&EarthBoss.Crunch,&mTEMP,NULL);
+    }
+    if (EarthBoss.DrawShell != 0) {
+      Temp = (EarthBoss.Radius / 0.65f) * 2.56f;
+      Scale = SetNuVec(Temp,Temp,Temp);
+      NuQuatToMtx(&EarthBoss.Quat,&mTEMP);
+      NuMtxScale(&mTEMP,&Scale);
+      NuMtxTranslate(&mTEMP,&EarthBoss.Position);
+      MyDrawModelNew(&EarthBoss.Shell,&mTEMP,NULL);
+    }
+  }
+  return;
+}
+
+//NGC MATCH
+void UpdateRumbleCamTween(void) {
+  if (RumbleCamTweenDest > RumbleCamTween) {
+    RumbleCamTween += 0.01666667f;
+    if (RumbleCamTweenDest < RumbleCamTween) {
+        RumbleCamTween = RumbleCamTweenDest;
+    }
+  }
+  if (RumbleCamTweenDest < RumbleCamTween) {
+    RumbleCamTween -= 0.01666667f;
+    if (RumbleCamTweenDest > RumbleCamTween) {
+        RumbleCamTween = RumbleCamTweenDest;
+    }
+  }
+  if ((EarthBoss.Action != 7) || (EarthBoss.HitPoints > 0)) {
+    RumbleCamTweenInterest = (RumbleCamTween - 0.25f) * RUMZOOM;
+  }
+  if (RumbleCamTweenInterest < 0.0f) {
+    RumbleCamTweenInterest = 0.0f;
+  }
+}
+
+//NGC MATCH
+void ProcessAtlasAtlasCollisions(void) {
+  if ((EarthBoss.HitPoints > 0) && (PlayerAtlas.HitPoints > 0)) {
+    ProcessAtlasAtlasCollisions_a(&PlayerAtlas,&EarthBoss);
+  }
+}
+
+//NGC MATCH
+void InitTrail(void) {
+  s32 loop;
+
+  for(loop = 0; loop < 0x80; loop++) {
+    trail[loop].pos1.x = -10000.0f;
+  }
+  trailpt = 0;
+  trailair = 0;
+}
+
+//NGC MATCH
+s32 PointsSame(struct nuvec_s *A,struct nuvec_s *B) {
+  s32 ret = 0;
+
+  if ((A->x == B->x) && (A->y == B->y)) {
+    ret = (A->z == B->z) ? 1 : 0;
+  }
+    return ret;
+}
+
+//NGC MATCH
+s32 FindTrailAng(struct nuvec_s *A,struct nuvec_s *B) {
+  struct nuvec_s Line;
+  
+  NuVecSub(&Line,B,A);
+  return (NuAtan2D(Line.x,Line.z) - 0x2000) & 0xffff;
+}
+
+//NGC MATCH
+void DrawVehicleTrail(void) {
+    DrawJeepTrails();
+}
+
+//NGC MATCH
+struct JEEPROCK * FindJeepRock(void) {
+  s32 i;
+  
+  for(i = 0; i < 6; i++) {
+    if (JeepRock[i].Active == 0) {
+      return &JeepRock[i];
+    }
+  }
+  return NULL;
+}
+
+//NGC MATCH
+void InitJeepRocks(void) {
+  s32 i;
+
+  for(i = 0; i < 6; i++) {
+    JeepRock[i].Active = 0;
+  }
+}
+
+//NGC MATCH
+void KeepHoldOnRock(struct JEEPROCK *Rock,struct nuvec_s *Pos,struct nuvec_s *Vel) {
+  Rock->Pos = *Pos;
+  Rock->Atlas.Position = *Pos;
+  Rock->Atlas.OldPosition = Rock->Atlas.Position;
+  Rock->Vel = *Vel;
+  Rock->Atlas.Velocity = *Vel;
+  Rock->Grabbed = 1;
+}
+
+//NGC MATCH
+struct JEEPROCK * AddRock(struct nuvec_s *Pos,float Radius,s32 Type) {
+  return AddRockVel(Pos,&v000,Radius,Type);
+}
+
+//NGC MATCH
+void ShootRoksSkyward(void) {
+  s32 i;
+  
+  RumbleDisplayMode = -1;
+  MyGameSfx(0xb9,&EarthBoss.Position,0x7fff);
+  ShootRockSound = 1;
+  for(i = 0; i < 6; i++) {
+    if (JeepRock[i].Active != 0) {
+      JeepRock[i].Atlas.Velocity = SetNuVec(0.0f,13.0f,0.0f);
+      JeepRock[i].Mode = 0x14;
+      JeepRock[i].Atlas.BeenHit = 0;
+      JeepRock[i].FlameTimer = 10.0f;
+    }
+  }
+}
+
+//NGC MATCH
+s32 GetRumbleTotalRoks(void) {
+  s32 i;
+  s32 j;
+  
+  if (RumbleDisplayMode == -1) {
+    return RumbleStoreTotalRoks;
+  }
+  for(i = 0, j = 0; i < 6; i++) {
+    if (JeepRock[i].Active != 0) {
+      j++;
+    }
+  }
+  RumbleStoreTotalRoks = j;
+  return RumbleStoreTotalRoks;
+}
+
+//NGC MATCH
+s32 GetRumbleCrunchRoks(void) {
+  s32 i;
+  s32 j;
+  
+  if (RumbleDisplayMode == -1) {
+    return RumbleStoreCrunchRoks;
+  }
+  for(i = 0, j = 0; i < 6; i++) {
+    if (((JeepRock[i].Active != 0) && (0.0f < JeepRock[i].FlameTimer)) && (JeepRock[i].Mode == -1)) {
+      j++;
+    }
+  }
+  RumbleStoreCrunchRoks = j;
+  return RumbleStoreCrunchRoks;
+}
+
+//NGC MATCH
+s32 GetRumblePlayerRoks(void) {
+  s32 i;
+  s32 j;
+  
+  if (RumbleDisplayMode == -1) {
+    return RumbleStoreCrashRoks;
+  }
+  for(i = 0, j = 0; i < 6; i++) {
+    if (((JeepRock[i].Active != 0) && (JeepRock[i].FlameTimer > 0.0f)) && (JeepRock[i].Mode == 1)) {
+      j++;
+    }
+  }
+  RumbleStoreCrashRoks = j;
+  return RumbleStoreCrashRoks;
+}
+
+//NGC MATCH
+void SmashRockIntoTwo(struct JEEPROCK *Rock) {
+  struct nuvec_s vel;
+  struct nuvec_s pos;
+  float NewRad;
+  
+  NewRad = Rock->Atlas.Radius / 1.2599f;
+  vel = Rock->Vel;
+  pos = Rock->Pos;
+  pos.x -= (NewRad * 0.5f);
+  vel.x -= 2.0f;
+  AddRockVel(&pos,&vel,NewRad,0);
+  pos.x = (NewRad * 1.01f + pos.x);
+  vel.x += 4.0f;
+  AddRockVel(&pos,&vel,NewRad,0);
+  Rock->Explode = 1;
+}
+
+//NGC MATCH
+void DrawJeepRocks(void) {
+  s32 i;
+  
+  for(i = 0; i < 6; i++) {
+    if (JeepRock[i].Active != 0) {
+      DrawJeepRock(&JeepRock[i]);
+    }
+  }
+}
+
+//NGC MATCH
+s32 CheckAgainstRocks(struct nuvec_s *Position,struct nuvec_s *Move) {
+  struct nuvec_s Rel;
+  struct nuvec_s Pos;
+  s32 i;
+  s32 Ret;
+  
+  Ret = 0;
+  if (Level != 0x16) {
+    return 0;
+  }
+  NuVecAdd(&Pos,Position,Move);
+  for(i = 0; i < 6; i++) {
+    if (JeepRock[i].Active != 0) {
+      NuVecSub(&Rel,&Pos,&JeepRock[i].Pos);
+      if (NuVecMagSqr(&Rel) < 0.5625f) {
+         JeepRock[i].Explode = 1;
+         Ret = 1;
+      }
+    }
+  }
+  return Ret;
+}
+
+//NGC MATCH
 void DrawVehMasks(void) {
     struct VEHMASK* Mask;
     s32 d;
@@ -1059,5 +1738,4 @@ void DrawVehMasks(void) {
             }
         }
     }
-    return;
 }
