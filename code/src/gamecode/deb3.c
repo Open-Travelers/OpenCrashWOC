@@ -36,7 +36,6 @@ s32 wtimer;
 	AddDeb3Ang     73%
 	AddDeb3           65%
 	LaunchObjects  86%
-	ProcDeb3       92%
 */
 
 //NGC MATCH
@@ -460,4 +459,177 @@ void DynaBreak(struct deb3_s *deb) {
   AddGameDebris(0x44,&pos);
   GameSfx(0x3b,&pos);
   return;
+}
+
+//NGC MATCH
+void ProcDeb3(void) {
+  s32 loop;
+  s32 flag;
+  struct deb3_s *deb;
+  struct nuvec_s vec;
+  struct nuvec_s t;
+  struct numtx_s mat;
+  float dist;
+  float dx;
+  float dy;
+  float dz;
+  float radius;
+  float r;
+  
+  LaunchObjects();
+  deb = deb3;
+  NuMtxSetIdentity(&mat);
+  radius = ((player->obj.max.y - player->obj.min.y) * player->obj.SCALE * 0.5f);
+  for(loop = 0; loop < 0x40; loop++, deb++) {
+    if (deb->timer != 0) {
+      deb->diff.x *= 0.5f;
+      deb->diff.y *= 0.5f;
+      deb->diff.z *= 0.5f;
+      if ((deb->status & 1) == 0) {
+        mat = deb->mtx;
+        RBodyMove(deb,0.01666667f);
+        if ((deb->info->info & 6U) != 0) {
+          dx = deb->mtx._30 - player->obj.pos.x;
+          dy = deb->mtx._31 - (((player->obj.bot + player->obj.top) * player->obj.SCALE) * 0.5f + player->obj.pos.y);
+          dz = deb->mtx._32 - player->obj.pos.z;
+          r = (deb->info->size * 0.5f + radius);
+          if (dx * dx + dy * dy + dz * dz < r * r) {
+            if (((deb->info->info & 2U) != 0) && (deb->info->type == 0x93)) {
+              player->freeze = 0x78;
+              player->spin = 0;
+              GameSfx(0x54,&player->obj.pos);
+            }
+            deb->timer = 1;
+            deb->status |= 4;
+          }
+        }
+        deb->check--;
+        if (deb->check < 1) {
+          if (deb->norm.y != 100.0f) {
+            deb->diff.x += (deb->mtx._30 - deb->impact.x);
+            deb->diff.y += (deb->mtx._31 - deb->impact.y);
+            deb->diff.z += (deb->mtx._32 - deb->impact.z);
+            deb->mtx._30 = deb->impact.x;
+            deb->mtx._31 = deb->impact.y;
+            deb->mtx._32 = deb->impact.z;
+            if (deb->info->impact != NULL) {
+              (*deb->info->impact)(deb);
+            }
+            if (rbclass[deb->info->classid].mass != 0.0f) {
+              t = deb->impact;
+              CubeImpact(&mat,&deb->mtx,&deb->norm,(deb->info->size * 0.5f),&t);
+              deb->norm.x = -deb->norm.x;
+              deb->norm.y = -deb->norm.y;
+              deb->norm.z = -deb->norm.z;
+              RBodyImpact(deb,&t,&deb->norm);
+            }
+            else {
+              FullReflect(&deb->norm,&deb->velocity,&deb->velocity);
+              deb->velocity.x *= rbclass[deb->info->classid].kr;
+              deb->velocity.y *= rbclass[deb->info->classid].kr;
+              deb->velocity.z *= rbclass[deb->info->classid].kr;
+              if (rbclass[deb->info->classid].kf != 0.0f) {
+                deb->angularMomentum.x = (qrand() + -0x8000 >> 8) * rbclass[deb->info->classid].kf;
+                deb->angularMomentum.y = (qrand() + -0x8000 >> 8) * rbclass[deb->info->classid].kf;
+                deb->angularMomentum.z = (qrand() + -0x8000 >> 8) * rbclass[deb->info->classid].kf;
+              }
+            }
+            if (deb->info->type == 0x93) {
+              GameSfx(0x44,(struct nuvec_s *)&deb->mtx._30);
+            }
+          }
+          vec.x = ((deb->velocity.x * 8.0f) / 60.0f);
+          vec.y = ((deb->velocity.y * 8.0f) / 60.0f);
+          vec.z = ((deb->velocity.z * 8.0f) / 60.0f);
+          dist = (vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+          t.x = deb->mtx._30;
+          t.y = deb->mtx._31;
+          t.z = deb->mtx._32;
+          if ((deb->info->info & 8U) != 0) {
+            flag = 0;
+          }
+          else {
+            flag = NewRayCast(&t,&vec,deb->info->size);
+          }
+          if (flag == 0) {
+            deb->status |= 2;
+          }
+          if (((flag == 1) || (flag == 2) || (flag == 3) || (flag == 4) || (flag == 5) || (flag == 6)
+              || (flag == 7) || (flag == 8) || (flag == 9) || (flag == 10) || (flag == 11) || (flag == 12)
+              || (flag == 13) || (flag == 14) || (flag == 15)) 
+              || (flag > 0xf) && ((deb->status & 2U) != 0)) {
+                deb->impact.x = t.x + vec.x;
+                deb->impact.y = t.y + vec.y;
+                deb->impact.z = t.z + vec.z;
+                deb->norm = ShadNorm;
+                vec.x = vec.x * vec.x + vec.y * vec.y + vec.z * vec.z;
+                vec.x = NuFsqrt(vec.x);
+                dist = NuFsqrt(dist);
+                if (dist == 0.0f) {
+                  deb->check = 0;
+                }
+                else {
+                  deb->check = (vec.x * 8.0f) / dist;
+                }
+                if (deb->check == 0) {
+                  deb->diff.x += (deb->mtx._30 - deb->impact.x);
+                  deb->diff.y += (deb->mtx._31 - deb->impact.y);
+                  deb->diff.z += (deb->mtx._32 - deb->impact.z);
+                  deb->mtx._30 = deb->impact.x;
+                  deb->mtx._31 = deb->impact.y;
+                  deb->mtx._32 = deb->impact.z;
+                  deb->count++;
+                  if (deb->count > 4) {
+                    if (0.7f < ShadNorm.y) {
+                      if ((deb->info->info & 1U) != 0) {
+                        deb->timer = 1;
+                      }
+                      else {
+                        deb->status |= 1;
+                      }
+                    }
+                  }
+                } else {
+                    deb->count = 0;
+                }
+            } else {
+                    deb->check = 8;
+                    deb->norm.y = 100.0f;
+                    deb->count = 0;
+            }
+        }
+      }
+      deb->mtx._30 += deb->diff.x;
+      deb->mtx._31 += deb->diff.y;
+      deb->mtx._32 += deb->diff.z;
+      vec.x = deb->mtx._30;
+      vec.y = deb->mtx._31;
+      vec.z = deb->mtx._32;
+      if ((deb->info->deb != 0) && ((deb->status & 1U) == 0)) {
+        if (deb->info->rate > 0) {
+          AddVariableShotDebrisEffect(GDeb[deb->info->deb].i,&vec,deb->info->rate,0,0);
+        }
+        else {
+          if ((s32)deb->timer == ((s32)deb->timer / -deb->info->rate) * -deb->info->rate) {
+            AddVariableShotDebrisEffect(GDeb[deb->info->deb].i,&vec,1,0,0);
+          }
+        }
+      }
+      deb->mtx._30 -= deb->diff.x;
+      deb->mtx._31 -= deb->diff.y;
+      deb->mtx._32 -= deb->diff.z;
+      deb->timer--;
+      if (deb->timer < 1) {
+        if (deb->info->end != NULL) {
+          (*deb->info->end)(deb);
+        }
+        if (deb->info->type == 0x93) {
+          GameSfx(0x70,(struct nuvec_s *)&deb->mtx._30);
+        }
+      }
+      else if ((deb->info->info & 0x10U) != 0) {
+        deb->shadow = NewShadow((struct nuvec_s *)&deb->mtx._30,0.0f);
+      }
+    }
+  }
 }
