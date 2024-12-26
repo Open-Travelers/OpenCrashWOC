@@ -447,53 +447,395 @@ void NuPs2PadSetMotors(struct nupad_s *pad,s32 motor1,s32 motor2)	//TODO
 {
 }
 
-UNKTYPE* NuPs2ReadPad (struct nupad_s * pad)	//TODO
-{
-
+/*  61% NGC
+s32 NuPs2ReadPad(struct nupad_s *pad) {
+  s32 *puVar1;
+  char bVar2;
+  short sVar3;
+  u16 uVar4;
+  float fVar5;
+  short sVar6;
+  s16 uVar7;
+  s8 uVar8;
+  s8 uVar9;
+  s16 uVar10;
+  struct padrecinfo_s *pPVar11;
+  s32 uVar12;
+  u32 uVar13;
+  u32 uVar14;
+  u8 uVar15;
+  u8 uVar16;
+  s32 iVar17;
+  u32 uVar18;
+  s32 uVar19;
+  u32 uVar20;
+  u32 uVar21;
+  u32 uVar22;
+  s32 uVar23;
+  struct nupad_s *ppvVar16;
+  
+  ppvVar16 = (struct nupad_s *)pad->padhandle;
+  if (ppvVar16 == NULL) {
+    if (Demo == 0) {
+      return 0;
+    }
+    ppvVar16 = &demopad;
+    pad->padhandle = &demopad;
+  }
+  if (ppvVar16->padhandle == NULL) {
+    if (Demo == 0) {
+      return 1;
+    }
+    memset(&ppvVar16->xinputs,0,0x16);
+  }
+  else {
+    uVar12 = *(s32 *)((ppvVar16->xinputs).gamepad.bAnalogButtons + 2);
+    uVar19 = *(s32 *)((ppvVar16->xinputs).gamepad.bAnalogButtons + 6);
+    uVar4 = (ppvVar16->xinputs).gamepad.wButtons;
+    uVar15 = (ppvVar16->xinputs).gamepad.bAnalogButtons[0];
+    uVar16 = (ppvVar16->xinputs).gamepad.bAnalogButtons[1];
+    (ppvVar16->old_xinputs).dwPacketNumber = (ppvVar16->xinputs).dwPacketNumber;
+    (ppvVar16->old_xinputs).gamepad.wButtons = uVar4;
+    (ppvVar16->old_xinputs).gamepad.bAnalogButtons[0] = uVar15;
+    (ppvVar16->old_xinputs).gamepad.bAnalogButtons[1] = uVar16;
+    *(s32 *)((ppvVar16->old_xinputs).gamepad.bAnalogButtons + 2) = uVar12;
+    *(s32 *)((ppvVar16->old_xinputs).gamepad.bAnalogButtons + 6) = uVar19;
+    sVar6 = (ppvVar16->xinputs).gamepad.sThumbRX;
+    sVar3 = (ppvVar16->xinputs).gamepad.sThumbRY;
+    (ppvVar16->old_xinputs).gamepad.sThumbLY = (ppvVar16->xinputs).gamepad.sThumbLY;
+    (ppvVar16->old_xinputs).gamepad.sThumbRX = sVar6;
+    (ppvVar16->old_xinputs).gamepad.sThumbRY = sVar3;
+    XInputGetState(ppvVar16->padhandle,&ppvVar16->xinputs);
+  }
+  pPVar11 = PadRecInfo;
+  if ((PadRecInfo != NULL) && (ppvVar16->port == 0)) {
+    if (PadRecInfo->padmode == 1) {
+      iVar17 = PadRecInfo->padpointer;
+      if (iVar17 < PadRecInfo->padsize) {
+        if ((ppvVar16->analogue_sticks & 0x20000000U) == 0) {
+          ppvVar16->buttons_hi = 0;
+          pPVar11 = PadRecInfo;
+          uVar12 = *(s32 *)((ppvVar16->xinputs).gamepad.bAnalogButtons + 2);
+          iVar17 = PadRecInfo->padpointer;
+          uVar23 = *(s32 *)((ppvVar16->xinputs).gamepad.bAnalogButtons + 6);
+          uVar19 = *(s32 *)&(ppvVar16->xinputs).gamepad;
+          *(u32 *)((s32)PadRecInfo->PadRecData + iVar17 * 0x16) = (ppvVar16->xinputs).dwPacketNumber ;
+          *(s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 4) = uVar19;
+          *(s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 8) = uVar12;
+          *(s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 0xc) = uVar23;
+          uVar12 = *(s32 *)&(ppvVar16->xinputs).gamepad.sThumbLY;
+          *(short *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 0x14) =
+               (ppvVar16->xinputs).gamepad.sThumbRY;
+          *(s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 0x10) = uVar12;
+          pPVar11->padpointer = iVar17 + 1;
+        }
+        else {
+          uVar12 = *(s32 *)((ppvVar16->old_xinputs).gamepad.bAnalogButtons + 2);
+          uVar23 = *(s32 *)((ppvVar16->old_xinputs).gamepad.bAnalogButtons + 6);
+          uVar19 = *(s32 *)&(ppvVar16->old_xinputs).gamepad;
+          *(u32 *)((s32)PadRecInfo->PadRecData + iVar17 * 0x16) =
+               (ppvVar16->old_xinputs).dwPacketNumber;
+          *(s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 4) = uVar19;
+          *(s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 8) = uVar12;
+          *(s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 0xc) = uVar23;
+          uVar12 = *(s32 *)&(ppvVar16->old_xinputs).gamepad.sThumbLY;
+          *(short *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 0x14) =
+               (ppvVar16->old_xinputs).gamepad.sThumbRY;
+          *(s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 0x10) = uVar12;
+          pPVar11->padpointer = iVar17 + 1;
+        }
+      }
+    }
+    else if (PadRecInfo->padmode == 2) {
+      uVar4 = (ppvVar16->xinputs).gamepad.wButtons;
+      iVar17 = 0;
+      ppvVar16->old_paddata = 0;
+      ppvVar16->analogue_sticks = ppvVar16->analogue_sticks | 0x20000000;
+      pPVar11 = PadRecInfo;
+      if (0xf < uVar4) {
+        demo_inactivity = 0;
+        PadDemoEnd = 1;
+      }
+      do {
+        if (0x20 < (ppvVar16->xinputs).gamepad.bAnalogButtons[iVar17]) {
+          PadDemoEnd = 1;
+          demo_inactivity = 0;
+        }
+        iVar17 = iVar17 + 1;
+      } while (iVar17 < 8);
+      iVar17 = PadRecInfo->padpointer;
+      if (iVar17 < PadRecInfo->padend + -2) {
+        puVar1 = (s32 *)((s32)PadRecInfo->PadRecData + iVar17 * 0x16 + -0x12);
+        uVar7 = *(s16 *)puVar1;
+        uVar8 = *(s8 *)((s32)puVar1 + 2);
+        uVar9 = *(s8 *)((s32)puVar1 + 3);
+        uVar19 = *(s32 *)((s32)PadRecInfo->PadRecData + iVar17 * 0x16 + -0xe);
+        uVar12 = *(s32 *)((s32)PadRecInfo->PadRecData + iVar17 * 0x16 + -10);
+        (ppvVar16->old_xinputs).dwPacketNumber =
+             *(u32 *)((s32)PadRecInfo->PadRecData + iVar17 * 0x16 + -0x16);
+        (ppvVar16->old_xinputs).gamepad.wButtons = uVar7;
+        (ppvVar16->old_xinputs).gamepad.bAnalogButtons[0] = uVar8;
+        (ppvVar16->old_xinputs).gamepad.bAnalogButtons[1] = uVar9;
+        *(s32 *)((ppvVar16->old_xinputs).gamepad.bAnalogButtons + 2) = uVar19;
+        *(s32 *)((ppvVar16->old_xinputs).gamepad.bAnalogButtons + 6) = uVar12;
+        puVar1 = (s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + -6);
+        uVar7 = *(s16 *)puVar1;
+        uVar10 = *(s16 *)((s32)puVar1 + 2);
+        (ppvVar16->old_xinputs).gamepad.sThumbRY =
+             *(short *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + -2);
+        (ppvVar16->old_xinputs).gamepad.sThumbLY = uVar7;
+        (ppvVar16->old_xinputs).gamepad.sThumbRX = uVar10;
+        iVar17 = pPVar11->padpointer;
+        puVar1 = (s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 4);
+        uVar7 = *(s16 *)puVar1;
+        uVar8 = *(s8 *)((s32)puVar1 + 2);
+        uVar9 = *(s8 *)((s32)puVar1 + 3);
+        uVar19 = *(s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 8);
+        uVar12 = *(s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 0xc);
+        (ppvVar16->xinputs).dwPacketNumber = *(u32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16);
+        (ppvVar16->xinputs).gamepad.wButtons = uVar7;
+        (ppvVar16->xinputs).gamepad.bAnalogButtons[0] = uVar8;
+        (ppvVar16->xinputs).gamepad.bAnalogButtons[1] = uVar9;
+        *(s32 *)((ppvVar16->xinputs).gamepad.bAnalogButtons + 2) = uVar19;
+        *(s32 *)((ppvVar16->xinputs).gamepad.bAnalogButtons + 6) = uVar12;
+        puVar1 = (s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 0x10);
+        uVar7 = *(s16 *)puVar1;
+        uVar10 = *(s16 *)((s32)puVar1 + 2);
+        (ppvVar16->xinputs).gamepad.sThumbRY =
+             *(short *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 0x14);
+        (ppvVar16->xinputs).gamepad.sThumbLY = uVar7;
+        (ppvVar16->xinputs).gamepad.sThumbRX = uVar10;
+        pPVar11->padpointer = iVar17 + 1;
+      }
+      else {
+        puVar1 = (s32 *)((s32)PadRecInfo->PadRecData + iVar17 * 0x16 + 4);
+        uVar7 = *(s16 *)puVar1;
+        uVar8 = *(s8 *)((s32)puVar1 + 2);
+        uVar9 = *(s8 *)((s32)puVar1 + 3);
+        uVar19 = *(s32 *)((s32)PadRecInfo->PadRecData + iVar17 * 0x16 + 8);
+        uVar12 = *(s32 *)((s32)PadRecInfo->PadRecData + iVar17 * 0x16 + 0xc);
+        (ppvVar16->xinputs).dwPacketNumber = *(u32 *)((s32)PadRecInfo->PadRecData + iVar17 * 0x16);
+        (ppvVar16->xinputs).gamepad.wButtons = uVar7;
+        (ppvVar16->xinputs).gamepad.bAnalogButtons[0] = uVar8;
+        (ppvVar16->xinputs).gamepad.bAnalogButtons[1] = uVar9;
+        *(s32 *)((ppvVar16->xinputs).gamepad.bAnalogButtons + 2) = uVar19;
+        *(s32 *)((ppvVar16->xinputs).gamepad.bAnalogButtons + 6) = uVar12;
+        puVar1 = (s32 *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 0x10);
+        uVar7 = *(s16 *)puVar1;
+        uVar10 = *(s16 *)((s32)puVar1 + 2);
+        (ppvVar16->xinputs).gamepad.sThumbRY =
+             *(short *)((s32)pPVar11->PadRecData + iVar17 * 0x16 + 0x14);
+        (ppvVar16->xinputs).gamepad.sThumbLY = uVar7;
+        (ppvVar16->xinputs).gamepad.sThumbRX = uVar10;
+        PadDemoEnd = 1;
+      }
+    }
+  }
+  uVar4 = (ppvVar16->xinputs).gamepad.wButtons;
+  ppvVar16->analogue_sticks = ppvVar16->analogue_sticks | 0x20000000;
+  ppvVar16->r_ry = 1.0f;
+  ppvVar16->r_dy = 0.1f;
+  ppvVar16->l_rx = 1.0f;
+  ppvVar16->l_dx = 0.1f;
+  ppvVar16->l_ry = 1.0f;
+  ppvVar16->l_dy = 0.1f;
+  ppvVar16->r_rx = 1.0f;
+  ppvVar16->r_dx = 0.1f;
+  bVar2 = (ppvVar16->xinputs).gamepad.bAnalogButtons[3];
+  uVar18 = padmap[uVar4 & 0xf] * 0x1000;
+  ppvVar16->padvalue = padmap[0];
+  if (0x20 < bVar2) {
+    uVar18 = uVar18 + 0x10;
+  }
+  if (0x20 < (ppvVar16->xinputs).gamepad.bAnalogButtons[1]) {
+    uVar18 = uVar18 + 0x20;
+  }
+  if (0x20 < (ppvVar16->xinputs).gamepad.bAnalogButtons[0]) {
+    uVar18 = uVar18 + 0x40;
+  }
+  if (0x20 < (ppvVar16->xinputs).gamepad.bAnalogButtons[2]) {
+    uVar18 = uVar18 + 0x80;
+  }
+  if (0x20 < (ppvVar16->xinputs).gamepad.bAnalogButtons[4]) {
+    uVar18 = uVar18 + 1;
+  }
+  if (0x20 < (ppvVar16->xinputs).gamepad.bAnalogButtons[5]) {
+    uVar18 = uVar18 + 2;
+  }
+  if (0x20 < (ppvVar16->xinputs).gamepad.bAnalogButtons[6]) {
+    uVar18 = uVar18 + 4;
+  }
+  if (0x20 < (ppvVar16->xinputs).gamepad.bAnalogButtons[7]) {
+    uVar18 = uVar18 + 8;
+  }
+  if ((uVar4 & 0x40) != 0) {
+    uVar18 = uVar18 + 0x200;
+  }
+  if ((uVar4 & 0x80) != 0) {
+    uVar18 = uVar18 + 0x400;
+  }
+  if ((uVar4 & 0x20) != 0) {
+    uVar18 = uVar18 + 0x100;
+  }
+  if ((uVar4 & 0x10) != 0) {
+    uVar18 = uVar18 + 0x800;
+  }
+  iVar17 = (s32)(ppvVar16->xinputs).gamepad.sThumbLX;
+  ppvVar16->paddata_db = uVar18 & ~ppvVar16->old_paddata;
+  ppvVar16->buttons_hi = ~(char)(uVar18 >> 8);
+  ppvVar16->buttons_lo = ~(char)uVar18;
+  ppvVar16->paddata = uVar18;
+  ppvVar16->old_paddata = uVar18;
+  if (iVar17 < 0) {
+    iVar17 = iVar17 + 0xff;
+  }
+  uVar13 = (u32)(ppvVar16->xinputs).gamepad.sThumbLY;
+  uVar14 = (iVar17 >> 8) - 0x80;
+  uVar15 = (u8)uVar14;
+  ppvVar16->l_alg_x = uVar15;
+  uVar21 = ~uVar13;
+  if (-1 < (s32)uVar13) {
+    uVar21 = uVar21 + 0xff;
+  }
+  iVar17 = (s32)(ppvVar16->xinputs).gamepad.sThumbRX;
+  uVar13 = ((s32)uVar21 >> 8) - 0x80;
+  uVar16 = (u8)uVar13;
+  ppvVar16->l_alg_y = uVar16;
+  if (iVar17 < 0) {
+    iVar17 = iVar17 + 0xff;
+  }
+  uVar21 = (u32)(ppvVar16->xinputs).gamepad.sThumbRY;
+  uVar22 = (iVar17 >> 8) - 0x80;
+  ppvVar16->r_alg_x = (u8)uVar22;
+  uVar20 = ~uVar21;
+  if (-1 < (s32)uVar21) {
+    uVar20 = uVar20 + 0xff;
+  }
+  uVar21 = ((s32)uVar20 >> 8) - 0x80;
+  ppvVar16->ldy = 0x80 - (uVar13 & 0xff);
+  ppvVar16->ldx = (uVar14 & 0xff) - 0x80;
+  ppvVar16->rdx = (uVar22 & 0xff) - 0x80;
+  ppvVar16->rdy = 0x80 - (uVar21 & 0xff);
+  ppvVar16->l1_alg = 0;
+  ppvVar16->r_alg_y = (u8)uVar21;
+  ppvVar16->r2_alg = 0;
+  ppvVar16->r1_alg = 0;
+  ppvVar16->l2_alg = 0;
+  if ((uVar18 & 4) != 0) {
+    ppvVar16->l1_alg = uVar16;
+    ppvVar16->l2_alg = uVar15;
+  }
+  if ((uVar18 & 8) != 0) {
+    ppvVar16->r1_alg = ppvVar16->r_alg_y;
+    ppvVar16->r2_alg = ppvVar16->r_alg_x;
+  }
+  if ((ppvVar16->analogue_sticks & 0x10000000U) != 0) {
+    iVar17 = DeadZoneValue(ppvVar16->ldx);
+    ppvVar16->ldx = iVar17;
+    iVar17 = DeadZoneValue(ppvVar16->ldy);
+    ppvVar16->ldy = iVar17;
+    iVar17 = DeadZoneValue(ppvVar16->rdx);
+    ppvVar16->rdx = iVar17;
+    iVar17 = DeadZoneValue(ppvVar16->rdy);
+    ppvVar16->rdy = iVar17;
+  }
+  fVar5 = (float)(ppvVar16->ldx) * (ppvVar16->l_rx + ppvVar16->l_dx) * 0.0078125f;
+  ppvVar16->l_nx = fVar5;
+  ppvVar16->l_ny = (float)(ppvVar16->ldy) * (ppvVar16->l_ry + ppvVar16->l_dy) * 0.0078125f;
+  if (0.0f < fVar5) {
+    fVar5 = fVar5 - ppvVar16->l_dx;
+    if (fVar5 < 0.0f) {
+      fVar5 = 0.0f;
+    }
+    ppvVar16->l_nx = fVar5;
+  }
+  if (ppvVar16->l_nx < 0.0f) {
+    fVar5 = ppvVar16->l_nx + ppvVar16->l_dx;
+    if (0.0f < fVar5) {
+      fVar5 = 0.0f;
+    }
+    ppvVar16->l_nx = fVar5;
+  }
+  if (0.0f < ppvVar16->l_ny) {
+    fVar5 = ppvVar16->l_ny - ppvVar16->l_dy;
+    if (fVar5 < 0.0f) {
+      fVar5 = 0.0f;
+    }
+    ppvVar16->l_ny = fVar5;
+  }
+  if (ppvVar16->l_ny < 0.0f) {
+    fVar5 = ppvVar16->l_ny + ppvVar16->l_dy;
+    if (0.0f < fVar5) {
+      fVar5 = 0.0f;
+    }
+    ppvVar16->l_ny = fVar5;
+  }
+  fVar5 = (float)ppvVar16->rdx * (ppvVar16->r_rx + ppvVar16->r_dx) * 0.0078125f;
+  ppvVar16->r_nx = fVar5;
+  ppvVar16->r_ny = (float)ppvVar16->rdy * (ppvVar16->r_ry + ppvVar16->r_dy) * 0.0078125f;
+  if (0.0f < fVar5) {
+    fVar5 = fVar5 - ppvVar16->r_dx;
+    if (fVar5 < 0.0f) {
+      fVar5 = 0.0f;
+    }
+    ppvVar16->r_nx = fVar5;
+  }
+  if (ppvVar16->r_nx < 0.0f) {
+    fVar5 = ppvVar16->r_nx + ppvVar16->r_dx;
+    if (0.0f < fVar5) {
+      fVar5 = 0.0f;
+    }
+    ppvVar16->r_nx = fVar5;
+  }
+  if (0.0f < ppvVar16->r_ny) {
+    fVar5 = ppvVar16->r_ny - ppvVar16->r_dy;
+    if (fVar5 < 0.0f) {
+      fVar5 = 0.0f;
+    }
+    ppvVar16->r_ny = fVar5;
+  }
+  if (ppvVar16->r_ny < 0.0f) {
+    fVar5 = ppvVar16->r_ny + ppvVar16->r_dy;
+    if (0.0f < fVar5) {
+      fVar5 = 0.0f;
+    }
+    ppvVar16->r_ny = fVar5;
+  }
+  return 1;
 }
+*/
 
-//reverseendian32, reverseendian16 TODO
-void InitPadPlayRecord(char *name,s32 mode,s32 size,void *buff)
-{
-  s32 size_LB;
-  u8 *puVar1;
+//reverseendian32, reverseendian16 TODO //97% NGC
+void InitPadPlayRecord(char *name,s32 mode,s32 size,void *buff) {
   s32 i;
-  struct PadRecInfo *recinfo;
-
-  if (PadRecInfo == (PadRecInfo *)0x0) {
-    PadRecInfo = (PadRecInfo *)buff;
+  struct padrecinfo_s *recinfo;
+  
+  if (PadRecInfo == NULL) {
+    PadRecInfo = (struct padrecinfo_s *)buff;
   }
   memset(PadRecInfo,0,0x1b658);
   PadDemoEnd = 0;
   if ((name != (char *)0x0) && (mode == 2)) {
-    size_LB = NuFileLoadBuffer(name,PadRecInfo,0x1b658);
-    if (size_LB == 0) {
+    if (NuFileLoadBuffer(name,PadRecInfo,0x1b658) == 0) {
       PadDemoEnd = 1;
     }
     else {
-      i = 0x10;
-      size_LB = 0x13ec;
-      reverseendian32(PadRecInfo);
-      reverseendian32(&PadRecInfo->padmode);
-      reverseendian32(&PadRecInfo->padend);
-      reverseendian32(&PadRecInfo->padsize);
-      do {
-        reverseendian16((short *)((s32)PadRecInfo->recdata + i + -0xc));
-        reverseendian16((short *)((s32)PadRecInfo->recdata + i + -2));
-        reverseendian16((short *)(&PadRecInfo->recdata[0].ok + i));
-        reverseendian16((short *)(&PadRecInfo->recdata[0].buttons_hi + i));
-        puVar1 = &PadRecInfo->recdata[0].r_alg_x + i;
-        i = i + 0x16;
-        reverseendian16((short *)puVar1);
-        size_LB = size_LB + -1;
-      } while (size_LB != 0);
+      reverseendian32((char*)&PadRecInfo->padpointer);
+      reverseendian32((char*)&PadRecInfo->padmode);
+      reverseendian32((char*)&PadRecInfo->padend);
+      reverseendian32((char*)&PadRecInfo->padsize);
+      for(i = 0; i < 0x13ec; i++) {
+        reverseendian16((short*)&PadRecInfo->PadRecData[i].r_alg_x);
+        reverseendian16((short*)&PadRecInfo->PadRecData[i].r_algpad_d);
+        reverseendian16((short*)&PadRecInfo->PadRecData[i].l1_alg);
+        reverseendian16((short*)&PadRecInfo->PadRecData[i].l2_alg);
+        reverseendian16((short*)&PadRecInfo->PadRecData[i].r2_alg);
+      }
     }
   }
-  recinfo = PadRecInfo;
+  PadRecInfo->padmode = mode;
+  PadRecInfo->padsize = size - 2;
   PadRecInfo->padpointer = 1;
-  recinfo->padmode = mode;
-  recinfo->padsize = size + -2;
-  return;
 }
 
 s32 NuPs2PadDemoEnd(void)
