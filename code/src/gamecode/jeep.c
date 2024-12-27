@@ -66,6 +66,148 @@ void LimitSpeedZbyXZ(struct nuvec_s *Vec,float LimitSpeed) {
 }
 
 //NGC MATCH
+static void ProcessJeepMovement(struct JEEPSTRUCT *Jeep,float DeltaTime) {
+  struct numtx_s MoveMatrixA;
+  struct numtx_s MoveMatrixB;
+  float SteepVal;
+  float TractionVal;
+  struct nuvec_s *Vel;
+  struct nuvec_s Resolved;
+  float SeekTime;
+  float NewCent;
+  float NewAcc;
+  float Temp;
+  float Dot;
+  
+  if (Jeep->Quick != 0) {
+    NuMtxSetRotationY(&MoveMatrixA,(int)Jeep->aAngleY);
+    NuMtxSetRotationY(&MoveMatrixB,-(int)Jeep->aAngleY);
+    SteepVal = 1.0f;
+    TractionVal = 1.0f;
+  }
+  else {
+    NuMtxSetRotationY(&MoveMatrixA,(int)Jeep->aAngleY);
+    NuMtxRotateZ(&MoveMatrixA,(int)Jeep->Move.aActSurfRotZ);
+    NuMtxRotateX(&MoveMatrixA,(int)Jeep->Move.aActSurfRotX);
+    NuMtxSetRotationX(&MoveMatrixB,-Jeep->Move.aTarSurfRotX);
+    NuMtxRotateZ(&MoveMatrixB,-(int)Jeep->Move.aTarSurfRotZ);
+    NuMtxRotateY(&MoveMatrixB,-(int)Jeep->aAngleY);
+    if ((Jeep->Move.AnyOnGroundBits & 1U) != 0) {
+        Dot = DotProduct(&Jeep->Move.WheelAxis[1],&WorldAxis[1]);
+        if (Dot > 0.866f) {
+          SteepVal = 0.0f;
+        }
+        else if (Dot < 0.707f) {
+            SteepVal = 1.0f;
+        }
+        else {
+            SteepVal = ((0.866f - Dot) / 0.159f);
+        }
+        Dot = DotProduct(&Jeep->Move.WheelAxis[2],&WorldAxis[1]);
+        if (Dot > 0.707f) {
+          TractionVal = 0.0f;
+        }
+        else if (Dot < 0.5f) {
+            TractionVal = 1.0f;
+        }
+        else {
+            TractionVal = (0.707f - Dot) / 0.207f;
+        }
+        TractionVal = TractionVal * (2.0f - SteepVal) * 0.5f;
+    } else {
+        SteepVal = 1.0f;
+        TractionVal = 1.0f;
+    }
+  }
+  Vel = &Jeep->Move.Velocity;
+  if ((Jeep->Move.AnyOnGroundBits & 1U) != 0 || (Jeep->Quick != 0)) {
+  SeekTime = 0.5f;
+  NuVecMtxRotate(&Resolved,Vel,&MoveMatrixB);
+  NewCent = Resolved.x;
+  if (Level == 0x16) {
+    ApplyFriction(&Resolved.x,11.4f,DeltaTime);
+  }
+  else {
+    ApplyFriction(&Resolved.x,9.5f,DeltaTime);
+  }
+  NewCent -= Resolved.x;
+  NewCent /= DeltaTime;
+  NewCent /= 9.5f;
+  if (Jeep->WheelSpin != 0) {
+    NewCent = -Jeep->TurnSin;
+  }
+  if (((NewCent < -0.1f) && (Jeep->CentrefugalForce > 0.1f)) ||
+     ((NewCent > 0.1f && (Jeep->CentrefugalForce < -0.1f)))) {
+    Jeep->CentrefugalForce = 0.0f;
+  }
+  else if (Jeep->WheelSpin != 0) {
+    SeekTime = 0.029999999f;
+  }
+  else if (NuFabs(Jeep->CentrefugalForce) > NuFabs(NewCent)) {
+      SeekTime = 0.1f;
+  }
+  SeekHalfLife(&Jeep->CentrefugalForce,NewCent,SeekTime,DeltaTime);
+  if (Jeep->Finished != 0) {
+    ApplyFriction(&Resolved.z,2.0f,DeltaTime);
+  }
+  else {
+    ApplyFriction(&Resolved.z,6.0f,DeltaTime);
+  }
+  NewAcc = -Resolved.z;
+  if (Jeep->WheelSpin != 0) {
+    SeekHalfLife(&Jeep->Traction,0.0f,0.05f,DeltaTime);
+  }
+  else {
+    SeekHalfLife(&Jeep->Traction,1.0f,0.3f,DeltaTime);
+  }
+  SeekTime = 2.0f;
+  Temp = (Jeep->MaxSpeed * Jeep->Accelerator * Jeep->Traction) * TractionVal;
+  if ((Jeep->TerrainType == 10) && (Level != 0x16)) {
+    Temp *= 0.5f;
+  }
+  if (Resolved.z < Temp) {
+    SeekHalfLife(&Resolved.z,Temp,SeekTime,DeltaTime);
+  }
+  NewAcc = ((NewAcc + Resolved.z) / DeltaTime) / Jeep->MySpeed;
+  SeekHalfLife(&NewAcc,0.0f,3.0f,NuFabs(Resolved.x));
+  if (Jeep->WheelSpin != 0) {
+    if (NewAcc < 1.0f) {
+      NewAcc = (NewAcc + 1.0f) * 0.5f;
+    }
+  }
+  SeekHalfLife(&Jeep->AccelerationForce,NewAcc,0.1f,DeltaTime);
+  LimitSpeedZbyXZ(&Resolved,Jeep->MaxSpeed);
+  if ((Jeep->Move.AllOnGroundBits & 1U) != 0 || (Jeep->Quick != 0)) {
+    Jeep->GroundTractionAcc = Jeep->GroundTractionAcc - Resolved.y;
+    if (Resolved.y < 0.0f) {
+      Resolved.y = 0.0f;
+    }
+  }
+  else {
+    Jeep->GroundTractionAcc = 0.0f;
+  }
+  SeekHalfLife(&Jeep->GroundTractionAcc,0.0f,0.4f,DeltaTime);
+  Jeep->Move.Resolved = Resolved;
+  NuVecMtxRotate(Vel,&Resolved,&MoveMatrixA);
+} else {
+    Jeep->CentrefugalForce = 0.0f;
+    ApplyFriction(&Vel->x,0.2f,DeltaTime);
+    ApplyFriction(&Vel->z,0.2f,DeltaTime);
+    NuVecMtxRotate(&Jeep->Move.Resolved,Vel,&MoveMatrixB);
+}
+  if ((Jeep->Move.AllTouchingGroundBits & 1U) == 0) {
+    if (Jeep->Quick == 0) {
+      if (((Jeep->Move.AnyOnGroundBits & 1U) != 0) && (SteepVal < 1.0f)) {
+        SteepVal = 1.0f;
+      }
+      Jeep->Move.Velocity.x -= (WorldAxis[1].x * 0.5f) * SteepVal;
+      Jeep->Move.Velocity.y -= (WorldAxis[1].y * 0.5f) * SteepVal;
+      Jeep->Move.Velocity.z -= (WorldAxis[1].z * 0.5f) * SteepVal;
+    }
+  }
+}
+
+//NGC MATCH
 void FindTerrainType(struct JEEPSTRUCT *Jeep) {
   struct nuvec_s Pos;
   float FloorY;

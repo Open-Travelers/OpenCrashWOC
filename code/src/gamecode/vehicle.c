@@ -2110,6 +2110,302 @@ void DrawBazookaToken(void) {
 }
 
 //NGC MATCH
+void ProcessWeatherBoss_a(struct BOSSSTRUCT *Boss) {
+  s32 Type;
+  s32 VulnerableOn;
+  s32 LastOn;
+  s32 Percent;
+  static s32 LastVulnerableOn_523;
+  static s32 WasLastOn_522;
+  static struct nuvec_s VulnerablePos_524;
+  struct nuvec_s Vel;
+  struct nuvec_s FirePos;
+  struct nuvec_s FirePos2;
+  struct nuvec_s GliderPos;
+  struct nuvec_s Vel2;
+  struct nuvec_s local_90;
+  struct nuvec_s local_80;
+  struct nuvec_s nStack_70;
+  struct nuvec_s local_60;
+  
+  Type = GetCurrentWeatherBossObjectives();
+  Boss->HitSoundFrame--;
+  if (Boss->HitSoundFrame < 0) {
+    Boss->HitSoundFrame = 0;
+  }
+  if ((Boss->ChestSoundBTimer < 100.0f) &&
+     (ProcessTimer(&Boss->ChestSoundBTimer) != 0)) {
+    Boss->ChestSoundBTimer = 100000.0f;
+    ElectricalPosition = PlayerGlider.Position;
+    MyGameSfx(0xb4,&ElectricalPosition,CHESTATTACKBVOL);
+  }
+  if ((Type < 0x32) && (ProcessTimer(&WeatherBossSkeletonGlitchTimer) != 0)) {
+    WeatherBossSkeletonTimer = frand() * 0.5f + WBSKELTIME;
+    WeatherBossSkeletonGlitchTimer = (frand() * 0.5f + 0.15f) + ((frand() * 2.0f) * (float)(Type)) / 50.0f;
+  }
+  ProcessTimer(&WeatherBossSkeletonTimer);
+  LastOn = 0;
+  MyAnimateModelNew(&Boss->MainDraw,0.5f);
+  MyAnimateModelNew(&Boss->BonesDraw,0.1f);
+  if (Boss->OldAction != Boss->Action) {
+    switch(Boss->Action) {
+        case 0:
+        Boss->DestAngleY = Boss->BaseAngleY;
+        if (WBIntroOn == 0) {
+          Boss->DistanceDest = 96.0f;
+        }
+        Boss->PossYDest = 37.0f;
+        MyChangeAnim(&Boss->MainDraw,0x22);
+        VulnerableA = NULL;
+        Boss->ActionTimer = 3.0f;
+        Boss->NextAction = WeatherBossNextAction();
+        switch(Boss->NextAction) {
+            case 1:
+              SetNewMaskStuff(0,&Boss->Position,&WBMASKONHIGH,0.0f,360.0f,0.0f,0,1,WBLOLOSCALE,WBLOLOTILTX);
+              SetNewMaskStuff(0,(struct nuvec_s *)&Boss->Locator[0]._30,&WBMASKLEFT,
+                              WBMASKLEFTRAD,360.0f,0.5f,0,0,WBLOLOSCALE,WBLOLOTILTX);
+            break;
+            case 3:
+                SetNewMaskStuff(0,&Boss->Position,&WBMASKONHIGH,0.0f,360.0f,0.0f,0,1,WBLOLOSCALE,WBLOLOTILTX);
+                SetNewMaskStuff(0,(struct nuvec_s *)&Boss->Locator[1]._30,&WBMASKRIGHT,
+                                WBMASKRIGHTRAD,360.0f,0.5f,0,0,WBLOLOSCALE,WBLOLOTILTX);
+            break;
+            case 2:
+                SetNewMaskStuff(0,&Boss->Position,&WBMASKONHIGH,0.0f,360.0f,0.0f,0,1,WBLOLOSCALE,WBLOLOTILTX);
+                SetNewMaskStuff(0,(struct nuvec_s *)&Boss->Locator[2]._30,&WBMASKEYES,
+                                WBMASKEYESRAD,360.0f,0.5f,0,0,WBLOLOSCALE,WBLOLOTILTX);
+            break;
+            case 4:
+               SetNewMaskStuff(0,&Boss->Position,&WBMASKONHIGH,0.0f,360.0f,0.0f,0,1,WBLOLOSCALE,WBLOLOTILTX);
+               SetNewMaskStuff(0,(struct nuvec_s *)&Boss->Locator[4]._30,&WBMASKCHEST,
+                               WBMASKCHESTRAD,360.0f,0.5f,0,0,WBLOLOSCALE,WBLOLOTILTX);
+            break;
+        }
+        break;
+        case 5:
+          MyGameSfx(0xb6,NULL,CHESTATTACKAVOL);
+          FlyingLevelVictoryDance = 1;
+          Boss->DistanceDest = 0.0f;
+          MyResetAnimPacket(&Boss->BonesDraw,0xe);
+          Boss->ActionTimer = 3.0f;
+          BazookaTokenPos = Boss->Position;
+          BazookaIconOn = (Game.hub[Hub].flags ^ 4) >> 2 & 1; //check
+          BazookaTokenCurrentPos = Boss->Position;
+          VulnerableA = NULL;
+          MyInitModelNew(&IconMainDraw,0xa2,0x22,0,NULL,&BazookaTokenCurrentPos);
+        break;
+        case 1:
+            WasLastOn_522 = 0;
+            Boss->DistanceDest = 96.0f;
+            Boss->PossYDest = 37.0f;
+            WasLastOn_522 = 0;
+            MyChangeAnim(&Boss->MainDraw,0x32);
+        break;
+        case 3:
+          Boss->DistanceDest = 96.0f;
+          Boss->FireTimer = 0.0f;
+          Boss->PossYDest = 37.0f;
+          MyChangeAnim(&Boss->MainDraw,0x39);
+        break;
+        case 2:
+          Boss->FireSide = 0;
+          Boss->DistanceDest = 32.0f;
+          Boss->FireTimer = 0.0f;
+          MyChangeAnim(&Boss->MainDraw,0x1b);
+        break;
+        case 4:
+          Boss->Unleashed = 0;
+          Boss->DistanceDest = 128.0f;
+          Boss->PossYDest = 37.0f;
+          MyChangeAnim(&Boss->MainDraw,0);
+        break;
+    }
+  }
+  Boss->OldAction = Boss->Action;
+  switch(Boss->Action) {
+      case 5:
+        if ((Boss->BonesDraw.Anim.flags & 1) != 0) {
+          ChrisBigBossDead = 1;
+          Boss->Active = 0;
+          BazookaIconOn = 0;
+          return;
+        }
+      break;
+      case 0:
+        if ((WBIntroOn == 0) && (ProcessTimer(&Boss->ActionTimer) != 0)) {
+          Boss->Action = Boss->NextAction;
+          SetNewMaskStuff(0,&Boss->Position,&WBMASKONHIGH,2.0f,360.0f,4.0f,0,1,WBLOLOSCALE,WBLOLOTILTX);
+        }
+      break;
+      case 1:
+          if (((Boss->MainDraw.Anim.action == 0x32) &&
+              (Boss->MainDraw.Anim.anim_time >= WBLeftStartFrame)) &&
+             (Boss->MainDraw.Anim.anim_time <= WBLeftStopFrame)) {
+                VulnerableB = VulnerableA = (struct nuvec_s *)&Boss->Locator[0]._30;
+                VulnerableRad = 9.0f;
+                VulnerableSection = 0;
+          }
+          else {
+            VulnerableA = NULL;
+          }
+          if ((Boss->MainDraw.Anim.action == 0x32) &&
+             (Boss->MainDraw.Anim.anim_time <= WBLeftStopTurnFrame)) {
+            Boss->DestAngleY = PlayerGlider.Position.x * WBANGSCALE + Boss->BaseAngleY + WBANGOFF;
+          }
+          else {
+            Boss->DestAngleY = Boss->BaseAngleY;
+          }
+          if (((Boss->MainDraw.Anim.action == 0x32) &&
+              (Boss->MainDraw.Anim.anim_time >= WBLeftStartFrame)) &&
+             (Boss->MainDraw.Anim.anim_time <= WBLeftStopFrame)) {
+            NuVecRotateY(&Vel,SetNuVecPntr(0.0f,0.0f,-110.0f),(s32)((Boss->AngleY + 45.0f) * 182.04445f));
+            NuVecMtxTransform(&FirePos,&WBLeftFirePos,Boss->Locator);
+            Vel.z -= Level_GliderSpeed;
+            FireWBBolt(&FirePos,&Vel,2,5.0f,Boss->Action);
+            if (WasLastOn_522 == 0) {
+              ElectricalPosition = PlayerGlider.Position;
+              MyGameSfx(0xb3,&ElectricalPosition,BALLATTACKVOL);
+            }
+            LastOn = 1;
+          }
+          else {
+            if (WasLastOn_522 != 0) {
+              GliderPos = PlayerGlider.Position;
+              NuVecMtxTransform(&FirePos2,&WBLeftFirePos,Boss->Locator);
+              NuVecSub(&Vel2,&GliderPos,&FirePos2);
+              NuVecNorm(&Vel2,&Vel2);
+              NuVecScale(&Vel2,&Vel2,WBSNOWBALLSPEED);
+              Vel2.z -= Level_GliderSpeed;
+              FireWBBolt(&FirePos2,&Vel2,2,5.0f,Boss->Action);
+            }
+          }
+          if (((Boss->MainDraw.Anim.flags & 1) != 0) || (Boss->HitPoints[Boss->Action + -1] < 1)) {
+                Boss->Action = WeatherBossNextAction();
+                Boss->DestAngleY = Boss->BaseAngleY;
+          }
+      break;
+      case 3:
+          if ((Boss->MainDraw.Anim.action == 0x39) && (Boss->MainDraw.Anim.anim_time <= 246.0f)) {
+            Boss->DestAngleY = PlayerGlider.Position.x * WBANGSCALE2 + Boss->BaseAngleY + WBANGOFF2;
+          }
+          else {
+            Boss->DestAngleY = Boss->BaseAngleY;
+          }
+          if (Boss->MainDraw.Anim.action != 0x39) {
+                VulnerableA = NULL; 
+          } else {
+            if ((Boss->MainDraw.Anim.anim_time >= 60.0f) && (Boss->MainDraw.Anim.anim_time <= 247.0f)) {
+              local_90 = *(struct nuvec_s*)&Boss->Locator[1]._30;
+              local_80 = PlayerGlider.Position;
+              Boss->FireTimer = 0.25f;
+              NuVecSub(&nStack_70,&local_80,&local_90);
+              NuVecNorm(&nStack_70,&nStack_70);
+              NuVecScale(&nStack_70,&nStack_70,WBSNOWCONESPEED);
+              nStack_70.z -= Level_GliderSpeed;
+              FireWBBolt(&local_90,&nStack_70,3,1.5f,Boss->Action);
+              ElectricalPosition = PlayerGlider.Position;
+              MyGameSfxLoop(0xb7,&ElectricalPosition,BEAMVOL);
+            }
+            if (((Boss->MainDraw.Anim.action == 0x39) &&
+                (Boss->MainDraw.Anim.anim_time >= 60.0f)) && (Boss->MainDraw.Anim.anim_time <= 247.0f)) {
+              VulnerableA = (struct nuvec_s *)&Boss->Locator[1]._30;
+              VulnerableSection = 2;
+              VulnerableB = VulnerableA;
+              VulnerableRad = 9.0f;
+            } else {
+               VulnerableA = NULL; 
+            }
+          }
+          if (((Boss->MainDraw.Anim.flags & 1) != 0) || (Boss->HitPoints[Boss->Action + -1] < 1)) {
+                Boss->Action = WeatherBossNextAction();
+                Boss->DestAngleY = Boss->BaseAngleY;
+          }
+      break;
+      case 2:
+        Boss->PossYDest = PlayerGlider.Position.y - 3.5f;
+        Boss->DestAngleY = PlayerGlider.Position.x * WBANGSCALE3 + Boss->BaseAngleY;
+        if (((Boss->MainDraw.Anim.action == 0x1b) && (Boss->MainDraw.Anim.anim_time >= 46.0f)) &&
+           (Boss->MainDraw.Anim.anim_time <= EYESTOPTIME)) {
+          VulnerableA = (struct nuvec_s *)&Boss->Locator[2]._30;
+          VulnerableB = (struct nuvec_s *)&Boss->Locator[3]._30;
+          VulnerableSection = 1;
+          VulnerableRad = 8.0f;
+          if (ProcessTimer(&Boss->FireTimer) != 0) {
+            Boss->FireTimer = 0.25f;
+            local_60 = *(struct nuvec_s *)&Boss->Locator[Boss->FireSide + 2]._30;
+            Percent = (frand() < 0.5f) ? 0 : 1;
+            FireWBBolt(&local_60,SetNuVecPntr((frandPN() * EYEBOLTFIRESCALEX),frandPN() * EYEBOLTFIRESCALEY + EYEBOLTFIREY,
+                                  EYEBOLTFIRESPEED - Level_GliderSpeed),Percent,8.0f,Boss->Action);
+            Boss->FireSide = Boss->FireSide + 1U & 1;
+            MyGameSfx(0x85,NULL,EYEATTACKVOL);
+          }
+        }
+        if (((Boss->MainDraw.Anim.flags & 1) != 0) || (Boss->HitPoints[Boss->Action + -1] < 1)) {
+          Boss->Action = WeatherBossNextAction();
+        }
+      break;
+      case 4:
+        if (((Boss->Unleashed == 0) && (Boss->MainDraw.Anim.action == 0)) &&
+           (Boss->MainDraw.Anim.anim_time >= 48.0f)) {
+          local_60 = *(struct nuvec_s *)&Boss->Locator[4]._30;
+          local_60.z += 10.0f;
+          Boss->Unleashed = 1;
+          VulnerableA = VulnerableB = (struct nuvec_s *)&Boss->Locator[4]._30;
+          VulnerableRad = 15.0f;
+          VulnerableSection = 3;
+          UnleashLighteningHail(&local_60,(s32)(frand() * 3.0f));
+          MyGameSfx(0xb6,NULL,CHESTATTACKAVOL);
+          Boss->ChestSoundBTimer = CHESTATTACKSOUNDTIME;
+        }
+        if (((Boss->MainDraw.Anim.flags & 1) != 0) || (Boss->HitPoints[Boss->Action + -1] < 1)) {
+          Boss->Action = WeatherBossNextAction();
+        }
+      break;
+  }
+  VulnerableOn = 0;
+  SeekAngHalfLife360f(&Boss->AngleY,Boss->DestAngleY,0.5f,0.016666668f);
+  SeekHalfLifeLim(&Boss->Distance,Boss->DistanceDest,WBDISTANCESPEED,WBDISTANCETIME,0.016666668f);
+  SeekHalfLifeLim(&Boss->Position.y,Boss->PossYDest,WBDISTANCEYSPEED,WBDISTANCEYTIME,0.016666668f);
+  Boss->Position.z = PlayerGlider.Position.z - Boss->Distance;
+  if ((VulnerableA != NULL) && (0 < Boss->HitPoints[VulnerableSection])) {
+    VulnerableOn = 1;
+    NuVecScale(&Vel,VulnerableA,0.5f);
+    NuVecScaleAccum(&Vel,VulnerableB,0.5f);
+    VulnerablePos_524 = Vel;
+    if (CollideGliderBullets(&Vel,VulnerableRad,0,1.0f,0,0) != 0) {
+      if (Boss->HitSoundFrame == 0) {
+        MyGameSfx(0xb8,NULL,EYEATTACKVOL);
+      }
+      if (WeatherBossSkeletonTimer == 0.0f) {
+        WeatherBossSkeletonTimer = frand() * WBSKELTIMERAND + WBSKELTIME;
+      }
+      Boss->HitPoints[VulnerableSection]--;
+      if (Boss->HitPoints[VulnerableSection] < 0) {
+        Boss->HitPoints[VulnerableSection] = 0;
+      }
+    }
+  }
+  if (VulnerableOn != 0) {
+    if (LastVulnerableOn_523 == 0) {
+        SetNewMaskStuff(1,(struct nuvec_s *)&WeatherBossCamMtx._30,&WBAKUMASKONHIGH,0.0f,-360.0f,0.0f ,0,1,WBLOLOSCALE,90.0f);
+        SetNewMaskStuff(1,&VulnerablePos_524,SetNuVecPntr(0.0f,0.0f,10.0f),VulnerableRad,-360.0f,0.5f,0,0,WBAKUAKUSCALE,90.0f);
+    }
+  }
+  else if (LastVulnerableOn_523 != 0) {
+      SetNewMaskStuff(1,(struct nuvec_s *)&WeatherBossCamMtx._30,&WBAKUMASKONHIGH,0.0f,-360.0f,0.5f,0,1,WBLOLOSCALE,90.0f);
+  }
+  LastVulnerableOn_523 = VulnerableOn;
+  if ((Boss->Dead == 0) &&
+     (Boss->HitPoints[0] + Boss->HitPoints[1] + Boss->HitPoints[2] + Boss->HitPoints[3] < 1)) {
+    WeatherBossDead = 1;
+    Boss->Dead = 1;
+    WeatherBossSkeletonTimer = 0.0f;
+    Boss->Action = 5;
+  }
+  WasLastOn_522 = LastOn;
+}
+
+//NGC MATCH
 void ProcessWeatherBoss(void) {
   if (WeatherBoss.Active != 0) {
     ProcessWeatherBoss_a(&WeatherBoss);
