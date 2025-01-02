@@ -2517,9 +2517,35 @@ s32 TerrShapeSideStep(struct nuvec_s *vpos,struct nuvec_s *vvel,u8 *flags) {
   return 0;
 }
 
-void CubeImpact(numtx_s *mat,numtx_s *nmat,nuvec_s *norm,float size,nuvec_s *impact)
-{
-	//TODO
+//PS2 MATCH
+void CubeImpact(struct numtx_s *mat,struct numtx_s *nmat,struct nuvec_s *norm,float size,struct nuvec_s *impact) {
+  s32 lp;
+  struct nuvec_s cube[8] = {1.0f, 1.0f, 1.0f};
+  struct nuvec4_s pnts[10];
+  float best;
+  s32 bestnum;
+  float dota;
+  float dotb;
+  
+    best = 10000.0f;
+    bestnum = 0.0f;
+  for (lp = 0; (s32)lp < 8; lp++) {
+    pnts[lp].x = cube[lp].x;
+    pnts[lp].y = cube[lp].y;
+    pnts[lp].z = cube[lp].z;
+    pnts[lp].w = 0.0f;
+    NuVec4MtxTransformVU0(&pnts[8],&pnts[lp],nmat);
+    NuVec4MtxTransformVU0(&pnts[lp],&pnts[lp],mat);
+    dota = pnts[lp].x * norm->x + pnts[lp].y * norm->y + pnts[lp].z * norm->z;
+    dotb = pnts[8].x * norm->x + pnts[8].y * norm->y + pnts[8].z * norm->z;
+    if ((dota > dotb) && (dota < best)) {
+      best = dota;
+      bestnum = lp;
+    }
+  }
+  impact->x = mat->_30 + pnts[bestnum].x * size;
+  impact->y = mat->_31 + pnts[bestnum].y * size;
+  impact->z = mat->_32 + pnts[bestnum].z * size;
 }
 
 //NGC MATCH

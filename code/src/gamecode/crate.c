@@ -341,6 +341,24 @@ block_12:
 }
 
 //NGC MATCH
+s32 CrateAbove(struct obj_s *obj,CrateCubeGroup *group,CrateCube *crate) {
+  CrateCube *crate2;
+  s32 i;
+  
+  crate2 = Crate + group->iCrate;
+  for(i = 0; i < group->nCrates; i++, crate2++) {
+        if ( ( ((crate2 != crate) && (crate2->on != 0)) && (GetCrateType(crate2,0) != 0) ) &&
+              ((crate2->dx == crate->dx) && (crate2->dz == crate->dz)) ) {
+            if (crate2->pos.y > crate->pos.y && ( !(obj->objtop < crate2->pos.y) 
+                && !(obj->objbot > (crate2->pos.y + 0.5f)) )) {
+                 return 1;
+              }
+        }
+  }
+  return 0;
+}
+
+//NGC MATCH
 s32 CrateBelow(struct obj_s *obj,CrateCubeGroup *group,CrateCube *crate) {
   s32 i;
   CrateCube *crate2;

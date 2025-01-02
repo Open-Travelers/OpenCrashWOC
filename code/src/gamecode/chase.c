@@ -105,6 +105,86 @@ float NearestChaserDistance(struct chase_s *chase,struct obj_s *obj) {
     return NuFsqrt(d0);
 }
 
+//NGC MATCH
+void DrawChases(s32 render) {
+  CHASE *chase;
+  struct numtx_s m;
+  struct CharacterModel *model;
+  struct nuvec_s s;
+  s32 i;
+  s32 j;
+  s32 local_64;
+  struct numtx_s mtxLOCATOR [16];
+  float **dwa;
+  AnimPacket* anim;
+  
+  chase = Chase;
+  local_64 = 0;
+  for(i = 0; i < 3; i++, chase++) {
+    if ((chase->status == 1) && (Level == 0x1f)) {
+      local_64 = 1;
+    }
+    if (((local_64 != 0) ||
+        ((chase->status == 2 && ((chase->i_last == -1 || (Chase[chase->i_last].status == 3))))))
+       || ((chase->status == 3 &&
+           ((chase->i_next != -1 &&
+            (((chase->i_next > 2 || (Chase[chase->i_next].status == 1)) || (Chase[chase->i_next].status == 0)))))) ))
+    {
+      for(j = 0; j < 6; j++) {
+        if (chase->ok[j] != 0) {
+          if (chase->obj[j].special != NULL) {
+            if (local_64 == 0) {
+              s.x = s.y = s.z = 1.0f;
+              NuMtxSetScale(&m,&s);
+              NuMtxRotateY(&m,chase->yrot[j] + 0x8000);
+              NuMtxRotateZ(&m,chase->zrot[j]);
+              NuMtxRotateX(&m,chase->xrot[j]);
+              NuMtxTranslate(&m,&chase->pos[j]);
+            }
+            if (render != 0) {
+              if (Level != 0x1f) {
+                NuRndrGScnObj((chase->obj[j].scene)->gobjs
+                              [(chase->obj[j].special)->instance->objid],&m);
+              }
+              chase->obj[j].special->instance->mtx = m;
+              if ((Level == 0x1f) && (ObjTab[0x4e].obj.special != NULL)) {
+                NuRndrGScnObj((ObjTab[0x4e].obj.scene)->gobjs
+                              [(ObjTab[0x4e].obj.special)->instance->objid],&m);
+              }
+            }
+          }
+          else {
+            if ((s32)chase->character[j] != -1) {
+              model = &CModel[CRemap[(s32)chase->character[j]]];
+              s.x = s.y = s.z = CData[(s32)chase->character[j]].scale * chase->scale[j];
+              NuMtxSetScale(&m,&s);
+              NuMtxRotateY(&m,chase->yrot[j] + 0x8000);
+              NuMtxRotateZ(&m,chase->zrot[j]);
+              NuMtxRotateX(&m,chase->xrot[j]);
+              NuMtxTranslate(&m,&chase->pos[j]);
+              anim = &chase->anim[j];
+              EvalModelAnim(model,anim,&m,tmtx,&dwa,mtxLOCATOR);
+              if ((temp_action != -1) && (Paused == 0)) {
+                AddAnimDebris(model,mtxLOCATOR,temp_action,temp_time,NULL);
+              }
+              if (render != 0) {
+                if ((USELIGHTS != 0) && (LIGHTCHASECHARACTERS != 0)) {
+                  SetLights(&chase->lights[j].pDir1st->Colour,&chase->lights[j].pDir1st->Direction,&chase->lights[j].pDir2nd->Colour,&chase->lights[j].pDir2nd->Direction,
+                            &chase->lights[j].pDir3rd->Colour,&chase->lights[j].pDir3rd->Direction,&chase->lights[j].AmbCol);
+                }
+                NuHGobjRndrMtxDwa(model->hobj,&m,1,NULL,tmtx,dwa);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (((render != 0) && (USELIGHTS != 0)) && (LIGHTCHASECHARACTERS != 0)) {
+    SetLevelLights();
+  }
+}
+
 /* UPDATECHASE LOCAL VAR
     nuvec_s oldpos; // 0x8(r1)
     nuvec_s* p0; // r9
