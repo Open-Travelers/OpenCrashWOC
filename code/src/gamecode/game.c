@@ -1,29 +1,27 @@
 /*
-TODO 
+WIP 
 
-HubSelect
-HubLevelSelect
-HubDrawItems  89%
-InitVehicleToggles
-ResetVehicleControl
-ToggleVehicle 73%
-BonusTransporter
-DeathTransporter
-GemPathTransporter
-
-
-JonProbe  98%
-AddAward 99%
-DrawAwards 98%
-UpdateWumpa 87%**
-UpdateMask  95%
-ProcMenu 99%
-DrawMenu 19%**
-GameTiming 99%
+AddAward 99% (regswap)
+DrawAwards 98% (regswap)
+UpdateWumpa 98%**
+UpdateMask  95% (regswap)
+ProcMenu 99% (merge)
+GameTiming 99% (regswap)
 NewLevelTime 87%**
-BonusTiming 98%
-DrawProbeFX  95%
-DrawMenu 19%
+BonusTiming 98% (regswap)
+DrawProbeFX  95% (regswap)
+Draw3DObject 98% (branch)
+DrawMenu 19%**
+
+HubDrawItems 89%
+ToggleVehicle 73%
+HubSelect   83%
+HubLevelSelect   90%
+InitVehicleToggles 76%**
+ResetVehicleControl 76%**
+BonusTransporter   93%
+DeathTransporter    88%
+GemPathTransporter  96%
 
 */
 
@@ -98,6 +96,160 @@ void InitProbe(void) {
   proberot.y = 0;
   proberot.z = 0;
   return;
+}
+
+//MATCH NGC
+void JonProbe(void) {
+    struct nuvec_s vec;
+    struct nuvec_s vec1;
+    struct nuvec_s vec2;
+    struct nuvec_s oldpos;
+    s32 i;
+    s32 ang;
+    s32 col;
+    s32 dec;
+    s32 vol;
+    float dx;
+    float dz;
+    float d;
+    
+    if ((Hub != -1) && (in_finish_range > 0)) {
+        if (probeon == 0) {
+            probepos = in_finish_pos;
+            probepos.y += 4.5f;
+            probeon = 1;
+            GameSfx(0x82, &probepos);
+            NewRumble(&player->rumble, 0x7f);
+            NewBuzz(&player->rumble, 6);
+        }
+        probetime = 0x708;
+        probedpos = in_finish_pos;
+    }
+    
+    oldpos = probepos;
+    if (probeon != 0) {
+        if (Paused == 0) {
+            if (probetime != 0) {
+                probetime -= 0x3c;
+                if (probetime < 0) {
+                    probetime = Paused;
+                }
+                probey += 0x5a00;
+                if (probey > 0xf0000) {
+                    probey = 0xf0000;
+                }
+            }
+            else {
+                probey -= 0x5a00;
+                if (probey < 0) {
+                    probey = probetime;
+                    probeon = probetime;
+                    GameSfx(0x82, &probepos);
+                    NewRumble(&player->rumble, 0x7f);
+                    NewBuzz(&player->rumble, 6);
+                }
+            }
+            vec = probedpos;
+            vec.y += (4.5f - (NuTrigTable[(probey / 0x3c) & 0xffff]) * 2.5f);
+            dx = ((probepos.x - vec.x) * 0.0625f);
+            if (dx > 0.1f) {
+                dx = 0.1f;
+            }
+            if (dx < -0.1f) {
+                dx = -0.1f;
+            }
+            probepos.x -= dx;
+            dz = (probepos.z - vec.z) * 0.0625f;
+            if (dz > 0.1f) {
+                dz = 0.1f;
+            }
+            if (dz < -0.1f) {
+                dz = -0.1f;
+            }
+            probepos.z -= dz;
+            probepos.y -= (probepos.y - vec.y) * 0.5f;
+            proberot.y = (proberot.y + 0x88) & 0xffff;
+            
+            if ((NuFabs(dx) < 0.005f) && (NuFabs(dz) < 0.005f) && (probey == 0xf0000)) {
+                if (probecol == 0) {
+                    gamesfx_effect_volume = 0xbffd;
+                    GameSfx(0x4b, &probepos);
+                }
+                probespk = probepos;
+                vec = probepos;
+                AddVariableShotDebrisEffect(GDeb[76].i, &vec, 1, -0x8000, 0);
+                probecol += 0xf0;
+                if (probecol > 0x1e00) {
+                    probecol = 0x1e00;
+                }
+                dec = 0;
+            }
+            else {
+                in_finish_range = 1;
+                probecol -= 0xf0;
+                if (probecol < 0) {
+                    probecol = 0;
+                }
+                dec = 1;
+            }
+        }
+        
+        if (probecol != 0) {
+            col = (probecol / 0x3c) * 0x1000000;
+            ang = proberot.y + temprotate;
+            for (i = 0; i < 3; i++, ang += 0x5555) {
+                vec = probespk;
+                vec1.y = vec.y;
+                vec.y -= 1.8f;
+                vec1.y -= 0.05f;
+                if (dec != 0) {
+                    vec.y -= ((0x80 - probecol / 0x3c) * 0.015625f);
+                    dx = (((probecol / 0x3c)) / 426.66666f);
+                    dz = (((probecol / 0x3c)) / 266.66669f);
+                }
+                else {
+                    dx = 0.3f;
+                    dz = 0.48f;
+                }
+                vec2.x = NuTrigTable[ang & 0xffff] * dz;
+                vec2.y = 0.0f;
+                vec2.z = NuTrigTable[(ang + 0x4000) & 0xffff] * dz;
+                vec.x += vec2.x;
+                vec.z += vec2.z;
+                vec1.x = vec.x + vec2.x;
+                vec1.z = vec.z + vec2.z;
+                if (Paused == 0) {
+                    NuLgtArcLaser(0, &vec1, &vec, &vec2, 0.1f, 0.1f, 0.01f, dx, col + 0x00ff7f3f);
+                    NuLgtArcLaser(0, &vec1, &vec, &vec2, 0.4f, 0.3f, 0.001f, dx, col + 0x00800040);
+                    AddVariableShotDebrisEffect(GDeb[78].i, &vec1, 1, 0, 0);
+                    AddVariableShotDebrisEffect(GDeb[78].i, &vec, 1, -0x8000, 0);
+                }
+            }
+        }
+        if (CRemap[177] != -1) {
+            Draw3DCharacter(&probepos, proberot.x, proberot.y, proberot.z, &CModel[CRemap[177]], -1, 1.0f, 1.0f, 0);
+        }
+        vol = (s32)(16383.0f - (NuVecDist(&probepos, &oldpos, NULL) * 16383.0f) / 0.050000004f);
+        if (vol  > 0) {
+            gamesfx_pitch = 200;
+            gamesfx_effect_volume = vol;
+            GameSfxLoop(0x61, &probepos);
+        }
+        probepos2 = probepos;
+        d = NuVecDist(&probepos, &oldpos, NULL);
+        vol = (s32)((d * 16383.0f) / 0.050000004f);
+        if (vol > 0x3fff) {
+            vol = 0x3fff;
+        }
+        if (vol > 0) {
+            gamesfx_effect_volume = vol;
+            gamesfx_pitch = (s32)(d * 600.0f + 50.0f);
+            if (gamesfx_pitch > 100) {
+                gamesfx_pitch = 100;
+            }
+            GameSfxLoop(0x3a, &probepos2);
+        }
+    }
 }
 
 //MATCH NGC
@@ -3748,57 +3900,56 @@ void AddKaboom(s32 type,struct nuvec_s *pos,float radius) {
   return;
 }
 
-
-//NGC MATCH (check if)
+//NGC MATCH
 void UpdateKabooms(void) {
-  struct wumpa_s *wmp;
-  struct cratesarray_s *crate;
-  struct obj_s *obj;
-  struct crategrp_s *group;
-  struct kaboom_s *kaboom;
+  GameObject *obj;
+  WumpaFruit *wumpa;
+  CrateCubeGroup *group;
+  CrateCube *crate;
+  KABOOM* kaboom;
   float r;
   float r2;
-  s32 type;
   s32 i;
   s32 j;
   s32 k;
+  s32 type;
   s32 key;
-  struct nuvec_s local_88;
-  struct nuvec_s local_78;
+  struct nuvec_s pos;
+  struct nuvec_s v;
   
   kaboom = Kaboom;
-  for (i = 0; i < 0x48; i++) {
+  for (i = 0; i < 0x48; i++, kaboom++) {
     if ((kaboom->time < kaboom->duration) && ((kaboom->type & 0x40) == 0)) {
       group = CrateGroup;
       r = ((kaboom->radius1 - kaboom->radius0) * (kaboom->time / kaboom->duration) + kaboom->radius0);
       r2 = (r * r);
-        for (j = 0; j < CRATEGROUPCOUNT; j++) {
+        for (j = 0; j < CRATEGROUPCOUNT; j++, group++) {
           if (((!(kaboom->pos.x < (group->minclip.x - r)) && !(kaboom->pos.x > (group->maxclip.x + r))) &&
                !(kaboom->pos.z < (group->minclip.z - r)) && !(kaboom->pos.z > group->maxclip.z + r) &&
                !(kaboom->pos.y < (group->minclip.y - r))) && !(kaboom->pos.y > (group->maxclip.y + r))) {
             crate = &Crate[group->iCrate];
-              for (k = 0; k < group->nCrates; k++) {
-                if (crate->on != '\0') {
+            for (k = 0; k < group->nCrates; k++, crate++) {
+                if (crate->on != 0) {
                   type = GetCrateType(crate,0);
                   if ((type == 0x13) && ((kaboom->type & 0xc) == 0)) {
                     NewCrateAnimation(crate,0x13,0x58,0);
                     GameSfx(0x39,&crate->pos);
                   }
-                      //check
-                  else if (kaboom->type != 0x20 || type != 0 || crate->type3 == -1 || kaboom->i == -1 || crate->trigger != kaboom->i) {
-                   if (kaboom->type != 0x20 && type != 0) {
-                      local_88.x = (crate->pos).x;
-                      local_88.y = ((crate->pos).y + 0.25f);
-                      local_88.z = (crate->pos).z;
-                      NuVecSub(&local_78,&kaboom->pos,&local_88);
-                      if ((local_78.x * local_78.x + local_78.y * local_78.y + local_78.z * local_78.z) < r2) {
+                  else if ((kaboom->type == 0x20 && type == 0) && (crate->type3 != -1)
+                      && kaboom->i != -1 && crate->trigger == kaboom->i 
+                      || (kaboom->type != 0x20 && type != 0)) {
+                      pos.x = crate->pos.x;
+                      pos.y = crate->pos.y + 0.25f;
+                      pos.z = crate->pos.z;
+                      NuVecSub(&v,&kaboom->pos,&pos);
+                      if ((v.x * v.x + v.y * v.y + v.z * v.z) < r2) {
                         if (kaboom->type == 0x20) {
                           crate->newtype = crate->type3;
-                          if (crate->type3 == '\x03') {
+                          if (crate->type3 == 3) {
                             NewCrateAnimation(crate,3,0x22,1);
                           }
-                          if (crate->newtype != '\0') {
-                            crate->appeared = '\x01';
+                          if (crate->newtype != 0) {
+                            crate->appeared = 1;
                           }
                         }
                         else if (type == 0xe) {
@@ -3819,29 +3970,26 @@ void UpdateKabooms(void) {
                           }
                         }
                       }
-                    }
                   }
                 }
-                crate++;
-              }
+            }
           }
-          group++;
         }
       if (kaboom->type != 0x20) {
         r = 0.5f;
         for (j = 0; j < 0x40; j++) {
           obj = pObj[j];
-          if ((((((obj != NULL) && (obj->dead == '\0')) && (obj->invisible == '\0')) &&
+          if ((((((obj != NULL) && (obj->dead == 0)) && (obj->invisible == 0)) &&
                ((obj->character != 0xb1 && (((obj->flags & 1) == 0 || ((kaboom->type & 0x18c) == 0)))))) &&
               (((obj->flags & 4) == 0 ||  ((((kaboom->type & 0x10) == 0 &&
                  ((kaboom->type != 4 || ((obj->vulnerable & 4) != 0)))) &&
                 ((kaboom->type != 8 || ((obj->vulnerable & 8) != 0)))))))) &&
              ((((obj->flags & 0x10) == 0 || ((kaboom->type & 0xc) != 0)) && ((obj->flags & 8) == 0)))) {
-            local_88.x = (obj->pos).x;
-            local_88.y = (((obj->bot + obj->top) * obj->SCALE) * r + (obj->pos).y);
-            local_88.z = (obj->pos).z;
-            NuVecSub(&local_78,&local_88,&kaboom->pos);
-            if ((local_78.x * local_78.x + local_78.y * local_78.y + local_78.z * local_78.z) < r2) {
+            pos.x = obj->pos.x;
+            pos.y = (((obj->bot + obj->top) * obj->SCALE) * r + obj->pos.y);
+            pos.z = obj->pos.z;
+            NuVecSub(&v,&pos,&kaboom->pos);
+            if ((v.x * v.x + v.y * v.y + v.z * v.z) < r2) {
               if ((obj->flags & 1) != 0) {
                 KillPlayer(obj,6);
               }
@@ -3851,10 +3999,10 @@ void UpdateKabooms(void) {
                 }
                 else {
                   if ((obj->flags & 0x40004) == 0x40004) {
-                    obj->kill_contact = '\x01';
+                    obj->kill_contact = 1;
                   }
                   else {
-                    FlyGameObject(obj,NuAtan2D(local_78.x,local_78.z) & 0xffff);
+                    FlyGameObject(obj,NuAtan2D(v.x,v.z) & 0xffff);
                     KillGameObject(obj,1);
                   }
                 }
@@ -3863,24 +4011,24 @@ void UpdateKabooms(void) {
           }
         }
         if ((kaboom->type != 0x20) && (TimeTrial == 0)) {
-          wmp = Wumpa;
-          for (j = 0; j < 0x140; j++) {
-            if (((wmp->active == '\x02') || ((wmp->active == '\x01' && ((kaboom->type & 0xc) == 0)))) &&
-               (NuVecSub(&local_78,&kaboom->pos,&wmp->pos),
-               (local_78.x * local_78.x + local_78.y * local_78.y + local_78.z * local_78.z) < r2)) {
-              if ((kaboom->type & 0xc) != 0) {
-                if ((player->obj).dead == '\0') {
-                  AddScreenWumpa((wmp->pos).x,(wmp->pos).y,(wmp->pos).z,1);
+          wumpa = Wumpa;
+          for (j = 0; j < 0x140; j++, wumpa++) {
+            if ((wumpa->active == 2) || ((wumpa->active == 1 && ((kaboom->type & 0xc) == 0)))) {
+              NuVecSub(&v,&kaboom->pos,&wumpa->pos);
+              if ((v.x * v.x + v.y * v.y + v.z * v.z) < r2) {
+                if ((kaboom->type & 0xc) != 0) {
+                  if ((player->obj).dead == 0) {
+                    AddScreenWumpa(wumpa->pos.x,wumpa->pos.y,wumpa->pos.z,1);
+                  }
+                  wumpa->active = 0;
+                  key = -1;
+                  AddFiniteShotDebrisEffect(&key,GDeb[130].i,&wumpa->pos,1);
                 }
-                wmp->active = '\0';
-                key = -1;
-                AddFiniteShotDebrisEffect(&key,GDeb[130].i,&wmp->pos,1);
-              }
-              else {
-                FlyWumpa(wmp);
+                else {
+                  FlyWumpa(wumpa);
+                }  
               }
             }
-            wmp++;
           }
         }
       }
@@ -3889,7 +4037,6 @@ void UpdateKabooms(void) {
         kaboom->time = kaboom->duration;
       }
     }
-    kaboom++;
   }
 }
 

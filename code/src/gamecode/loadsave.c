@@ -16,7 +16,6 @@ void loadsaveCallEachFrame(void) {
   if (saveload_cardtype != 2) {
     memcard_loadattempted = 0;
   }
-  return;
 }
 
 //NGC MATCH
@@ -92,7 +91,6 @@ void UpdateSaveSlots(struct cursor_s *cur) {
       memcard_loadattempted = memcard_formatme;
     }
   }
-  return;
 }
 
 //NGC MATCH
@@ -143,108 +141,67 @@ void DrawGameSlot(struct game_s *game,float x,float y,s32 col,float size) {
   }
   DrawPanel3DObject(0x81,x,(y - 0.05000000074505806f),1.01f,SLOTPANELSX,0.125f,
                     SLOTPANELSZ,0xc000,0,0,ObjTab[129].obj.scene,ObjTab[129].obj.special,0);
-  return;
 }
 
-void DrawGameSlots(Cursor *cursor)
-
-{
-  float fVar1;
-  int iVar2;
-  int iVar3;
-  int iVar4;
-  double dVar5;
-  double dVar6;
+//NGC MATCH
+void DrawGameSlots(struct cursor_s *cursor) {
+  s32 col;
+  s32 sel;
+  float x;
+  float y; 
   
-  iVar3 = 3;
+  col = 3;
   if (GlobalTimer.frame % 0xc < 6) {
-    iVar3 = 4;
+    col = 4;
   }
-  iVar4 = -1;
-  dVar5 = (double)(SLOTPANELDY * 0.5);
+  y = SLOTPANELDY * 0.5f;
+  sel = -1;
   if (cursor->y < 2) {
-    iVar4 = cursor->x * 2 + (int)cursor->y;
+    sel = cursor->x * 2 + (s32)cursor->y;
   }
-  dVar6 = -(double)(SLOTPANELDX * 0.5);
-  iVar2 = 0;
-  if ((iVar4 != 0) || (iVar2 = iVar3, iVar4 != 0)) {
-    fVar1 = 0.6;
-  }
-  else {
-    fVar1 = menu_pulsate * 0.6;
-  }
-  DrawGameSlot(SaveSlot,(float)dVar6,SLOTPANELDY * 0.5,iVar2,fVar1);
-  iVar2 = 0;
-  if ((iVar4 != 1) || (iVar2 = iVar3, iVar4 != 1)) {
-    fVar1 = 0.6;
-  }
-  else {
-    fVar1 = menu_pulsate * 0.6;
-  }
-  DrawGameSlot(SaveSlot + 1,(float)dVar6,(float)(dVar5 - (double)SLOTPANELDY),iVar2,fVar1);
-  iVar2 = 0;
-  if ((iVar4 != 2) || (iVar2 = iVar3, iVar4 != 2)) {
-    fVar1 = 0.6;
-  }
-  else {
-    fVar1 = menu_pulsate * 0.6;
-  }
-  DrawGameSlot(SaveSlot + 2,(float)(dVar6 + (double)SLOTPANELDX),(float)dVar5,iVar2,fVar1);
-  iVar2 = 0;
-  if ((iVar4 != 3) || (iVar2 = iVar3, iVar4 != 3)) {
-    fVar1 = 0.6;
-  }
-  else {
-    fVar1 = menu_pulsate * 0.6;
-  }
-  DrawGameSlot(SaveSlot + 3,(float)(dVar6 + (double)SLOTPANELDX),
-               (float)(dVar5 - (double)SLOTPANELDY),iVar2,fVar1);
-  return;
+  x = -(SLOTPANELDX * 0.5f);
+  DrawGameSlot(&SaveSlot[0],x,y,(sel != 0) ? 0 : col,(sel == 0) ? menu_pulsate * 0.6f : 0.6f);
+  DrawGameSlot(&SaveSlot[1],x,y - SLOTPANELDY,(sel != 1) ? 0 : col,(sel == 1) ? menu_pulsate * 0.6f : 0.6f);
+  DrawGameSlot(&SaveSlot[2],x + SLOTPANELDX,y,(sel != 2) ? 0 : col,(sel == 2) ? menu_pulsate * 0.6f : 0.6f);
+  DrawGameSlot(&SaveSlot[3],x + SLOTPANELDX,y - SLOTPANELDY,(sel != 3) ? 0 : col,(sel == 3) ? menu_pulsate * 0.6f : 0.6f);
 }
 
-
-void InitLoadSaveDeleteScreen(Cursor *cur,int menu)
-
-{
-  char cVar1;
-  int iVar2;
-  int iVar3;
-  Game_s *sSlot;
-  _ULARGE_INTEGER dVar4;
-  _SYSTEMTIME temp_time;
-  _FILETIME file_time;
+//78% NGC
+void InitLoadSaveDeleteScreen(struct cursor_s *cur,s32 menu) {
+  s32 i;
+  s32 recent;
+  s32 error;
+  struct _ULARGE_INTEGER dVar4;
+  struct _ULARGE_INTEGER dVar5;
+  struct _SYSTEMTIME temp_time;
+  struct _FILETIME file_time;
   
-  iVar3 = 0;
   memset(&temp_time,0,0x10);
-  iVar2 = -1;
+  recent = -1;
   dVar4.QuadPart = 0.0;
-  sSlot = SaveSlot;
-  do {
-    if (sSlot->empty == '\0') {
-      temp_time.wYear = sSlot->year + 2000;
-      temp_time.wHour = (ushort)sSlot->hours;
-      temp_time.wMonth = (ushort)sSlot->month;
-      temp_time.wDay = (ushort)sSlot->day;
-      temp_time.wMinute = (ushort)sSlot->mins;
-      GetLastError();
-      if (dVar4.QuadPart < (double)CONCAT44(file_time.dwLowDateTime,file_time.dwHighDateTime)) {
-        iVar2 = iVar3;
-        dVar4.QuadPart = (double)CONCAT44(file_time.dwLowDateTime,file_time.dwHighDateTime);
+  for(i = 0; i < 4; i++) {
+    if (SaveSlot[i].empty == 0) {
+      temp_time.wYear = SaveSlot[i].year + 2000;
+      temp_time.wHour = (u16)SaveSlot[i].hours;
+      temp_time.wMonth = (u16)SaveSlot[i].month;
+      temp_time.wDay = (u16)SaveSlot[i].day;
+      temp_time.wMinute = (u16)SaveSlot[i].mins;
+      error = GetLastError();
+      dVar5.QuadPart = file_time.dwLowDateTime;
+      if (dVar5.QuadPart > dVar4.QuadPart) {
+        recent = i;
+        dVar4.QuadPart = dVar5.QuadPart;
       }
     }
-    iVar3 = iVar3 + 1;
-    sSlot = sSlot + 1;
-  } while (iVar3 < 4);
-  if (iVar2 < 0) {
-    cur->remember[menu].x = '\0';
-    cur->remember[menu].y = '\0';
+  }
+  if (recent < 0) {
+    cur->remember[menu].x = 0;
+    cur->remember[menu].y = 0;
   }
   else {
-    cVar1 = (char)(iVar2 / 2);
-    cur->remember[menu].x = cVar1;
-    cur->remember[menu].y = (char)iVar2 + cVar1 * -2;
+    cur->remember[menu].x = (char)(recent / 2);
+    cur->remember[menu].y = (char)recent + cur->remember[menu].x;
   }
-  return;
 }
 
 //NGC MATCH
@@ -276,5 +233,4 @@ void InvalidateSaveSlots(void) {
   for(i = 0; i < 4; i++) {
     SaveSlot[i].empty = 1;
   }
-  return;
 }

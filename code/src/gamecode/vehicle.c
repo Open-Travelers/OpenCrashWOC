@@ -2476,6 +2476,134 @@ void ProcessCrashteroidsIntro(void) {
     ProcessFireFlyIntro();
 }
 
+//NGC MATCH
+void ProcessFireFlyIntro(void) {
+  s32 Done;
+  float RelAng;
+  float ThisPanSeekSpeed;
+  float Temp;
+  struct nuvec_s Dir;
+  struct nuvec_s Dir2;
+  struct nuvec_s Rel;
+  
+  Dir2 = SetNuVec(1.0f,0.0f,1.0f);
+  NuVecNorm(&Dir,&Dir2);
+  if (Level == 0x12) {
+    MatchTimer = 0.0f;
+    MatchMaxDist = 4.0f;
+    MatchMinDist = 4.0f;
+    PrePanTime = 2.0f;
+    PanSeekSpeed = 2.0f;
+    MinPanSeekSpeed = 0.3f;
+    FFINTROHEIGHT = 2.5f;
+    FFINTROCAMYOFF = 4.0f;
+  }
+  else if (Level == 0x1a) {
+    MatchMaxDist = 3.0f;
+    MatchMinDist = 3.0f;
+    MatchTimer = 0.0f;
+    PrePanTime = 3.5f;
+    PanSeekSpeed = 1.0f;
+    MinPanSeekSpeed = 0.3f;
+    FFINTROHEIGHT = -2.5f;
+    FFINTROCAMYOFF = 1.75f;
+  }
+  if (FireFlyIntroOn != 0) {
+    NuVecScale(&PlayerGlider.Velocity,&Dir2,Level_GliderSpeed);
+    NuVecScaleAccum(&PlayerGlider.Position,&PlayerGlider.Velocity,0.01666667);
+  }
+  GliderIntroInterest = PlayerGlider.Position;
+  if (FireFlyIntroAction != FireFlyIntroOldAction) {
+    switch(FireFlyIntroAction) {
+        case 0:
+            PlayerGlider.AutoPilot = 1;
+            FireFlyIntroOn = 1;
+            GliderIntroCamPos = SetNuVec(40.0f,(FFINTROCAMYOFF + 18.0f) - FFINTROHEIGHT,40.0f);
+            *(struct nuvec_s*)&GameCam[0].m._30 = GliderIntroCamPos;
+        break;
+        case 1:
+            Timer_549 = MatchTimer;
+        break;
+        case 2:
+            Timer_549 = PrePanTime;
+        break;
+        case 3:
+            CamAngY_550 = (float)(GameCam[0].yrot) / 182.04445f + 180.0f;
+        break;
+        case 4:
+            PlayerGlider.AutoPilot = 0;
+            FireFlyIntroOn = 0;
+        break;
+    }
+  }
+  FireFlyIntroOldAction = FireFlyIntroAction;
+  switch(FireFlyIntroAction) { 
+      case 0:
+          NuVecSub(&Rel,&PlayerGlider.Position,&GliderIntroCamPos);
+          Rel.y = 0.0f;
+          Temp = NuVecMag(&Rel);
+          CamAngY_550 = PlayerGlider.AngleY + 180.0f;
+          if (Temp < MatchMaxDist) {
+            FireFlyIntroAction = 1;
+          }
+      break;
+      case 1:
+          GliderIntroCamPos.x = PlayerGlider.Position.x;
+          GliderIntroCamPos.z = PlayerGlider.Position.z;
+          NuVecScaleAccum(&GliderIntroCamPos,&Dir,
+                          (Timer_549 / MatchTimer) * (MatchMaxDist - MatchMinDist) + MatchMinDist);
+          if (ProcessTimer(&Timer_549) != 0) {
+            FireFlyIntroAction = 3;
+          }
+      break;
+      case 2:
+        GliderIntroCamPos = PlayerGlider.Position;
+        NuVecScaleAccum(&GliderIntroCamPos,&Dir,MatchMinDist);
+        if (ProcessTimer(&Timer_549) != 0) {
+          FireFlyIntroAction = 3;
+        }
+      break;
+      case 3:
+        Done = 0;
+        RelAng = Rationalise360f(PlayerGlider.AngleY - CamAngY_550);
+        Temp = NuFabs(RelAng);
+        if (Temp > 90.0f) {
+          Temp = (180.0f - Temp);
+        }
+        ThisPanSeekSpeed = (PanSeekSpeed * Temp) / 90.0f;
+        if (ThisPanSeekSpeed < MinPanSeekSpeed) {
+          ThisPanSeekSpeed = MinPanSeekSpeed;
+        }
+        Temp = NuFabs(RelAng);
+        if (Temp < ThisPanSeekSpeed) {
+          Done = 1;
+          RelAng = 0.0f;
+        }
+        else {
+          RelAng = (RelAng - ThisPanSeekSpeed);
+        }
+        CamAngY_550 = Rationalise360f(PlayerGlider.AngleY - RelAng);
+        if (Done != 0) {
+          FireFlyIntroAction = 4;
+        }
+      break;
+      case 4:
+          FireFlyIntroAction = 5;
+      break;
+  }
+  GliderIntroInterest.y += 1.0f;
+  if (FireFlyIntroAction != 0) {
+    GliderIntroCamPos = PlayerGlider.Position;
+    NuVecScale(&Rel,&Dir,MatchMinDist);
+    NuVecRotateY(&Rel,&Rel,
+                 (s32)(((CamAngY_550 - FireFlyStartAngle) - 180.0f) * 182.04445f));
+    NuVecAdd(&GliderIntroCamPos,&Rel,&PlayerGlider.Position);
+    RelAng = NuFabs(Rationalise360f(PlayerGlider.AngleY - CamAngY_550));
+    GliderIntroCamPos.y += FFINTROCAMYOFF - (RelAng * FFINTROHEIGHT) / 180.0f;
+  }
+}
+
+//NGC MATCH
 void ProcessFireFlyLevel(struct nupad_s *Pad) {
   s32 i;
   

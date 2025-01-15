@@ -243,7 +243,7 @@ void FileLoadSingleEffectType(struct debinftype *effect,s32 version,char list) {
   return;
 }
 
-//92% NGC //99% PS2 (fix goto)
+//93% NGC (fix) //PS2 MATCH
 s32 edppLoadEffects(char* file, char list) {
     s32 i;
     s32 version;
@@ -260,30 +260,26 @@ s32 edppLoadEffects(char* file, char list) {
     } else {
         return 0;
     }
-    
     if (version > 1) {
         effect_types_used = EdFileReadInt();
     } else {
         effect_types_used = 128;
     }
-    
     if (version > 3) {
         effect_types_used++;
-    } else {
+    }
+    if (version < 4) {
         for (i = 0; i < effect_types_used; i++) {
             FileLoadSingleEffectType((struct debinftype*)&effecttypes[i], version, list);
         }
-        goto test;
+    } else {
+        for (i = 1; i < effect_types_used; i++) {
+            FileLoadSingleEffectType((struct debinftype*)&effecttypes[i], version, list);
+        }
     }
-    for (i = 1; i < effect_types_used; i++) {
-        FileLoadSingleEffectType((struct debinftype*)&effecttypes[i], version, list);
-    }
-test:
-    
     for (i = effect_types_used; i < 128; i++) {
         *((struct debinftype*)&effecttypes[i]) = *((struct debinftype*)&effecttypes[0]);
     }
-    
     if (version < 4) {
         EdFileRead(debtab, sizeof(debtab));
         effect_types_used = 0;
@@ -291,33 +287,32 @@ test:
             if (debtab[i] != 0) {
                 debtab[i] = &effecttypes[i];
                 effect_types_used++;
-                UpdateTotalPtls(&effecttypes[i]);
+                UpdateTotalPtls((struct debinftype*)&effecttypes[i]);
             }
         }
     } else {
-        for (i = 0; i < 0x80; i++) {
+        for (i = 0; i < 128; i++) {
             if (i < effect_types_used) {
                 debtab[i] = &effecttypes[i];
-                UpdateTotalPtls(&effecttypes[i]);
+                UpdateTotalPtls((struct debinftype*)&effecttypes[i]);
             } else {
                 debtab[i] = NULL;
             }
         }
     }
-    
-    if ((list == 1) || (list == 2)) {
+    if (list == 1 || list == 2) {
         ParticleReset();
         if (version < 5) {
-            for (i = 0; i <= 256; i++) {
-                EdFileRead(&edpp_ptls[i].pos, sizeof(edpp_ptls[i].pos));
+            for (i = 0; i <= 255; i++) {
+                EdFileRead(&edpp_ptls[i].pos, sizeof(struct nuvec_s));
                 edpp_ptls[i].type = EdFileReadInt();
                 edpp_ptls[i].handle = EdFileReadInt();
-                edpp_ptls[i].emitrotz = (short)EdFileReadInt();
-                edpp_ptls[i].emitroty = (short)EdFileReadInt();
+                edpp_ptls[i].emitrotz = EdFileReadInt();
+                edpp_ptls[i].emitroty = EdFileReadInt();
                 if (debtab[edpp_ptls[i].type] == NULL) {
-                    edpp_ptls[i].name[0] = 0;
+                    *edpp_ptls[i].name = 0;
                 } else {
-                    memcpy(edpp_ptls[i].name, debtab[edpp_ptls[i].type]->id, 16);
+                    memcpy(edpp_ptls[i].name, (void *)debtab[edpp_ptls[i].type]->id, 16);
                 }
                 edpp_ptls[i].offset = 0;
                 edpp_ptls[i].trigger_type = 0;
@@ -328,7 +323,7 @@ test:
             numptls = EdFileReadInt();
             maxptl = numptls > 256 ? 256 : numptls;
             for (i = 0; i < maxptl; i++) {
-                EdFileRead(&edpp_ptls[i].pos, sizeof(edpp_ptls[i].pos));
+                EdFileRead(&edpp_ptls[i].pos, sizeof(struct nuvec_s));
                 if (version < 7) {
                     edpp_ptls[i].rotz = 0;
                     edpp_ptls[i].roty = 0;
@@ -345,7 +340,7 @@ test:
                 } else {
                     edpp_ptls[i].offset = EdFileReadInt();
                 }
-                EdFileRead(edpp_ptls[i].name, sizeof(edpp_ptls[i].name));
+                EdFileRead(edpp_ptls[i].name, 16);
                 edpp_ptls[i].handle = i;
                 edpp_ptls[i].type = LookupDebrisEffect(edpp_ptls[i].name);
                 if (version > 8) {
@@ -357,7 +352,7 @@ test:
                     edpp_ptls[i].trigger_id = -1;
                     edpp_ptls[i].trigger_var = 0.0f;
                 }
-                if (version > 0xb) {
+                if (version > 11) {
                     edpp_ptls[i].refrotz = EdFileReadShort();
                     edpp_ptls[i].refroty = EdFileReadShort();
                     edpp_ptls[i].refoff = EdFileReadFloat();
@@ -366,12 +361,12 @@ test:
                     edpp_ptls[i].refroty = 0;
                     edpp_ptls[i].refoff = 0.0f;
                 }
-                if (version > 0xc) {
+                if (version > 12) {
                     edpp_ptls[i].refbounce = EdFileReadFloat();
                 } else {
-                    edpp_ptls[i].refbounce = 0.89999998f;
+                    edpp_ptls[i].refbounce = 0.9f; // if it's 0x3f666666 it can be replaced with 0.9f
                 }
-                if (version > 0xe) {
+                if (version > 14) {
                     edpp_ptls[i].group_id = EdFileReadShort();
                 } else {
                     edpp_ptls[i].group_id = 0;
@@ -379,9 +374,7 @@ test:
             }
         }
     }
-    
     EdFileClose();
-    
     for (i = 0; i < 128; i++) {
         effecttypes[i].DmaDebTypePointer = 0;
         effecttypes[i].variable_key = -1;
