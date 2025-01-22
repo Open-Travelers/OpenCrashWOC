@@ -3656,6 +3656,31 @@ void ShootRoksSkyward(void) {
 }
 
 //NGC MATCH
+s32 AllRoksSkyward(void) {
+  s32 i;
+  s32 j;
+
+  j = 1;
+  for(i = 0; i < 6; i++) {
+    if (JeepRock[i].Active != 0) {
+      if (JeepRock[i].Pos.y < 10.0f) {
+        if ((JeepRock[i].Mode != 0x14) || (JeepRock[i].Atlas.Velocity.y < 5.0f)) {
+          JeepRock[i].Active = 0;
+        }
+        j = 0;
+      } else {
+        JeepRock[i].Active = 0;
+      }
+    }
+  }
+  if (j != 0) {
+      RumbleDisplayMode = 0;
+      ShootRockSound = 0;
+  }
+  return j;
+}
+
+//NGC MATCH
 s32 GetRumbleTotalRoks(void) {
   s32 i;
   s32 j;

@@ -6,13 +6,13 @@ s32 gamecut; //cut.c
 
 /*
 	//TODO
-	ManageCreatures 88%
+	ManageCreatures 93%
 	LoadCharacterModel 95%
-	LoadCharacterModels 92%
+	LoadCharacterModels MATCH (Check)
 	MovePlayer 29%**
 	DrawCharacterModel 96%
 	UpdateAnimPacket 99%*
-	DrawCreatures 89%
+	DrawCreatures 90%
 	
 */
 
@@ -186,7 +186,7 @@ void RemoveCreature(struct creature_s *c) {
   return;
 }
 
-/*
+
 //NGC MATCH
 void CloseCreatures(void) {
   s32 i;
@@ -206,278 +206,7 @@ void CloseCreatures(void) {
 }
 
 
-void ManageCreatures(void)
 
-{
-  bool bVar1;
-  float fVar2;
-  short sVar3;
-  char cVar4;
-  ai_s *paVar5;
-  creature_s *pcVar6;
-  uint uVar7;
-  nuvec_s *a;
-  int iVar8;
-  int iVar9;
-  int iVar10;
-  int iVar11;
-  creature_s *c;
-  int iVar12;
-  double dVar13;
-  double in_f29;
-  double dVar14;
-  double dVar15;
-  float fVar16;
-
-  pcVar6 = player;
-  if ((Level == 0x25) || (fVar16 = AIVISRANGE, (LDATA->flags & 0x202) != 0)) {
-    fVar16 = (float)((double)CONCAT44(0x43300000,(uint)LDATA->farclip) - 4503599627370496.0);
-  }
-  if ((float)((double)CONCAT44(0x43300000,LDATA->farclip ^ 0x80000000) - 4503601774854144.0) <
-      fVar16) {
-    fVar16 = (float)((double)CONCAT44(0x43300000,(uint)LDATA->farclip) - 4503599627370496.0);
-  }
-  dVar14 = (double)(fVar16 * fVar16);
-  if (((player != (creature_s *)0x0) && (player->used != '\0')) && ((player->obj).dead != '\0')) {
-    fVar16 = (player->obj).die_duration;
-    fVar2 = (player->obj).die_time + 0.01666667;
-    (player->obj).die_time = fVar2;
-    iVar8 = new_mode;
-    if (((fVar16 <= fVar2) && ((pcVar6->obj).die_time = fVar16, iVar8 == -1)) && (new_level == -1) )
-    {
-      if (Demo == 0) {
-        if (Bonus == 2) {
-          if (((plr_bonus_wumpas.count == 0) && (bonus_wumpa_delay == '\0')) &&
-             ((bonus_wumpa_wait <= 0.0 &&
-              ((((save_bonus_crates_destroyed * 6 + 6 <= bonus_finish_frame &&
-                 (bonus_crates_wait <= 0.0)) && (bonus_lives == 0)) &&
-               ((bonus_life_delay == '\0' && (bonus_lives_wait <= 0.0)))))))) {
-            NuSoundStopStream(0);
-            NuSoundStopStream(1);
-            bonus_restart = 1;
-            new_mode = GameMode;
-          }
-        }
-        else if (TimeTrial == 0) {
-          if (plr_lives.count == 0) {
-            new_level = 0x26;
-          }
-          else {
-            plr_lives.count = plr_lives.count + -1;
-            if (Adventure != 0) {
-              LivesLost = LivesLost + 1;
-              Game.lives = (uchar)plr_lives.count;
-            }
-            new_mode = GameMode;
-            player->jump_hold = '\0';
-          }
-          plr_died = 1;
-        }
-        else {
-          new_mode = GameMode;
-        }
-      }
-      else {
-        new_level = 0x23;
-      }
-    }
-  }
-  dVar13 = 0.01666666753590107;
-  dVar15 = 0.0;
-  iVar8 = -1;
-  iVar9 = 1;
-  iVar10 = 0xce4;
-  pcVar6 = Character;
-  do {
-    c = pcVar6 + 1;
-    if (c->used == '\0') {
-      if (iVar8 == -1) {
-        iVar8 = iVar9;
-      }
-    }
-    else if (pcVar6[1].on == '\0') {
-      if ((pcVar6[1].off_wait != '\0') &&
-         (cVar4 = pcVar6[1].off_wait + -1, pcVar6[1].off_wait = cVar4, cVar4 == '\0')) {
-        RemoveCreature(c);
-      }
-    }
-    else {
-      cVar4 = pcVar6[1].obj.dead;
-      if ((int)cVar4 == 0) {
-        fVar16 = NuVecDistSqr(&AITab[pcVar6[1].i_aitab].origin,&(player->obj).pos,(nuvec_s *)0x0);
-        if ((dVar14 < (double)fVar16) ||
-           ((level_part_2 != 0 && (AITab[pcVar6[1].i_aitab].ai_type != 'O')))) {
-          sVar3 = pcVar6[1].obj.character;
-          pcVar6[1].on = cVar4;
-          pcVar6[1].off_wait = '\x02';
-          if (sVar3 == 0x76) {
-            clock_ok = (int)cVar4;
-          }
-        }
-      }
-      else {
-        fVar16 = (float)((double)*(float *)((int)&Character[0].ai + iVar10 + -0x60) + dVar13);
-        *(float *)((int)&Character[0].ai + iVar10 + -0x60) = fVar16;
-        fVar2 = pcVar6[1].obj.die_duration;
-        if (fVar2 <= fVar16) {
-          *(float *)((int)&Character[0].ai + iVar10 + -0x60) = fVar2;
-          pcVar6[1].on = '\0';
-          pcVar6[1].off_wait = '\x02';
-          iVar11 = (int)pcVar6[1].i_aitab;
-          if ((iVar11 != -1) && ((double)AITab[iVar11].delay <= dVar15)) {
-            AITab[iVar11].status = '\0';
-          }
-        }
-      }
-    }
-    iVar9 = iVar9 + 1;
-    iVar10 = iVar10 + 0xce4;
-    pcVar6 = c;
-  } while (iVar9 < 9);
-  if ((iVar8 == -1) && (iVar8 = c_slot + 1, c_slot + 1 == 9)) {
-    c_slot = 1;
-    iVar8 = c_slot;
-  }
-  c_slot = iVar8;
-  iVar8 = -1;
-  a = &(player->obj).pos;
-  if ((Character[c_slot].used != '\0') && (iVar8 = (int)Character[c_slot].i_aitab, iVar8 != -1)) {
-    fVar16 = NuVecDistSqr(a,AITab[iVar8].pos,(nuvec_s *)0x0);
-    in_f29 = (double)fVar16;
-  }
-  iVar9 = iVar8;
-  if (0 < LEVELAICOUNT) {
-    dVar13 = 0.0;
-    paVar5 = AITab;
-    iVar10 = 0;
-    do {
-      if (((dVar13 < (double)paVar5->delay) && (dVar13 < (double)paVar5->time)) &&
-         (fVar16 = (float)((double)paVar5->time - 0.01666666753590107), paVar5->time = fVar16,
-         (double)fVar16 < dVar13)) {
-        paVar5->time = (float)dVar13;
-      }
-      iVar11 = iVar10 + 1;
-      iVar12 = 8;
-      pcVar6 = Character;
-      do {
-        pcVar6 = pcVar6 + 1;
-        if (((pcVar6->used != '\0') && (pcVar6->i_aitab == iVar10)) &&
-           ((paVar5->delay <= 0.0 || (paVar5->time != 0.0)))) goto LAB_80017f48;
-        iVar12 = iVar12 + -1;
-      } while (iVar12 != 0);
-      if (((level_part_2 == 0) || (paVar5->ai_type == 'O')) &&
-         ((paVar5->status != '\0' &&
-          (uVar7 = (uint)(byte)paVar5->ai_type, CRemap[AIType[uVar7].character] != -1)))) {
-        if (uVar7 < 0x54) {
-          if (uVar7 < 0x52) {
-            if (uVar7 < 0x50) {
-              if (uVar7 < 0x4e) {
-                if (uVar7 < 0x4c) goto LAB_80017f20;
-                if ((Game.level[Level].flags & 8) == 0) {
-                  bVar1 = (plr_items & 1) == 0;
-LAB_80017ed4:
-                  if ((bVar1) && ((LDATA->flags & 0x200) == 0)) goto LAB_80017f20;
-                }
-              }
-              else if (((Demo == 0) && ((Hub == 5 || ((Game.level[Level].flags & 8) != 0)))) &&
-                      (uVar7 = clock_ok, TimeTrial == 0)) goto joined_r0x80017f1c;
-            }
-            else if ((Game.level[Level].flags & 0x10) == 0) {
-              bVar1 = (plr_items & 2) == 0;
-              goto LAB_80017ec8;
-            }
-          }
-          else if (((((Game.level[Level].flags & 0x20) == 0) && ((plr_items & 4) == 0)) &&
-                   (TimeTrial == 0)) && (uVar7 = bonusgem_ok, (LDATA->flags & 0x200) == 0)) {
-joined_r0x80017f1c:
-            if (uVar7 != 0) goto LAB_80017f20;
-          }
-        }
-        else if (uVar7 == 0x57) {
-          if ((Game.level[Level].flags & 0x200) == 0) {
-            bVar1 = (plr_items & 0x40) == 0;
-            goto LAB_80017ec8;
-          }
-        }
-        else if (uVar7 < 0x58) {
-          if (uVar7 == 0x55) {
-            if ((Game.level[Level].flags & 0x80) == 0) {
-              bVar1 = (plr_items & 0x20) == 0;
-              goto LAB_80017ec8;
-            }
-          }
-          else if (uVar7 < 0x56) {
-            if ((Game.level[Level].flags & 0x40) == 0) {
-              bVar1 = (plr_items & 8) == 0;
-LAB_80017ec8:
-              if (bVar1) {
-                bVar1 = TimeTrial == 0;
-                goto LAB_80017ed4;
-              }
-            }
-          }
-          else if ((Game.level[Level].flags & 0x100) == 0) {
-            bVar1 = (plr_items & 0x10) == 0;
-            goto LAB_80017ec8;
-          }
-        }
-        else if (uVar7 == 0x59) {
-LAB_80017efc:
-          if (boss_dead == 1) {
-            uVar7 = LBIT._4_4_ & 0x3e00000;
-            goto joined_r0x80017f1c;
-          }
-        }
-        else if (uVar7 < 0x59) {
-          if ((Game.level[Level].flags & 0x400) == 0) {
-            bVar1 = (plr_items & 0x80) == 0;
-            goto LAB_80017ec8;
-          }
-        }
-        else {
-          if (uVar7 == 0x5a) {
-            if ((Game.powerbits & 0x20) != 0) goto LAB_80017f48;
-          }
-          else if (uVar7 < 0x5f) goto LAB_80017efc;
-LAB_80017f20:
-          fVar16 = NuVecDistSqr(a,paVar5->pos,(nuvec_s *)0x0);
-          if ((iVar9 == -1) || ((double)fVar16 < in_f29)) {
-            iVar9 = iVar10;
-            in_f29 = (double)fVar16;
-          }
-        }
-      }
-LAB_80017f48:
-      paVar5 = paVar5 + 1;
-      iVar10 = iVar11;
-    } while (iVar11 < LEVELAICOUNT);
-  }
-  iVar10 = c_slot;
-  if (((iVar9 != -1) && (iVar9 != iVar8)) &&
-     ((dVar13 = 0.0, AITab[iVar9].delay <= 0.0 || (AITab[iVar9].time <= 0.0)))) {
-    if (Character[c_slot].used == '\0') {
-      fVar16 = NuVecDistSqr(&AITab[iVar9].origin,&(player->obj).pos,(nuvec_s *)0x0);
-      if ((double)fVar16 < dVar14) {
-        AddCreature((int)AIType[(byte)AITab[iVar9].ai_type].character,c_slot,iVar9);
-        if (dVar13 < (double)AITab[iVar9].delay) {
-          AITab[iVar9].time = AITab[iVar9].delay;
-        }
-      }
-    }
-    else {
-      bVar1 = Character[c_slot].obj.character != 0x76;
-      if ((bVar1) || (Level != 0x22)) {
-        Character[c_slot].off_wait = '\x02';
-        Character[iVar10].on = '\0';
-        if (!bVar1) {
-          clock_ok = 0;
-        }
-      }
-    }
-  }
-  return;
-}
-*/
 
 //PS2
 float ModelAnimDuration(u32 character,u32 action,float start,float end)
@@ -542,7 +271,7 @@ s32 LoadCharacterModel(s32 character, s32 level, s32* cmodel_index, s32 clist_en
 
     model = &CModel[*cmodel_index];
     if (level == 0x28) {
-        space = (struct space_s*)SpaceGameCutTab[0][gamecut * 2];
+        space = (struct space_s*)SpaceGameCutTab[gamecut][0];
     } else {
         space = NULL;
     }
@@ -653,28 +382,25 @@ void PurgeCharacterModels(void) {
   return;
 }
 
-//92%
+//NGC MATCH
 void LoadCharacterModels(void) {
     s32 i;
     s32 j;
     s32 character;
     s32 cmodel_index;
-    // struct nudathdr_s* dfanim;
     struct space_s *space;
     char charsdat_filename[128];
     s32 clist_entry;
     s32 remap;
 
-
-    if(CModel[0].hobj != NULL)
-    {
+    if(CModel[0].hobj != NULL) {
         clist_entry = 1;
     } else {
         clist_entry = 0;
     }
-
+    
     if (Level == 0x28) {
-        space = (struct space_s *)SpaceGameCutTab[0][gamecut * 2];
+        space = (struct space_s *)SpaceGameCutTab[gamecut][0];
     }
     else {
         space = NULL;
@@ -683,31 +409,27 @@ void LoadCharacterModels(void) {
         i = clist_entry;
         remap = i;
         cmodel_index = i;
-        while( 1 ) {
+loop_1:
             force_decal = 0;
             if (space != NULL) {
-                // fakery
-                // j = i << 5;
-                // j &= 0xFFFFFFF0;
-                // character = ((s32*)space)[j];
-
-                character = space[i].character;
+                // fakery ??
+                 j = i << 5;
+                character = ((s32*)space)[j]; //space[j].character
             }
             else {
                 character = LDATA->clist[i];
             }
-
+            
             if ((character == 0x1b) || (character == 0x86)) {
                 force_decal = 1;
             }
-            if (LoadCharacterModel(character, Level, &cmodel_index, i, &remap) == 0)
+            if (LoadCharacterModel(character, Level, &cmodel_index, i, &remap) != 0) 
             {
-                break;
+                i++;
+                goto loop_1;
             }
-            i++;
-        }
     }
-
+    
     CrashMoveInfo.JUMPLANDFRAMES   = ModelAnimDuration(0,   0x30, 0.0f, 0.0f) * 60.0f;
     CrashMoveInfo.SLAMWAITFRAMES   = ModelAnimDuration(0,   0x1f, 0.0f, 0.0f) * 60.0f;
     CrashMoveInfo.SOMERSAULTFRAMES = ModelAnimDuration(0,   0x44, 0.0f, 0.0f) * 60.0f;
@@ -719,7 +441,6 @@ void LoadCharacterModels(void) {
     CocoMoveInfo.SPINFRAMES        = ModelAnimDuration(1,   0x46, 0.0f, 0.0f) * 60.0f;
     CocoMoveInfo.SLIDEFRAMES       = ModelAnimDuration(1,   0x43, 0.0f, 0.0f) * 60.0f;
     MineCartMoveInfo.JUMPFRAMES0   = ModelAnimDuration(0x89,  99, 0.0f, 0.0f) * 60.0f;
-    return;
 }
 
 //NGC MATCH
@@ -1570,19 +1291,19 @@ void UpdateAnimPacket(struct CharacterModel *mod,struct anim_s *anim,float dt,fl
     return;
 }
 
-//89.18% NGC
+//90.69% NGC
 void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
     struct nuvec_s s; // 0x10(r1)
-    int i; // 0x13C(r1)
-    int j; // r30
-    int vflag; // r30
-    int shflag; // r18
-    int reflect; // r17
-    int action; // r0
-    int frames; // r0
-    int old_frame; // r21
-    int PLAYER; // 
-    int VEHICLE; // r28
+    s32 i; // 0x13C(r1)
+    s32 j; // r30
+    s32 vflag; // r30
+    s32 shflag; // r18
+    s32 reflect; // r17
+    s32 action; // r0
+    s32 frames; // r0
+    s32 old_frame; // r21
+    s32 PLAYER; // 
+    s32 VEHICLE; // r28
     float dx; // f0
     float dz; // f13
     float dist; // f31
@@ -1595,33 +1316,25 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
     struct numtx_s mC; // 0x60(r1)
     struct numtx_s mS; // 0xA0(r1)
     struct numtx_s mR; // 0xE0(r1)
-    // Size: 0x7AC, DWARF: 0x14D9C0
     struct CharacterModel* model[2]; // 0x130(r1)
     struct numtx_s* m; // r3
-    
-  float fVar4;
-  short sVar7;
+
   s32 bVar9;
   s32 bVar10;
   s32 bVar11;
   s32 iVar12;
-  struct numtx_s *pnVar16;
-  struct numtx_s *pnVar17;
-  uint uVar18;
-  uint uVar23;
-  short sVar24;
-  s32 iVar25;
-  char bVar28;
-  float dVar33;
-  float dVar34;
+  u32 uVar18;
   
-    if ((DRAWCREATURESHADOWS == 0) || (Level == 0x1d)
+    if (
+        (DRAWCREATURESHADOWS == 0)
+        || (Level == 0x1d)
         || (Level == 0x24)
         || ((Level == 0x1e) && (level_part_2 != 0))
         || (Level == 0x1a)
         || ((LDATA->flags & 0x1000) != 0)
         || (VEHICLECONTROL == 2)
-        || ((VEHICLECONTROL == 1) && ((player->obj).vehicle == 0x20))) {
+        || ((VEHICLECONTROL == 1) && ((player->obj).vehicle == 0x20))
+    ) {
         shadow = 0;
     }
     
@@ -1629,78 +1342,119 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
         ((LDATA->flags & 0x202) != 0)
         || (Level == 0x1c)
     ) {
-        dVar33 = (s32)LDATA->farclip;
+        r2 = (s32)LDATA->farclip;
     } else {
-        dVar33 = AIVISRANGE;
+        r2 = AIVISRANGE;
     }
     
-    if ((LDATA->farclip) < dVar33) {
-        dVar33 = LDATA->farclip;
+    if (LDATA->farclip < r2) {
+        r2 = LDATA->farclip;
     }
     
-    dVar33 = (dVar33 * dVar33);
+    r2 = (r2 * r2);
     
-    for (iVar25 = 0; iVar25 < count; iVar25++, c++) {
-        uVar23 = (c->obj).flags & 1;
-        if (uVar23 == 0){
-            // sVar24 = -1;
+    for (i = 0; i < count; i++, c++) {
+        vflag = c->obj.flags & 1;
+
+        // if (vflag != 0){
+        //     if (
+        //         ((in_finish_range == 0x3C)
+        //         || (c->obj.finished != 0x00)
+        //         || ((Level == 0x25) && (warp_level != -1)))
+        //     )
+        //     {
+        //         continue;
+        //     }
+        //     if (VEHICLECONTROL == 1) {
+        //         VEHICLE = (s16)c->obj.vehicle;
+        //         if (c->obj.vehicle == -1) {
+        //             VEHICLE = -1;
+        //         }
+        //     }
+        // } else {
+        //     VEHICLE = -1;
+        // }
+        
+        
+        if (vflag == 0) {
+            // VEHICLE = -1;
             goto here;
         }
         
         if (
             ((in_finish_range != 0x3C)
-            && ((c->obj).finished == 0x00)
+            && (c->obj.finished == 0x00)
             && ((Level != 0x25) || (warp_level == -1)))
         )
         {
-            if ((VEHICLECONTROL == 1) && ((c->obj).vehicle != -1)) {
-                sVar24 = (c->obj).vehicle;
+            if ((VEHICLECONTROL == 1) && (c->obj.vehicle != -1)) {
+                VEHICLE = c->obj.vehicle;
             } else {
                 here:
-                sVar24 = -1;
+                VEHICLE = -1;
             }
             
-            old_frame = (c->obj).draw_frame;
-            (c->obj).draw_frame = 0;
-            if ((c->used != 0x00) 
+            old_frame = c->obj.draw_frame;
+            c->obj.draw_frame = 0;
+            if (
+                (c->used != 0x00) 
                 && (c->on != 0x00) 
-                && ((c->obj).model != NULL) 
-                && ((c->obj).dead != 0x16)
-                && ((c->obj).dead != 0x04)
-                && ((c->obj).dead != 0x07)) {
-                if ((Level != 0x17) 
-                    || ((glass_phase == 0) && ((c->obj).character != 0x7F))
-                    || ((glass_phase != 0) && ((c->obj).character == 0x7F))) {
+                && (c->obj.model != NULL) 
+                && (c->obj.dead != 0x16)
+                && (c->obj.dead != 0x04)
+                && (c->obj.dead != 0x07)
+                ) 
+            {
+                if (
+                    (Level != 0x17) 
+                    || ((glass_phase == 0) && (c->obj.character != 0x7F))
+                    || ((glass_phase != 0) && (c->obj.character == 0x7F))
+                    ) 
+                {
                     
-                    if ((((c->obj).invisible == 0) || ((c->obj).character == 0x77)) 
-                        && (((c->obj).invincible == 0) || (1 < ((c->obj).invincible & 3)))
+                    if (
+                           ((c->obj.invisible == 0) || (c->obj.character == 0x77)) 
+                        && ((c->obj.invincible == 0) || (1 < (c->obj.invincible & 3)))
                         // && ((LDATA->flags & 0x200) == 0)
-                        // && ((LDATA->flags & 0x200) != 0 || (dVar34 <= dVar33))
+                        // && ((LDATA->flags & 0x200) != 0 || (dx <= r2))
                     ) {
-                        dVar34 = ((((pCam->pos).x - (c->obj).pos.x) * ((pCam->pos).x - (c->obj).pos.x)) + (((pCam->pos).z - (c->obj).pos.z) * ((pCam->pos).z - (c->obj).pos.z)));
-                        if (((LDATA->flags & 0x200) != 0) || (dVar34 < dVar33)) {
+                        // fVar4 = (pCam->pos.z - c->obj.pos.z);
+                        // fVar8 = (pCam->pos.x - c->obj.pos.x); 
+                        dx = (((pCam->pos.x - c->obj.pos.x) * (pCam->pos.x - c->obj.pos.x)) + ((pCam->pos.z - c->obj.pos.z) * (pCam->pos.z - c->obj.pos.z)));
+                        if (((LDATA->flags & 0x200) != 0) || !(dx > r2)) {
                             bVar9 = 0;
                             bVar10 = 0;
                             bVar11 = 0;
-                            if ((sVar24 == 0x63)
-                                || (sVar24 == 0x36)
-                                || (sVar24 == 0x81)
-                                || (sVar24 == 0x53)
-                                || (sVar24 == 0x8B)) {
+                            
+                            // switch(VEHICLE) {
+                            //     case 0x36:
+                            //     case 0x81:
+                            //     case 0x53:
+                            //     case 0x8B:
+                            //     case 0x63:
+                            if (
+                                (VEHICLE == 0x63)
+                                || (VEHICLE == 0x36)
+                                || (VEHICLE == 0x81)
+                                || (VEHICLE == 0x53)
+                                || (VEHICLE == 0x8B)
+                            )
+                            {
                                 if (render == 0) {
                                     // c->anim_processed = 1;
                                     continue;
+                                    // goto LAB_8001f958;
                                 }
                             
                                 SetCreatureLights(c);
-                                switch(sVar24) {
+                                switch(VEHICLE) {
                                     case 0x81:
                                         ForceShader = 0x80;
                                     case 0x8B:
                                     case 0x36:
                                         DrawGlider(c);
                                         ForceShader = -1;
-                                        (c->obj).draw_frame = old_frame + 1;
+                                        c->obj.draw_frame = old_frame + 1;
                                         mV = mTEMP;
                                         bVar9 = 1;
                                         break;
@@ -1709,14 +1463,14 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                         DrawAtlas(c);
                                         bVar9 = 1;
                                         ForceShader = -1;
-                                        (c->obj).draw_frame = old_frame + 1;
-                                        NuMtxSetRotationY(&mV, (uint)(c->obj).hdg);
-                                        NuMtxTranslate(&mV, &(c->obj).pos);
+                                        c->obj.draw_frame = old_frame + 1;
+                                        NuMtxSetRotationY(&mV, (uint)c->obj.hdg);
+                                        NuMtxTranslate(&mV, &c->obj.pos);
                                         mV._31 = mV._31 + ATLASPLAYERLIFT;
                                         break;
                                     case 0x63:
                                         m = DrawPlayerJeep(c);
-                                        (c->obj).draw_frame = old_frame + 1;
+                                        c->obj.draw_frame = old_frame + 1;
                                         if (m == NULL) {
                                             continue;
                                         } 
@@ -1726,46 +1480,60 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                 }
                             }
                             LAB_8001e374:
-                            vflag = uVar23 == 0;
-                            if (uVar23 != 0) {
-                                if ((VEHICLECONTROL == 2) && ((c->obj).dead == 0x00) && (c->spin != 0x00)
+                            //bVar3 = vflag == 0;
+                            //bVar27 = bVar3 << 1;
+                            if (vflag != 0) {
+                                if (
+                                    (VEHICLECONTROL == 2)
+                                    && (c->obj.dead == 0x00)
+                                    && (c->spin != 0x00)
                                     && (c->spin_frame < (c->spin_frames - c->OnFootMoveInfo->SPINRESETFRAMES)) 
                                     && (bVar9 == 0)
                                 )
                                 {
                                     if (CRemap[116] != -1) {
-                                        s.x = s.y = s.z = (c->obj).SCALE;
-                                        yrot = (c->obj).hdg - 0x8000;
+                                        s.x = s.y = s.z = c->obj.SCALE;
+                                        yrot = c->obj.hdg - 0x8000;
                                         NuMtxSetScale(&mC, &s);
                                         NuMtxRotateZ(&mC, c->spin_frame * 0x1555);
-                                        NuMtxRotateX(&mC, (c->obj).xrot);
+                                        NuMtxRotateX(&mC, c->obj.xrot);
                                         NuMtxRotateY(&mC, yrot);
-                                        NuMtxTranslate(&mC, &(c->obj).pos);
+                                        NuMtxTranslate(&mC, &c->obj.pos);
                                         iVar12 = (s32)CRemap[116];
                                         model[0] = CModel + iVar12;
-                                        if (CModel[iVar12].anmdata[0x46] != NULL) {
-                                            NuHGobjEvalAnim(CModel[iVar12].hobj, 
-                                                CModel[iVar12].anmdata[0x46],
-                                                (CModel[iVar12].anmdata[0x46]->time - 1.0f) * 
+                                        if (model[0]->anmdata[0x46] != NULL) {
+                                            NuHGobjEvalAnim(model[0]->hobj, 
+                                                model[0]->anmdata[0x46],
+                                                (model[0]->anmdata[0x46]->time - 1.0f) * 
                                                 ((float)c->spin_frame / (float)(c->OnFootMoveInfo->SPINFRAMES + c->OnFootMoveInfo->SUPERSPINFRAMES * 3))
-                                                + 1.0f, 0,NULL,tmtx);
+                                                + 1.0f,
+                                            // (float)(
+                                            // (float)(model[0].anmdata[0x46]->time - 1.0f) *
+                                            // ((float)(CONCAT44(0x43300000, (s32)c->spin_frame ^ 0x80000000) - 4503601774854144.0f) /
+                                            // (float)(CONCAT44(0x43300000, (s32)c->OnFootMoveInfo->SPINFRAMES + c->OnFootMoveInfo->SUPERSPINFRAMES * 3 ^ 0x80000000) - 4503601774854144.0f)) 
+                                            //  + 1.0f),
+                                                0,
+                                                NULL,
+                                                tmtx
+                                            );
                                         }
                                         else {
-                                            NuHGobjEval(CModel[iVar12].hobj, 0, NULL, tmtx);
+                                            NuHGobjEval(model[0]->hobj, 0, NULL, tmtx);
                                         }
                                         
                                         if (glass_draw == 0) {
-                                            StoreLocatorMatrices(model[0], &mC, tmtx, c->mtxLOCATOR, c->momLOCATOR);
+                                            StoreLocatorMatrices(model[0], &mC, tmtx, &c->mtxLOCATOR[0][0], &c->momLOCATOR[0][0]);
                                         }
                                         
                                         if (render == 0) {
                                             continue;
                                             // goto LAB_8001f958;
                                         }
+                                        //bVar2 = local_d0._02 != 0.0f;
                                         SetCreatureLights(c);
                                         NuHGobjRndrMtx(model[0]->hobj, &mC, 1, NULL, tmtx);
                                         if (
-                                            ((c->obj).reflect_y != 2000000.0f)
+                                            (c->obj.reflect_y != 2000000.0f)
                                             && (glass_mix == 0.0f)
                                             && (glass_draw == 0)
                                         ) {
@@ -1773,37 +1541,43 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                             mR._01 = -mR._01;
                                             mR._11 = -mR._11;
                                             mR._21 = -mR._21;
-                                            //do {} while (0);
-                                            mR._31 -= (mR._31 - (c->obj).reflect_y);
+                                            // fVar4 = c->obj.reflect_y;
+                                            mR._31 -= (mR._31 - c->obj.reflect_y);
                                             NuHGobjRndrMtx(model[0]->hobj, &mR, 1, NULL, tmtx);
                                         }
                                         if (
                                             (shadow != 0)
-                                            && ((c->obj).shadow != 2000000.0f)
-                                            && (dVar34 < dVar33)
-                                            && ((TerSurface[(c->obj).surface_type].flags & 1) == 0)
+                                            && (c->obj.shadow != 2000000.0f)
+                                            && (dx < r2)
+                                            && ((TerSurface[c->obj.surface_type].flags & 1) == 0)
                                             && (SKELETALCRASH == 0)
                                             && (c->freeze == 0)
                                             && (glass_draw == 0)
                                         )
                                         {
-                                            ScaleFlatShadow(&s, (c->obj).pos.y, (c->obj).shadow, (c->obj).SCALE);
+                                            ScaleFlatShadow(&s, c->obj.pos.y, c->obj.shadow, c->obj.SCALE);
                                             NuMtxSetScale(&mS, &s);
-                                            NuMtxRotateY(&mS, uVar23);
-                                            NuMtxRotateZ(&mS, (uint)(c->obj).surface_zrot);
-                                            NuMtxRotateX(&mS, (uint)(c->obj).surface_xrot);
-                                            mS._30 = (c->obj).pos.x;
-                                            mS._31 = (c->obj).shadow + 0.025f;
-                                            mS._32 = (c->obj).pos.z;
+                                            NuMtxRotateY(&mS, vflag);
+                                            NuMtxRotateZ(&mS, (uint)c->obj.surface_zrot);
+                                            NuMtxRotateX(&mS, (uint)c->obj.surface_xrot);
+                                            mS._30 = c->obj.pos.x;
+                                            mS._31 = c->obj.shadow + 0.025f;
+                                            mS._32 = c->obj.pos.z;
                                         }
                                     }
                                     LAB_8001ed04:
+                                    // c->obj.draw_frame = uVar22 + 1;
+                                    // goto LAB_8001f958;
                                 }
                                 else if (
-                                    (uVar23 != 0)  && ((c->obj).character == 0) && ((c->obj).dead == 0)
+                                    (vflag != 0) 
+                                    && (c->obj.character == 0)
+                                    && (c->obj.dead == 0)
                                     && (c->spin != 0)
                                     && (c->spin_frame < (c->spin_frames - c->OnFootMoveInfo->SPINRESETFRAMES))
-                                    && (bVar9 == 0) && (sVar24 == -1) && (c->freeze == 0)
+                                    && (bVar9 == 0)
+                                    && (VEHICLE == -1) 
+                                    && (c->freeze == 0)
                                 ) {
                                     if (render != 0) {
                                         SetCreatureLights(c);
@@ -1811,13 +1585,12 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                     
                                     if (CRemap[8] != -1) {
                                         yrot = -(c->spin_frame * 0x1555);
-                                        s.x = s.y = s.z = (c->obj).SCALE;
-                                        
+                                        s.x = s.y = s.z = c->obj.SCALE;
                                         NuMtxSetScale(&mC, &s);
                                         NuMtxRotateY(&mC, yrot);
-                                        NuMtxRotateZ(&mC, (c->obj).zrot);
-                                        NuMtxRotateX(&mC, (c->obj).xrot);
-                                        NuMtxTranslate(&mC, &(c->obj).pos);
+                                        NuMtxRotateZ(&mC, c->obj.zrot);
+                                        NuMtxRotateX(&mC, c->obj.xrot);
+                                        NuMtxTranslate(&mC, &c->obj.pos);
                                         
                                         if ((SKELETALCRASH != 0) && (CRemap[159] != -1)) {
                                             model[0] = CModel + CRemap[159];
@@ -1825,7 +1598,7 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                             model[0] = CModel + CRemap[8];
                                         }
                                         
-                                        if ((c->obj).dangle != 0) {
+                                        if (c->obj.dangle != 0) {
                                             uVar18 = 0x47;
                                         } else {
                                             uVar18 = 0x46;
@@ -1835,23 +1608,27 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                             NuHGobjEvalAnim(
                                                 model[0]->hobj,
                                                 model[0]->anmdata[uVar18],
-                                                (float)(model[0]->anmdata[uVar18]->time - 1.0f) * ((float)c->spin_frame / (float)(c->OnFootMoveInfo->SPINFRAMES + c->OnFootMoveInfo->SUPERSPINFRAMES * 3)) + 1.0f, 0,
-                                                NULL,tmtx);
+                                                (float)(model[0]->anmdata[uVar18]->time - 1.0f) * ((float)c->spin_frame / (float)(c->OnFootMoveInfo->SPINFRAMES + c->OnFootMoveInfo->SUPERSPINFRAMES * 3)) + 1.0f,
+                                                0,
+                                                NULL,
+                                                tmtx
+                                            );
                                         }
                                         else {
                                             NuHGobjEval(model[0]->hobj, 0, NULL, tmtx);
                                         }
                                         
                                         if (glass_draw == 0) {
-                                            StoreLocatorMatrices(model[0], &mC, tmtx, c->mtxLOCATOR, c->momLOCATOR);
+                                            StoreLocatorMatrices(model[0], &mC, tmtx, &c->mtxLOCATOR[0][0], &c->momLOCATOR[0][0]);
                                         }
                                         
                                         if (render == 0) {
                                             continue;
                                         }
+                                        //bVar2 = local_d0._02 != 0.0f;
                                         NuHGobjRndrMtx(model[0]->hobj, &mC, 1, NULL, tmtx);
                                         if (
-                                            ((c->obj).reflect_y != 2000000.0f)
+                                            (c->obj.reflect_y != 2000000.0f)
                                             && (glass_mix == 0.0f)
                                             && (glass_draw == 0)
                                         ) {
@@ -1860,25 +1637,30 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                             mR._11 = -mR._11;
                                             mR._21 = -mR._21;
                                             if (Level != 0x25) {
-                                                fVar4 = (c->obj).reflect_y;
+                                                y = c->obj.reflect_y;
                                             } else {
-                                                fVar4 = HUBREFLECTY;
+                                                y = HUBREFLECTY;
                                             }
-                                            mR._31 = fVar4 - (mR._31 - fVar4);
+                                            mR._31 = y - (mR._31 - y);
                                             NuHGobjRndrMtx(model[0]->hobj, &mR, 1, NULL, tmtx);
                                         }
-                                        if ((shadow != 0) 
-                                            && ((c->obj).shadow != 2000000.0f) && (dVar34 < dVar33)
-                                            && ((TerSurface[(c->obj).surface_type].flags & 1) == 0) 
-                                            && (SKELETALCRASH == 0)  && (c->freeze == 0) && (glass_draw == 0)) {
-                                            ScaleFlatShadow(&s, (c->obj).pos.y, (c->obj).shadow, (c->obj).SCALE);
+                                        if (
+                                            (shadow != 0) 
+                                            && (c->obj.shadow != 2000000.0f)
+                                            && (dx < r2)
+                                            && ((TerSurface[c->obj.surface_type].flags & 1) == 0) 
+                                            && (SKELETALCRASH == 0) 
+                                            && (c->freeze == 0)
+                                            && (glass_draw == 0)
+                                        ) {
+                                            ScaleFlatShadow(&s, c->obj.pos.y, c->obj.shadow, c->obj.SCALE);
                                             NuMtxSetScale(&mS, &s);
                                             NuMtxRotateY(&mS, yrot);
-                                            NuMtxRotateZ(&mS, (c->obj).surface_zrot);
-                                            NuMtxRotateX(&mS, (c->obj).surface_xrot);
-                                            mS._30 = (c->obj).pos.x;
-                                            mS._31 = (c->obj).shadow + 0.025f;
-                                            mS._32 = (c->obj).pos.z;
+                                            NuMtxRotateZ(&mS, c->obj.surface_zrot);
+                                            NuMtxRotateX(&mS, c->obj.surface_xrot);
+                                            mS._30 = c->obj.pos.x;
+                                            mS._31 = c->obj.shadow + 0.025f;
+                                            mS._32 = c->obj.pos.z;
                                             NuMtlSetStencilRender(NUSTENCIL_REPLACE_NODRAW);
                                             NuHGobjRndrMtx(model[0]->hobj, &mS, 1, NULL, tmtx);
                                             NuMtlSetStencilRender(NUSTENCIL_NOSTENCIL);
@@ -1888,21 +1670,21 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                         continue;
                                     }
                                     if (
-                                        ((c->obj).dangle != 0) 
+                                        (c->obj.dangle != 0) 
                                         && (CRemap[9] != -1)
                                     ) {
-                                        s.x = s.y = s.z = (c->obj).SCALE;
-                                        yrot = (c->obj).hdg - 0x8000;
+                                        s.x = s.y = s.z = c->obj.SCALE;
+                                        yrot = c->obj.hdg - 0x8000;
                                         NuMtxSetScale(&mC, &s);
                                         NuMtxRotateY(&mC, yrot);
-                                        NuMtxRotateZ(&mC, (c->obj).zrot);
-                                        NuMtxRotateX(&mC, (c->obj).xrot);
-                                        NuMtxTranslate(&mC, &(c->obj).pos);
+                                        NuMtxRotateZ(&mC, c->obj.zrot);
+                                        NuMtxRotateX(&mC, c->obj.xrot);
+                                        NuMtxTranslate(&mC, &c->obj.pos);
                                         model[1] = CModel + CRemap[9];
-                                        NuHGobjRndr(CModel[CRemap[9]].hobj, &mC, 1, NULL);
+                                        NuHGobjRndr(model[1]->hobj, &mC, 1, NULL);
                                         
                                         if (
-                                            ((c->obj).reflect_y != 2000000.0f)
+                                            (c->obj.reflect_y != 2000000.0f)
                                             && (glass_mix == 0.0f)
                                             && (glass_draw == 0)
                                         ) {
@@ -1910,8 +1692,7 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                             mR._01 = -mR._01;
                                             mR._11 = -mR._11;
                                             mR._21 = -mR._21;
-                                            fVar4 = (c->obj).reflect_y;
-                                            mR._31 = fVar4 - (mR._31 - fVar4);
+                                            mR._31 = c->obj.reflect_y - (mR._31 - c->obj.reflect_y);
                                             NuHGobjRndr(model[1]->hobj, &mR, 1, NULL);
                                         }
                                     }
@@ -1920,39 +1701,42 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                             }
                             
                             LAB_8001ecd4:
-                            if (((c->obj).character == 0x77U) && ((c->obj).invisible != 0)) {
+                            // sVar7 = c->obj.character;
+                            if ((c->obj.character == 0x77U) && (c->obj.invisible != 0)) {
                                 if (render != 0) {
-                                    Draw3DCrateCount(&(c->obj).pos, (c->obj).hdg);
-                                    (c->obj).draw_frame = old_frame + 1;
+                                    Draw3DCrateCount(&c->obj.pos, c->obj.hdg);
+                                    c->obj.draw_frame = old_frame + 1;
                                 }
                                 continue;
                             } 
                             
                             if (
                                 (render == 0) 
-                                || ((c->obj).character == 0x75)
-                                || ((c->obj).character == 0x77)
-                                || ((c->obj).character == 0x78)
-                                || ((c->obj).character == 0x79)
-                                || ((c->obj).character == 0x7A)
-                                || ((c->obj).character == 0x7B)
-                                || ((c->obj).character == 0x7C)
+                                || (c->obj.character == 0x75)
+                                || (c->obj.character == 0x77)
+                                || (c->obj.character == 0x78)
+                                || (c->obj.character == 0x79)
+                                || (c->obj.character == 0x7A)
+                                || (c->obj.character == 0x7B)
+                                || (c->obj.character == 0x7C)
                             )
                             {
-                                yrot = (c->obj).hdg - 0x8000;
-                                if (uVar23 != 0) {
-                                    if (((c->obj).dead == 0x03) || ((c->obj).dead == 0x08)) {
+                                yrot = c->obj.hdg - 0x8000;
+                                if (vflag != 0) {
+                                    if ((c->obj.dead == 0x03) || (c->obj.dead == 0x08)) {
                                         yrot -= 0x8000;
                                     }
                                     else if (c->freeze != 0x00) {
                                         yrot = GameCam->hdg_to_player;
                                     }
                                     else {
-                                        if ((c->spin != 0x00)
+                                        if (
+                                            (c->spin != 0x00)
                                             && (c->spin_frame < (c->spin_frames - c->OnFootMoveInfo->SPINRESETFRAMES))
-                                            && (sVar24 == 0x3b)
-                                            && ((c->obj).anim.newaction == 0x69)
-                                            && (((c->obj).model)->anmdata[0x69] != NULL)) {
+                                            && (VEHICLE == 0x3b)
+                                            && (c->obj.anim.newaction == 0x69)
+                                            && ((c->obj.model)->anmdata[0x69] != NULL)
+                                        ) {
                                             yrot -= (c->spin_frame << 0x10) / GyroMoveInfo.SPINFRAMES;
                                         }
                                     }
@@ -1963,32 +1747,36 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                     c->m = mC;
                                 }
                                 else {
-                                    if ((uVar23 == 0)
-                                        && (((c->obj).vehicle == 0xa1)
+                                    if (
+                                        (vflag == 0)
+                                        && (
+                                            (c->obj.vehicle == 0xa1)
                                             || (VEHICLECONTROL == 2)
-                                            || (sVar24 == 0x20)
-                                            || (sVar24 == 0x89) 
-                                            || (sVar24 == 0xa1))) {
-                                        s.x = s.y = s.z = (c->obj).SCALE;
+                                            || (VEHICLE == 0x20)
+                                            || (VEHICLE == 0x89) 
+                                            || (VEHICLE == 0xa1)
+                                        )
+                                    ) {
+                                        s.x = s.y = s.z = c->obj.SCALE;
                                         NuMtxSetScale(&mC, &s);
-                                        NuMtxRotateZ(&mC, (c->obj).zrot);
+                                        NuMtxRotateZ(&mC, c->obj.zrot);
                                         
-                                        if (sVar24 == 0x20) {
-                                            uVar18 = RotDiff(0, (c->obj).xrot) / 4;
+                                        if (VEHICLE == 0x20) {
+                                            uVar18 = RotDiff(0, c->obj.xrot) / 4;
                                         }
                                         else {
-                                            uVar18 = (c->obj).xrot;
+                                            uVar18 = c->obj.xrot;
                                         }
                                         
                                         NuMtxRotateX(&mC, uVar18);
                                         NuMtxRotateY(&mC, yrot);
-                                        NuMtxTranslate(&mC, &(c->obj).pos);
+                                        NuMtxTranslate(&mC, &c->obj.pos);
                                         c->m = mC;
                                     }
                                     else {
                                         if (
                                             (Level == 0x17)
-                                            && ((c->obj).character == 0x7f)
+                                            && (c->obj.character == 0x7f)
                                         ) {
                                             a = ((GameTimer.frame % 0x24) * 0x10000) / 0x24;
                                             
@@ -1996,34 +1784,34 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                             s.y = (NuTrigTable[a + 0x4000] * 0.05f + 1.0f);
                                             s.z = (NuTrigTable[a] * 0.05f + 1.0f);
                                             
-                                            s.x *= (c->obj).SCALE;
+                                            s.x *= c->obj.SCALE;
                                             if (s.x < 0.0f) {
                                                 s.x = 0.0f;
                                             }
                                             
-                                            s.y *= (c->obj).SCALE;
+                                            s.y *= c->obj.SCALE;
                                             if (s.y < 0.0f) {
                                                 s.y = 0.0f;
                                             }
                                             
-                                            s.z *= (c->obj).SCALE;
+                                            s.z *= c->obj.SCALE;
                                             if (s.z < 0.0f) {
                                                 s.z = 0.0f;
                                             }
                                         }
                                         else {
-                                            s.x = s.y = s.z = (c->obj).SCALE;
+                                            s.x = s.y = s.z = c->obj.SCALE;
                                         }
                                         
-                                        if (((c->obj).flags & 0x10000) != 0) {
+                                        if ((c->obj.flags & 0x10000) != 0) {
                                             s.y = -s.y;
                                         }
                                         
                                         NuMtxSetScale(&mC, &s);
                                         NuMtxRotateY(&mC, yrot);
-                                        NuMtxRotateZ(&mC, (c->obj).zrot);
-                                        NuMtxRotateX(&mC, (c->obj).xrot);
-                                        NuMtxTranslate(&mC, &(c->obj).pos);
+                                        NuMtxRotateZ(&mC, c->obj.zrot);
+                                        NuMtxRotateX(&mC, c->obj.xrot);
+                                        NuMtxTranslate(&mC, &c->obj.pos);
                                         c->m = mC;
                                     }
                                     
@@ -2031,8 +1819,8 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                 
                                 if (render != 0) {
                                     if (
-                                        ((c->obj).reflect_y != 2000000.0f)
-                                        && ((c != player) || ((c->obj).dead != 0x02))
+                                        (c->obj.reflect_y != 2000000.0f)
+                                        && ((c != player) || (c->obj.dead != 0x02))
                                         && (glass_draw == 0)
                                     ) {
                                         mR = mC;
@@ -2041,44 +1829,47 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                         mR._21 = -mR._21;
                                         
                                         if (Level != 0x25) {
-                                            fVar4 = (c->obj).reflect_y;
+                                            y = c->obj.reflect_y;
                                         } else {
-                                            fVar4 = HUBREFLECTY;
+                                            y = HUBREFLECTY;
                                         }
                                         
                                         bVar11 = 1;
-                                        mR._31 = fVar4 - (mR._31 - fVar4);
+                                        mR._31 = y - (mR._31 - y);
                                     }
                                     
-                                    if ((render != 0)
+                                    if (
+                                        (render != 0)
                                         && (shadow != 0)
-                                        && ((c->obj).shadow != 2000000.0f)
-                                        && (dVar34 < dVar33)
-                                        && ((TerSurface[(c->obj).surface_type].flags & 1) == 0)
+                                        && (c->obj.shadow != 2000000.0f)
+                                        && (dx < r2)
+                                        && ((TerSurface[c->obj.surface_type].flags & 1) == 0)
                                         && (c->freeze == 0x00)
                                         && (glass_draw == 0)
-                                        && (((c->obj).flags & 0x4000) == 0)
-                                        && (!bVar28)
-                                        && ((c->obj).dead != 0x08)
-                                        && ((uVar23 == 0) || (SKELETALCRASH == 0))
-                                        && (sVar24 != 0xA1)
-                                        && (sVar24 != 0x89)
-                                        && (sVar24 != 99)
-                                        && ((uVar23 == 0) || ((c->obj).vehicle != 0xa1))) {
-                                        ScaleFlatShadow(&s, (c->obj).pos.y, (c->obj).shadow, (c->obj).SCALE);
+                                        && ((c->obj.flags & 0x4000) == 0)
+                                        && (!bVar9)
+                                        && (c->obj.dead != 0x08)
+                                        && ((vflag == 0) || (SKELETALCRASH == 0))
+                                        && (VEHICLE != 0xA1)
+                                        && (VEHICLE != 0x89)
+                                        && (VEHICLE != 99)
+                                        && ((vflag == 0) || (c->obj.vehicle != 0xa1))
+                                        ) 
+                                    {
+                                        ScaleFlatShadow(&s, c->obj.pos.y, c->obj.shadow, c->obj.SCALE);
                                         NuMtxSetScale(&mS, &s);
                                         NuMtxRotateY(&mS, yrot);
-                                        NuMtxRotateZ(&mS, (c->obj).surface_zrot);
-                                        NuMtxRotateX(&mS, (c->obj).surface_xrot);
+                                        NuMtxRotateZ(&mS, c->obj.surface_zrot);
+                                        NuMtxRotateX(&mS, c->obj.surface_xrot);
                                         
-                                        mS._30 = (c->obj).pos.x;
-                                        if ((c->obj).dead == 1) {
-                                            mS._31 = (c->obj).pos.y + ((c->obj).shadow - (c->obj).oldpos.y);
+                                        mS._30 = c->obj.pos.x;
+                                        if (c->obj.dead == 1) {
+                                            mS._31 = c->obj.pos.y + (c->obj.shadow - c->obj.oldpos.y);
                                         }
-                                        mS._31 = (c->obj).shadow + 0.025f;
-                                        mS._32 = (c->obj).pos.z;
+                                        mS._31 = c->obj.shadow + 0.025f;
+                                        mS._32 = c->obj.pos.z;
                                         
-                                        if (sVar24 == 0x99) {
+                                        if (VEHICLE == 0x99) {
                                             if (Level == 3) {
                                                 mS._31 = mS._31 + 0.05f;
                                             } else {
@@ -2087,100 +1878,122 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                         }
                                         
                                         bVar10 = 1;
-                                        temp_surface_xrot = (c->obj).surface_xrot;
-                                        temp_surface_yrot = (c->obj).hdg;
-                                        temp_surface_zrot = (c->obj).surface_zrot;
+                                        temp_surface_xrot = c->obj.surface_xrot;
+                                        temp_surface_yrot = c->obj.hdg;
+                                        temp_surface_zrot = c->obj.surface_zrot;
                                     }
                                 }
                                 
-                                model[0] = (c->obj).model;
-                                if (((c->obj).dead != 0x00)&& ((c->obj).die_model[0] != -1)
-                                    && ((c->obj).die_model[0] != CRemap[(c->obj).character])){
-                                    model[0] = CModel + (c->obj).die_model[0];
-                                } else if (!(uVar23 == 0) && (VEHICLECONTROL == 2)) {
+                                model[0] = c->obj.model;
+                                if (
+                                    (c->obj.dead != 0x00) 
+                                    && (c->obj.die_model[0] != -1)
+                                    && (c->obj.die_model[0] != CRemap[c->obj.character])
+                                ) 
+                                {
+                                    model[0] = CModel + c->obj.die_model[0];
+                                } else if (!(vflag == 0) && (VEHICLECONTROL == 2)) {
                                     model[0] = CModel + CRemap[115];
                                 }
                                 
                                 if (
-                                    !(uVar23 == 0)
-                                    && ((model[0]->character == 0)|| (model[0]->character == 0x73))
-                                    && (CRemap[84] != -1) && ((SKELETALCRASH != 0) || (
-                                            ((c->obj).dead == 0x11) && (GameTimer.frame % 0xc < 6)))){
+                                    !(vflag == 0)
+                                    && (
+                                        (model[0]->character == 0)
+                                        || (model[0]->character == 0x73)
+                                    )
+                                    && (CRemap[84] != -1)
+                                    && (
+                                        (SKELETALCRASH != 0)
+                                        || (
+                                            (c->obj.dead == 0x11) 
+                                            && (GameTimer.frame % 0xc < 6)
+                                        )
+                                    )
+                                )
+                                {
                                     model[0] = CModel + CRemap[84];
                                 }
                                 
                                 model[1] = NULL;
                                 
-                                if (((c->obj).dead != 0x00) 
-                                    && ((c->obj).die_model[1] != -1)
-                                    && ((c->obj).die_model[1] != CRemap[(c->obj).character])
-                                    && ((c->obj).die_model[1] == (c->obj).die_model[0])){
-                                //     iVar12 = (c->obj).die_model[1];
+                                if (
+                                    (c->obj.dead != 0x00) 
+                                    && (c->obj.die_model[1] != -1)
+                                    && (c->obj.die_model[1] != CRemap[c->obj.character])
+                                    && (c->obj.die_model[1] == c->obj.die_model[0])
+                                )
+                                {
+                                //     iVar12 = c->obj.die_model[1];
                                 }
                                 else {
                                     iVar12 = -1;
-                                    if ((c->obj).character == 0x11) {
+                                    if (c->obj.character == 0x11) {
                                         iVar12 = 0x12;
                                     }
-                                    else if (((c->obj).character == 0x24) && ((c->obj).anim.newaction == 0)) {
+                                    else if ((c->obj.character == 0x24) && (c->obj.anim.newaction == 0)) {
                                         iVar12 = 0x87;
                                     }
-                                    else if ((c->obj).character == 0x6d) {
+                                    else if (c->obj.character == 0x6d) {
                                         iVar12 = 0x3d;
                                     }
-                                    else if (((c->obj).dead == 0x00) 
-                                        && ((c->obj).character == 0) 
+                                    else if (
+                                        (c->obj.dead == 0x00) 
+                                        && (c->obj.character == 0) 
                                         && (
-                                            ((c->obj).anim.newaction == 0x25)
-                                            || ((c->obj).anim.newaction == 0x26)
-                                        )) {
+                                            (c->obj.anim.newaction == 0x25)
+                                            || (c->obj.anim.newaction == 0x26)
+                                        )
+                                    ) {
                                         iVar12 = 0x45;
                                     }
-                                    else if ((c->freeze != 0x00) 
-                                        && ((c->obj).dead == 0x00)
+                                    else if (
+                                        (c->freeze != 0x00) 
+                                        && (c->obj.dead == 0x00)
                                     )
                                     {
                                         iVar12 = 0x4f;
                                     }
-                                    else if ((uVar23 != 0)
-                                        && ((c->obj).dead == 0x00)
+                                    else if (
+                                        (vflag != 0)
+                                        && (c->obj.dead == 0x00)
                                         && (c->target != 0x00)
-                                        && ((c->obj).character == 0)
-                                        && (sVar24 == -1)
+                                        && (c->obj.character == 0)
+                                        && (VEHICLE == -1)
                                     ) {
                                         iVar12 = 0x8c;
                                     }
-                                    else if ((sVar24 != -1) && (vtog_time == vtog_duration)) {
-                                        if (sVar24 == 0x6b) {
+                                    else if ((VEHICLE != -1) && (vtog_time == vtog_duration)) {
+                                        if (VEHICLE == 0x6b) {
                                             iVar12 = 0x6b;
                                         }
-                                        else if (sVar24 == 0xa0) {
+                                        else if (VEHICLE == 0xa0) {
                                             iVar12 = 0xa0;
                                         }
-                                        else if (sVar24 == 0x44) {
+                                        else if (VEHICLE == 0x44) {
                                             iVar12 = 0x44;
                                         }
-                                        else if (sVar24 == 0xb2) {
+                                        else if (VEHICLE == 0xb2) {
                                             iVar12 = 0xb2;
                                         }
-                                        else if (sVar24 == 0x3b) {
+                                        else if (VEHICLE == 0x3b) {
                                             iVar12 = 0x3b;
                                         }
-                                        else if (sVar24 == 0x20) {
+                                        else if (VEHICLE == 0x20) {
                                             iVar12 = 0x20;
                                         }
-                                        else if (sVar24 == 0x89) {
+                                        else if (VEHICLE == 0x89) {
                                             iVar12 = 0x89;
                                         }
-                                        else if (sVar24 == 0xA1) {
+                                        else if (VEHICLE == 0xA1) {
                                             iVar12 = 0xA1;
                                         }
-                                        else if (sVar24 == 0x99) {
+                                        else if (VEHICLE == 0x99) {
                                             iVar12 = 0x99;
                                         }
                                     } 
                                     else {
-                                        if ((uVar23 == 0) && ((c->obj).vehicle == 0xA1)) {
+                                        if ((vflag == 0) && (c->obj.vehicle == 0xA1)) {
                                             iVar12 = 0xA1;
                                         }
                                     }
@@ -2196,26 +2009,30 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                     SetCreatureLights(c);
                                 }
                         
-                                //dVar34 = 1.2987013f;
+                                dx = 1.2987013f;
+                                // iVar26 = 0;
+                                // iVar12 = 0;
                                 for(j = 0; j < 2; j++, c++) {
-                                    struct numtx_s* mom_loc = c->momLOCATOR;
-                                    struct numtx_s* mtx_loc = c->mtxLOCATOR;
                                     if (model[j] == 0) {
                                         continue;
                                     }
                                     
-                                    if (((c->obj).anim.blend == 0x00) || (
+                                    if (
+                                        (c->obj.anim.blend == 0x00)
+                                        || (
                                             (model[j]->character != 0x45)
                                             && (model[j]->character != 0x8c)
                                             && (model[j]->character != 0xa0)
-                                            && (model[j]->character != 0x6b))
-                                        || ((model[j]->anmdata[(c->obj).anim.blend_src_action] != 0) &&
-                                    (model[j]->anmdata[(c->obj).anim.blend_dst_action] != 0))) {
+                                            && (model[j]->character != 0x6b)
+                                        )
+                                        ||
+                                    ((model[j]->anmdata[c->obj.anim.blend_src_action] != 0) &&
+                                    (model[j]->anmdata[c->obj.anim.blend_dst_action] != 0))
+                                    ) 
+                                    {
                                         // bVar28 = bVar11 << 1;
                                         if ((Level == 0x1c) && (j == 1) && (model[0]->character == 0x7f)) {
-                                            s.z = 1.2987013f;
-                                            s.y = 1.2987013f;
-                                            s.x = 1.2987013f;
+                                            s.x = s.y = s.z = dx;
                                             NuMtxPreScale(&mC, &s);
                                             if (bVar10) {
                                                 NuMtxPreScale(&mS, &s);
@@ -2224,7 +2041,7 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                                 NuMtxPreScale(&mR, &s);
                                             }
                                         }
-                                        if (uVar23 != 0) {
+                                        if (vflag != 0) {
                                             plr_render = 1;
                                         }
                                         if ((render != 0) && (model[j]->character == 0xAF || model[j]->character == 0xB0))
@@ -2236,54 +2053,60 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
                                             jeep_draw = 1;
                                         }
                                         
-                                        if ((bVar10)
-                                            && (uVar23 == 0) 
-                                            || (j == 0) 
+                                        DrawCharacterModel(
+                                            model[j],
+                                            &c->obj.anim,
+                                            &mC,
+                                            ((bVar10 != 0)  && (vflag == 0)  || (j == 0) 
                                             && (model[1] != NULL)
                                             && (model[1]->character != 0x44) 
                                             && (model[1]->character != 0xb2) 
                                             && (model[1]->character != 0x99)    
-                                            && (model[1]->character != 99)
-                                        )
-                                        {
-                                            pnVar16 = &mS;
-                                        }
-                                        else {
-                                            pnVar16 = NULL;
-                                        }
-                                        
-                                        if ((bVar28 >> 1 & 1)) {
-                                            pnVar17 = &mR;
-                                        }
-                                        else {
-                                            pnVar17 = NULL;
-                                        }
-                                        
-                                        DrawCharacterModel(model[j],&(c->obj).anim,&mC,pnVar16,render,
-                                            pnVar17,mtx_loc,mom_loc,&c->obj);
+                                            && (model[1]->character != 99)) ? &mS : NULL,
+                                            render,
+                                            (bVar11 != 0) ? &mR : NULL,
+                                            &c->mtxLOCATOR[0][j],
+                                            &c->momLOCATOR[0][j],
+                                            &c->obj
+                                        );
                                     }
+                                    // iVar26 = iVar26 + 1;
+                                    // c++;
+                                    // iVar12 = iVar12 + 4;
                                 }
-                                if ((render != 0) && ((c->obj).character == 0x76) && (
-                                        ((LDATA->flags & 0x200) != 0)|| (Level == 0x1d))
-                                    && (ObjTab[66].obj.special != NULL)) {
+                                
+                                // do {
+                                    
+                                // } while (iVar26 < 2);
+                                if (
+                                    (render != 0)
+                                    && (c->obj.character == 0x76)
+                                    && (
+                                        ((LDATA->flags & 0x200) != 0)
+                                        || (Level == 0x1d)
+                                    )
+                                    && (ObjTab[66].obj.special != NULL)
+                                ) {
                                     NuRndrGScnObj((ObjTab[66].obj.scene)->gobjs[(ObjTab[66].obj.special)->instance->objid], &mC);
                                 }
                             }
-                            (c->obj).draw_frame = old_frame + 1;
+                            c->obj.draw_frame = old_frame + 1;
                         }
                     }
                 }
             }
         }
         LAB_8001f958:
-        c->anim_processed = '\x01';
-    }
+        //i = i + 1;
+        c->anim_processed = 1;
+        // c = c + 1;
+    } //while (i < (s32)local_d0._00);
+  //}
     glass_phase = 0;
     glass_draw = 0;
     if (render != 0) {
         SetLevelLights();
     }
-    return;
 }
 
 //29% NGC
