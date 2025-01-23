@@ -22,8 +22,8 @@ This README will be more complete and detailed with instructions to contribute, 
 - [x] numath function (100%)
 - [x] nusound function (dummy)
 - [x] nuraster function (100%)
-- [ ] system function (90%) 
-- [ ] gamelib function (80%)
+- [ ] system function (95%) 
+- [ ] gamelib function (90%)
 
 ### nulib test
 - [ ] nu3dx validation test
@@ -35,7 +35,7 @@ This README will be more complete and detailed with instructions to contribute, 
 - [ ] gamelib validation test 
 
 ### game
-- [ ] gamecode (50%)
+- [ ] gamecode (70%)
 
 ## Building
 
@@ -51,7 +51,7 @@ You can check for any `DWARF info` (variables name,types,global variables,etc..)
 Which will provide the local variables types and names of the function and other information used in the alpha version, it should match in most cases with the retail version (some variables may be missing or totally different sometimes).
 Once matched you can make a pull request or send a message on discord
 
-If want to help the project or have any troubles, reach out on the Discord server: https://discord.gg/W8khh4v4Gx  
+If want to help the project or have any troubles, reach out on the Discord server: https://discord.gg/kmCPpW4KvJ
 
 ## Warning
 Currently there are problems with the compiler flags for branch prediction (+\-) , so some functions will not fully match. 
