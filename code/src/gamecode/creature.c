@@ -9,7 +9,7 @@ s32 gamecut; //cut.c
 	ManageCreatures 93%
 	LoadCharacterModel 95%
 	LoadCharacterModels MATCH (Check)
-	MovePlayer 29%**
+	MovePlayer 83%*
 	DrawCharacterModel 96%
 	UpdateAnimPacket 99%*
 	DrawCreatures 90%
@@ -2109,71 +2109,43 @@ void DrawCreatures(struct creature_s *c, s32 count, s32 render, s32 shadow) {
     }
 }
 
-//29% NGC
+//83% NGC
 void MovePlayer(struct creature_s *plr,struct nupad_s *pad) {
-  struct MoveInfo *moveinfo;
+  struct MoveInfo *minfo;
   u16 gotlist[9];
   u16 sVartmp;
-  s32 bVar1;
-  float fVar2;
-  short sVar3;
-  s32 uVar4;
-  float fVar6;
-  char cVar8;
-  u8 uVar9;
   u16 uVar12;
-  s32 Awrd;
   u16 uVar13;
-  s32 iVar11;
-  struct CharacterModel *mod;
-  char cVar14;
-  float fVar15;
-  struct nuvec_s *pos;
   short sVar16;
+  s32 bVar1;
+  s32 uVar4;
+  //char cVar8;
+  s32 iVar4;
+  s32 iVar11;
+  s32 cVar14;
   s32 uVar17;
   //s32 *piVar18;
   s32 unaff_r19;
-  short sVar19;
+  s32 sVar19;
   s32 iVar20;
   s32 bVar21;
-  char bVar22;
-  //char bVar23;
-  float dVar24;
-  float dVar25;
-  float dVar26;
-  float dVar27;
-  float dVar28;
-  float fVar29;
-  s32 local_108;
-  s32 local_104;
-  s32 local_100;
-  s32 local_fc;
-  short local_f8;
-  //s32 iStack_f6;
   struct nuvec_s local_f0;
   struct nuvec_s local_e0;
   struct nuvec_s local_d0;
   struct nuvec_s local_c0;
   struct nuvec_s local_b0;
   struct nuvec_s local_a0;
-  //double local_68;
-  
-  /*local_108 = 0x80007; //??
-  local_104 = 0x100020;
-  local_100 = 0x400080;
-  local_fc = 0x1000200;
-  local_f8 = 0x400;
-///
-  local_108[0] = 8;
-  local_108[1] = 7;
-  local_108[2] = 0x10;
-  local_108[3] = 0x20;
-  local_108[4] = 0x40;
-  local_108[5] = 0x80;
-  local_108[6] = 0x100;
-  local_108[7] = 0x200;
-  local_108[8] = 0x400;
-  */
+  float fVar2;
+  float fVar15;
+  float fVar6;
+  float dVar24;
+  float dVar25;
+  float dVar26;
+  float dVar27;
+  float dVar28;
+  float fVar29;
+  struct CharacterModel *model;
+
   memcpy(gotlist, lbl_801083ec, sizeof(u16) * 9);
   //piVar18 = &lbl_801083ec;
   if (pad == NULL) {
@@ -2187,12 +2159,12 @@ void MovePlayer(struct creature_s *plr,struct nupad_s *pad) {
   }
   if (pad != NULL) {
     if ((Game.vibration != 0) && (Demo == 0)) {
-      //uVar17 = (u32)(plr->rumble).frame;
-      if ((plr->rumble).frame == 0) {
+      //uVar17 = plr->rumble.frame;
+      if (plr->rumble.frame == 0) {
         uVar17 = 0;
       }
       else {
-        uVar17 = ((plr->rumble).power * (plr->rumble).frame) / (u32)(plr->rumble).frames;
+        uVar17 = (plr->rumble.power * plr->rumble.frame) / plr->rumble.frames;
       }
         if (plr->rumble.buzz != 0) {
           NuPs2PadSetMotors(pad,uVar17,uVar17);
@@ -2204,75 +2176,72 @@ void MovePlayer(struct creature_s *plr,struct nupad_s *pad) {
       NuPs2PadSetMotors(pad,0,0);
     }
   }
-  if ((((Level == 0x16) && (boss_dead == 1)) && ((plr->obj).pos.z < 49.0f)) &&
-     (fVar6 = (plr->obj).oldpos.z, 49.0f <= fVar6)) {
-    (plr->obj).pos.x = (plr->obj).oldpos.x;
-    (plr->obj).pos.z = fVar6;
-    (plr->obj).mom.z = 0.05;
+  if ((((Level == 0x16) && (boss_dead == 1)) && (plr->obj.pos.z < 49.0f)) &&
+     (plr->obj.oldpos.z >= 49.0f)) {
+    plr->obj.pos.x = plr->obj.oldpos.x;
+    plr->obj.pos.z = plr->obj.oldpos.z;
+    plr->obj.mom.z = 0.05f;
   }
-  Awrd = VEHICLECONTROL;
-  if ((plr->obj).vehicle != -1) {
-    if ((((LBIT & 0x11 | LBIT & 0x5252801) == 0) && (Level != 3)) &&
-              ((Level != 0x1d && (Level != 0x1c)))) {
-        if (((LBIT & 4 | LBIT & 0x40) != 0) && (VEHICLECONTROL == 0)) {
+  iVar4 = VEHICLECONTROL;
+  if (plr->obj.vehicle != -1) {
+    if ((((LBIT & 0x00000001105252801) == 0) && (Level != 3)) &&
+              ((Level != 0x1d || (Level == 0x1c)))) {
+        iVar4 = 1;
+    }
+    else if (((LBIT & 0x0000000400000040) != 0) && (iVar4 == 0)) {
           VEHICLECONTROL = 1;
-        }
-      }
-      else {
-        VEHICLECONTROL = 0;
-      }
+    }
   }
   else {
     VEHICLECONTROL = 0;
   }
   if ((VEHICLECONTROL == 1) && (vtog_time == vtog_duration)) {
-    (plr->obj).vehicle_frame = (plr->obj).vehicle_frame + 1;
+    plr->obj.vehicle_frame = plr->obj.vehicle_frame + 1;
   }
   else {
-    (plr->obj).vehicle_frame = 0;
+    plr->obj.vehicle_frame = 0;
     plr_vehicle_time = 0.0f;
     plr_vehicle_speedmul = 1.0f;
   }
   ToggleVehicle(plr);
   sVar19 = -1;
-  if ((VEHICLECONTROL == 1) && (sVar16 = (plr->obj).vehicle, sVar16 != -1)) {
-    sVar19 = sVar16;
+  if ((VEHICLECONTROL == 1) && (plr->obj.vehicle != -1)) {
+    sVar19 = plr->obj.vehicle;
   }
-  //bVar23 = (sVar19 == 0x6b) << 1;
   if (sVar19 == 0x6b) {
-    moveinfo = &ScooterMoveInfo;
+    minfo = &ScooterMoveInfo;
   }
   else if (sVar19 == 0xa0) {
-    moveinfo = &SnowBoardMoveInfo;
+    minfo = &SnowBoardMoveInfo;
   }
   else if (sVar19 == 0x44) {
-    moveinfo = &MechMoveInfo;
+    minfo = &MechMoveInfo;
   }
   else if (sVar19 == 0xb2) {
-    moveinfo = &FireEngineMoveInfo;
+    minfo = &FireEngineMoveInfo;
   }
   else if (sVar19 == 0x3b) {
-    moveinfo = &GyroMoveInfo;
+    minfo = &GyroMoveInfo;
   }
   else if (sVar19 == 0x20) {
-    moveinfo = &SubmarineMoveInfo;
+    minfo = &SubmarineMoveInfo;
   }
   else if (sVar19 == 0x89) {
-    moveinfo = &MineCartMoveInfo;
+    minfo = &MineCartMoveInfo;
   }
   else if (sVar19 == 0xa1) {
-    moveinfo = &MineTubMoveInfo;
+    minfo = &MineTubMoveInfo;
   }
   else if (sVar19 == 0x99) {
-    moveinfo = &OffRoaderMoveInfo;
+    minfo = &OffRoaderMoveInfo;
   }
   else if (VEHICLECONTROL == 2) {
-    moveinfo = &SwimmingMoveInfo;
+    minfo = &SwimmingMoveInfo;
   }
   else {
-    moveinfo = plr->OnFootMoveInfo;
+    minfo = plr->OnFootMoveInfo;
   }
-  if ((VEHICLECONTROL == 1) && (Awrd != 1)) {
+  if ((VEHICLECONTROL == 1) && (iVar4 != 1)) {
     plr_vehicle_time = 0.0f;
     if (sVar19 == 0x89) {
       VEHICLETIME = 60.0f;
@@ -2282,35 +2251,33 @@ void MovePlayer(struct creature_s *plr,struct nupad_s *pad) {
     }
     ResetTubs();
   }
-  uVar9 = (plr->obj).invincible;
-  if (uVar9 != 0) {
-    (plr->obj).invincible = uVar9 + 0xff;
+  if (plr->obj.invincible != 0) {
+    plr->obj.invincible += 0xff;
   }
   if (plr->freeze != 0) {
-    plr->freeze = plr->freeze + 0xff;
+    plr->freeze += 0xff;
   }
-  pos = &(plr->obj).pos;
-  //fVar15 = (plr->obj).pos.y;
-  //fVar6 = (plr->obj).pos.z;
-  (plr->obj).oldpos = (plr->obj).pos;
-  (plr->obj).old_ground = (plr->obj).ground;
-  cVar14 = (plr->obj).dangle;
+  //fVar15 = plr->obj.pos.y;
+  //fVar6 = plr->obj.pos.z;
+  plr->obj.oldpos = plr->obj.pos;
+  plr->obj.old_ground = plr->obj.ground;
+  cVar14 = plr->obj.dangle;
   GetTopBot(plr);
   OldTopBot(&plr->obj);
   if (GameMode != 1) {
     if (vtog_time < vtog_duration) {
-      vtog_time = vtog_time + 0.01666667;
-      if ((vtog_duration * 0.333 <= vtog_time) && (vtog_time < vtog_duration * 0.333)) {
+      vtog_time += 0.016666668f;
+      if ((vtog_time >= vtog_duration * 0.333f) && (vtog_time < vtog_duration * 0.333f)) {
         gamesfx_effect_volume = 0x2fff;
-        GameSfx(0x2f,pos);
+        GameSfx(0x2f,&plr->obj.pos);
       }
-      if ((vtog_duration <= vtog_time) && (vtog_time = vtog_duration, VEHICLECONTROL == 1)) {
-        Awrd = 0x48;
+      if ((vtog_time >= vtog_duration) && (vtog_time = vtog_duration, VEHICLECONTROL == 1)) {
+        iVar4 = 0x48;
         if (sVar19 == 0xa0) {
-          Awrd = 0x54;
+          iVar4 = 0x54;
         }
-        if (Awrd != -1) {
-          GameSfx(Awrd,pos);
+        if (iVar4 != -1) {
+          GameSfx(iVar4,&plr->obj.pos);
         }
         NewRumble(&plr->rumble,0xbf);
         NewBuzz(&plr->rumble,0xc);
@@ -2318,23 +2285,21 @@ void MovePlayer(struct creature_s *plr,struct nupad_s *pad) {
       uVar12 = vtog_angle;
       if (vtog_blend != 0) {
         dVar27 = (vtog_time / vtog_duration);
-        (plr->obj).pos.x = (vtog_newpos.x - vtog_oldpos.x) * dVar27 + vtog_oldpos.x;
-        (plr->obj).pos.y = (vtog_newpos.y - vtog_oldpos.y) * dVar27 + vtog_oldpos.y;
-        (plr->obj).pos.z = (vtog_newpos.z - vtog_oldpos.z) * dVar27 + vtog_oldpos.z;
+        plr->obj.pos.x = (vtog_newpos.x - vtog_oldpos.x) * dVar27 + vtog_oldpos.x;
+        plr->obj.pos.y = (vtog_newpos.y - vtog_oldpos.y) * dVar27 + vtog_oldpos.y;
+        plr->obj.pos.z = (vtog_newpos.z - vtog_oldpos.z) * dVar27 + vtog_oldpos.z;
         //fVar15 = v000.z;
         //fVar6 = v000.y;
-        (plr->obj).mom = v000;
-        (plr->obj).thdg = vtog_angle;
-        //uVar12 = SeekRot((plr->obj).hdg,uVar12,3);
-        (plr->obj).hdg = SeekRot((plr->obj).hdg,uVar12,3);
-        fVar6 = NewShadowMaskPlat(pos,0.0f,-1);
-        (plr->obj).shadow = fVar6;
-        if (fVar6 != 2000000.0f) {
-          GetSurfaceInfo(&plr->obj,1,fVar6);
+        plr->obj.mom = v000;
+        plr->obj.thdg = vtog_angle;
+        //uVar12 = SeekRot(plr->obj.hdg,uVar12,3);
+        plr->obj.hdg = SeekRot(plr->obj.hdg,uVar12,3);
+        plr->obj.shadow = NewShadowMaskPlat(&plr->obj.pos,0.0f,-1);
+        if (plr->obj.shadow != 2000000.0f) {
+          GetSurfaceInfo(&plr->obj,1,plr->obj.shadow);
         }
-        if ((LBIT & 4 | LBIT & 0x40) == 0) {
-          (plr->obj).pos.y = (plr->obj).pos.y +
-               NuTrigTable[(s32)(dVar27 * 32768.0f) & 0xffff] +
+        if ((LBIT & 0x0000000400000040) == 0) {
+          plr->obj.pos.y += NuTrigTable[(s32)(dVar27 * 32768.0f) & 0xffff] +
                NuTrigTable[(s32)(dVar27 * 32768.0f) & 0xffff];
         }
         ObjectRotation(&plr->obj,2,1);
@@ -2343,465 +2308,178 @@ void MovePlayer(struct creature_s *plr,struct nupad_s *pad) {
     }
     if (Level == 0x25) {
       if (tumble_time < tumble_duration) {
-        tumble_time = tumble_time + 0.01666667;
+        tumble_time = tumble_time + 0.016666668f;
         if ((tumble_action == 0x56) && (new_lev_flags != 0)) {
-          fVar6 = (plr->obj).anim.anim_time;
-          if ((fVar6 - ((plr->obj).model)->animlist[0x56]->speed * 0.5f < tumble_item_starttime + 1.0f
-              ) && (tumble_item_starttime + 1.0f <= fVar6)) {
-            Awrd = 0;
-            do {
-              uVar12 = new_lev_flags & gotlist[Awrd];
+          if ((plr->obj.anim.anim_time - (plr->obj.model)->animlist[0x56]->speed * 0.5f < tumble_item_starttime + 1.0f
+              ) && (plr->obj.anim.anim_time >= tumble_item_starttime + 1.0f )) {
+            for(iVar4 = 0; iVar4 < 9; iVar4++) {
+              uVar12 = new_lev_flags & gotlist[iVar4];
               if ((uVar12 != 0) && ((temp_lev_flags & uVar12) == 0)) {
                 temp_lev_flags = uVar12 | temp_lev_flags;
-                Awrd = AddAward(Hub,last_level,uVar12);
-                if (Awrd == 0) {
+                if (AddAward(Hub,last_level,uVar12) == 0) {
                   new_lev_flags = uVar12 ^ (uVar12 | new_lev_flags);
                   Game.level[last_level].flags = uVar12 | Game.level[last_level].flags;
                 }
                 //piVar18 = &iStack_f6;
-                Awrd = 9;
+                iVar4 = 9;
               }
-              Awrd = Awrd + 1;
               //piVar18 = (s32 *)((s32)piVar18 + 2);
-            } while (Awrd < 9);
+            }
           }
         }
-        if (tumble_duration <= tumble_time) {
-          if ((new_lev_flags | temp_lev_flags) == temp_lev_flags) {
+        if (tumble_time >= tumble_duration) {
+          if ((new_lev_flags | temp_lev_flags) != temp_lev_flags) {
+            tumble_time = tumble_cycleduration;
+            plr->obj.anim.anim_time = tumble_item_starttime;
+          }
+          else {
             tumble_time = tumble_duration;
             plr->jump = 1;
             if (tumble_action == 0x56) {
               plr->jump_type = 0;
-              Awrd = qrand();
-              if (Awrd < 0) {
-                Awrd = Awrd + 0x7fff;
+              iVar4 = qrand();
+              if (iVar4 < 0) {
+                iVar4 += 0x7fff;
               }
-              plr->jump_subtype = (char)(Awrd >> 0xf);
+              plr->jump_subtype = (char)(iVar4 >> 0xf);
             }
             else {
               plr->jump_type = 1;
             }
             if (plr->jump_type == 0) {
-              sVar16 = moveinfo->STARJUMPFRAMES;
+              plr->jump_frames = minfo->STARJUMPFRAMES;
             }
             else {
-              sVar16 = moveinfo->JUMPFRAMES0;
+              plr->jump_frames = minfo->JUMPFRAMES0;
             }
-            plr->jump_frames = sVar16;
-            (plr->obj).anim.anim_time = 1.0f;
-            (plr->obj).ground = 0;
-            plr->jump_hack = 1;
             plr->jump_frame = 0;
             plr->somersault = 0;
+            plr->obj.anim.anim_time = 1.0f;
+            plr->jump_hack = 1;
             plr->land = 0;
-            AddGameDebris(0x10,pos);
-            AddGameDebris(0x11,pos);
-            GameSfx(0x2f,pos);
+            plr->obj.ground = 0;
+            AddGameDebris(0x10,&plr->obj.pos);
+            AddGameDebris(0x11,&plr->obj.pos);
+            GameSfx(0x2f,&plr->obj.pos);              
+          }
+        }
+      }
+    if (Level == 0x25) {
+        if ((tumble_duration < tumble_time) && (last_hub != -1)) {
+          if (tumble_time >= tumble_moveduration) {
+            plr->obj.pos.x = tumble_newpos.x;
+            plr->obj.pos.y = tumble_newpos.y;
+            plr->obj.pos.z = tumble_newpos.z;
           }
           else {
-            tumble_time = tumble_cycleduration;
-            (plr->obj).anim.anim_time = tumble_item_starttime;
-          }
-        }
-      }
-      if (Level != 0x25) goto LAB_80019f04;
-      if ((tumble_duration < tumble_time) && (last_hub != -1)) {
-        if ((1) && (warp_level != -1)) goto LAB_8001cbd4;
-        goto LAB_80019f04;
-      }
-      if (tumble_time >= tumble_moveduration) {
-        fVar6 = tumble_time / tumble_moveduration;
-        (plr->obj).pos.x = (tumble_newpos.x - tumble_oldpos.x) * fVar6 + tumble_oldpos.x;
-        (plr->obj).pos.y = (tumble_newpos.y - tumble_oldpos.y) * fVar6 + tumble_oldpos.y;
-        (plr->obj).pos.z = (tumble_newpos.z - tumble_oldpos.z) * fVar6 + tumble_oldpos.z;
-        fVar6 = NewShadowMaskPlat(pos,0.0f,-1);
-        (plr->obj).shadow = fVar6;
-        if (fVar6 != 2000000.0f) {
-          GetSurfaceInfo(&plr->obj,1,fVar6);
-        }
-      }
-      else {
-        (plr->obj).pos.x = tumble_newpos.x;
-        (plr->obj).pos.y = tumble_newpos.y;
-        (plr->obj).pos.z = tumble_newpos.z;
-      }
-      uVar12 = tumble_hdg;
-      bVar1 = sVar19 == 0x20;
-      (plr->obj).ground = 3;
-      (plr->obj).thdg = uVar12;
-      (plr->obj).hdg = uVar12;
-      (plr->obj).old_ground = 3;
-LAB_8001c028:
-      fVar6 = NewShadowMaskPlatRot(pos,0.0f,-1);
-      if (fVar6 == 2000000.0f) {
-        cVar8 = (plr->obj).transporting;
-        plr_terrain_ok = (s32)cVar8;
-        if (plr_terrain_ok != 0) goto LAB_8001c0a8;
-        if (((NOTERRAINSTOP == 0) || (Level == 8)) || (Level == 6)) goto LAB_8001c0b0;
-        //fVar6 = (plr->obj).oldpos.z;
-        (plr->obj).pos.x = (plr->obj).oldpos.x;
-        (plr->obj).pos.z = (plr->obj).oldpos.z;
-        (plr->obj).mom.z = 0.0f;
-        (plr->obj).dangle = cVar8;
-        (plr->obj).mom.x = 0.0f;
-      }
-      else {
-LAB_8001c0a8:
-        plr_terrain_ok = 1;
-LAB_8001c0b0:
-        unaff_r19 = (s32)(plr->obj).layer_type;
-        if (((plr->obj).got_shadow == 0) ||
-           ((((plr->obj).transporting == 0 && (fVar6 != 2000000.0f)) &&
-            ((plr->obj).shadow < fVar6)))) {
-          (plr->obj).got_shadow = 0;
-          (plr->obj).shadow = fVar6;
-          GetSurfaceInfo(&plr->obj,2,fVar6);
-        }
-        else {
-          GetSurfaceInfo(&plr->obj,0,fVar6);
-        }
-      }
-      (plr->obj).wade = 0;
-      if ((plr->obj).layer_type == -1) {
-        (plr->obj).submerged = 0;
-      }
-      else {
-        if ((plr->obj).layer_shadow <= (plr->obj).top * (plr->obj).SCALE + (plr->obj).pos.y) {
-          (plr->obj).submerged = 0;
-        }
-        else {
-          bVar22 = (plr->obj).submerged;
-          if (bVar22 < 0x3c) {
-            (plr->obj).submerged = bVar22 + 1;
-          }
-          else if (((Level != 0x25) && (!bVar1)) && (VEHICLECONTROL != 2)) {
-            KillPlayer(&plr->obj,10);
-          }
-        }
-        if (((plr->obj).bot + (plr->obj).top) * (plr->obj).SCALE * 0.5f + (plr->obj).pos.y <
-            (plr->obj).layer_shadow) {
-          (plr->obj).wade = 1;
-        }
-        cVar8 = (plr->obj).layer_type;
-        Awrd = 1;
-        local_e0.x = (plr->obj).pos.x;
-        iVar20 = -1;
-        local_e0.y = (plr->obj).layer_shadow;
-        local_e0.z = (plr->obj).pos.z;
-//SWITCH??
-        if (cVar8 == 2) {
-LAB_8001c324:
-          iVar20 = 1;
-        }
-        else if (cVar8 < 3) {
-          if (cVar8 == 1) {
-            uVar17 = qrand();
-            //dVar26 = 4503601774854144.0f;
-            //local_68 = CONCAT44(0x43300000,uVar17 ^ 0x80000000);
-            dVar27 = 1.525878928987368e-06;
-            local_a0.x = (float)uVar17 * 1.525879e-06 + local_e0.x;
-            uVar17 = qrand();
-            //local_68 = CONCAT44(0x43300000,uVar17 ^ 0x80000000);
-            local_a0.y = (float)((float)uVar17 * dVar27 + local_e0.y);
-            uVar17 = qrand();
-            //local_68 = CONCAT44(0x43300000,uVar17 ^ 0x80000000);
-            (plr->obj).ddr = '@';
-            (plr->obj).ddg = 'x';
-            local_a0.z = ((float)uVar17 * dVar27 + local_e0.z);
-            (plr->obj).ddb = -0x80;
-            (plr->obj).ddwater = 'x';
-            if ((plr->obj).idle_gametime == 0.0f) {
-              iVar11 = qrand();
-              bVar21 = 0x7fff < iVar11;
-            }
-            else {
-              iVar11 = qrand();
-              bVar21 = 0xfff < iVar11;
-            }
-            if (!bVar21) {
-              NuRndrAddWaterRipple(&local_a0,0.2,0.4,0x20,0x60706050);
+            fVar6 = tumble_time / tumble_moveduration;
+            plr->obj.pos.x = (tumble_newpos.x - tumble_oldpos.x) * fVar6 + tumble_oldpos.x;
+            plr->obj.pos.y = (tumble_newpos.y - tumble_oldpos.y) * fVar6 + tumble_oldpos.y;
+            plr->obj.pos.z = (tumble_newpos.z - tumble_oldpos.z) * fVar6 + tumble_oldpos.z;
+            plr->obj.shadow = NewShadowMaskPlat(&plr->obj.pos,0.0f,-1);
+            if (plr->obj.shadow != 2000000.0f) {
+              GetSurfaceInfo(&plr->obj,1,plr->obj.shadow);
             }
           }
+          //uVar12 = tumble_hdg;
+          plr->obj.ground = 3;
+          plr->obj.thdg = tumble_hdg;
+          plr->obj.hdg = tumble_hdg;
+          plr->obj.old_ground = 3;
+          bVar1 = (sVar19 == 0x20) ? 0 : 1;
         }
-        else {
-          if (cVar8 == 3) goto LAB_8001c324;
-          if ((cVar8 == 4) && ((plr->obj).idle_gametime == 0.0f)) {
-            iVar20 = 1;
-            Awrd = 2;
-            local_e0.y = local_e0.y + 0.03;
-          }
+        else if (Level == 0x25) {
+            if ((warp_level != -1)) goto LAB_8001cbd4;
         }
-        if (((Paused == 0) && (-1 < iVar20)) && (jonframe1 == (jonframe1 / Awrd) * Awrd)) {
-          AddVariableShotDebrisEffect(GDeb[iVar20].i,&local_e0,1,0,0);
-        }
-      }
-      cVar8 = (plr->obj).surface_type;
-      if (0 < cVar8) {
-        local_e0.x = (plr->obj).pos.x;
-        Awrd = 1;
-        local_e0.y = (plr->obj).pos.y;
-        iVar20 = -1;
-        local_e0.z = (plr->obj).pos.z;
-        if (cVar8 == '\b') {
-          if (((plr->obj).idle_gametime == 0.0f) && (Level != 3)) {
-            iVar20 = 4;
-            Awrd = 4;
-LAB_8001c484:
-            local_e0.y = local_e0.y + 0.03;
-          }
-        }
-        else if (cVar8 < '\t') {
-          if (cVar8 == 1) {
-LAB_8001c40c:
-            if ((plr->obj).idle_gametime == 0.0f) {
-              iVar20 = 2;
-              Awrd = 2;
-            }
-          }
-          else if ((cVar8 == 2) && ((plr->obj).idle_gametime == 0.0f)) {
-            iVar20 = 1;
-            Awrd = 2;
-            goto LAB_8001c484;
-          }
-        }
-        else if ((cVar8 < '\x0e') && ('\v' < cVar8)) goto LAB_8001c40c;
-        if ((((Paused == 0) && (-1 < iVar20)) && ((plr->obj).ground != 0)) &&
-           (jonframe1 == (jonframe1 / Awrd) * Awrd)) {
-          AddVariableShotDebrisEffect(GDeb[iVar20].i,&local_e0,1,0,0);
-        }
-      }
-      Awrd = (s32)(plr->obj).roof_type;
-      if (((Awrd == -1) || ((TerSurface[Awrd].flags & 0x10) == 0)) || (VEHICLECONTROL == 1)) {
-        (plr->obj).dangle = 0;
-        if (cVar14 != 0) {
-          sVar16 = plr->jump_frames;
-          plr->jump = 6;
-          (plr->obj).mom.y = 0.0f;
-          plr->jump_frame = sVar16;
-          plr->jump_type = 4;
-          GameSfx(0x1c,pos);
-        }
-      }
-      else {
-        fVar6 = (plr->obj).SCALE;
-        fVar15 = (plr->obj).roof_y - moveinfo->DANGLEGAP;
-        if ((fVar15 <= (plr->obj).top * fVar6 + (plr->obj).pos.y) || (cVar14 != 0)) {
-          fVar29 = (plr->obj).max.y;
-          (plr->obj).dangle = 1;
-          (plr->obj).pos.y = fVar15 - fVar29 * fVar6;
-          if (cVar14 == 0) {
-            GameSfx(0x1b,pos);
-          }
-        }
-      }
-      cVar14 = (plr->obj).layer_type;
-      if ((cVar14 == 1) && (unaff_r19 == -1)) {
-        GameSfx(0x47,pos);
-      }
-      else if ((cVar14 == -1) && (unaff_r19 == 1)) {
-        GameSfx(0x47,pos);
-      }
-      TerrainFailsafe(&plr->obj);
-      if ((plr->obj).got_shadow == 0) {
-        bVar21 = ((plr->obj).bot * (plr->obj).SCALE + (plr->obj).pos.y) - (plr->obj).shadow < 0.025f;
-      }
-      else {
-        bVar21 = (plr->obj).bot * (plr->obj).SCALE + (plr->obj).pos.y <= (plr->obj).shadow;
-      }
-      cVar14 = *(char *)((s32)&(plr->obj).gndflags + 1);
-      (plr->obj).ground = 0;
-      if (cVar14 != 0) {
-        (plr->obj).ground = 1;
-      }
-      if (bVar21) {
-        (plr->obj).ground = (plr->obj).ground | 2;
-      }
-      cVar14 = (plr->obj).ground;
-      if (cVar14 != 0) {
-        (plr->obj).last_ground = cVar14;
-      }
-      if ((((plr->obj).ground & 2U) != 0) && ((plr->obj).dead == 0)) {
-        cVar14 = (plr->obj).surface_type;
-        if ((((TerSurface[cVar14].flags & 1) == 0) ||
-            (((uVar9 = (plr->obj).invincible, uVar9 != 0 && ((plr->obj).layer_type == -1)) ||
-             (sVar19 == 0x20)))) || (VEHICLECONTROL == 2)) {
-          if ((TerSurface[cVar14].flags & 2) != 0) {
-            (plr->obj).boing = (plr->obj).boing | 2;
-            GameSfx(2,pos);
-            NewRumble(&player->rumble,0x7f);
-            NewBuzz(&player->rumble,0xc);
-          }
-        }
-        else {
-          if ((VEHICLECONTROL == 1) && ((plr->obj).vehicle != -1)) {
-            Awrd = 0xb;
-            cVar8 = (plr->obj).layer_type;
-          }
-          else {
-            cVar8 = (plr->obj).layer_type;
-            if ((plr->obj).character == 0) {
-              if (((cVar8 == -1) || (CRemap[79] == -1)) || (Level != 7)) {
-                if (((0) || (cVar14 != '\a')) || (CRemap[151] == -1)) goto LAB_8001c7b0;
-                Awrd = 0xd;
-              }
-              else {
-                Awrd = 8;
-              }
-            }
-            else {
-LAB_8001c7b0:
-              Awrd = 5;
-              if ((cVar8 != -1) && ((plr->obj).submerged != 0)) {
-                Awrd = 10;
-              }
-            }
-          }
-          bVar21 = 0;
-          if ((((plr->obj).mask != NULL) && ((plr->obj).mask->active != 0)) && ((LDATA->flags & 0xe00) == 0))  {
-            bVar21 = 2 < (plr->obj).mask->active;
-          }
-          if ((((cVar8 == -1) || ((plr->obj).submerged != 0)) || (Level != 2)) || (Bonus != 0))  {
-            (plr->obj).invincible = 0;
-            KillGameObject(&plr->obj,Awrd);
-            if ((((plr->obj).mask != NULL) && ((plr->obj).mask->active != 0)) &&
-               (uVar12 = LDATA->flags, (uVar12 & 0xe00) == 0)) {
-              AddMaskFeathers((plr->obj).mask);
-              ((plr->obj).mask)->active = uVar12 & 0xe00;
-            }
-          }
-          else if ((((plr->obj).mask == NULL) || ((plr->obj).mask->active == 0)) ||
-                  ((LDATA->flags & 0xe00) != 0)) {
-            KillGameObject(&plr->obj,Awrd);
-          }
-          else if (((plr->obj).mask->active < 3) && (uVar9 == 0)) {
-            LoseMask(&plr->obj);
-          }
-          if ((((plr->obj).dead != 0) && (bVar21)) && (Awrd = NuSoundKeyStatus(4), Awrd == 1)) {
-            NuSoundStopStream(4);
-          }
-        }
-      }
-      ObjectRotation(&plr->obj,2,(u32)(sVar19 == -1));
-      if ((((plr->obj).transporting == 0) && (sVar19 != 0x89)) && (sVar19 != 0xa1)) {
-        WumpaCollisions(&plr->obj);
-      }
-      plr_allow_jump = (s32)plr->allow_jump;
-      if ((plr->obj).ground == 0) {
-        if (plr->allow_jump != 0) {
-          uVar9 = plr->allow_jump + 0xff;
-          goto LAB_8001c9d0;
-        }
-      }
-      else {
-        uVar9 = '\f';
-LAB_8001c9d0:
-        plr->allow_jump = uVar9;
-      }
-      bVar22 = (plr->obj).boing;
-      if (bVar22 != 0) {
-        plr->land = 0;
-        plr->ok_slam = 1;
-        cVar14 = 1;
-        plr->jump = 1;
-        plr->somersault = 0;
-        if ((bVar22 & 2) != 0) {
-          cVar14 = 3;
-        }
-        plr->jump_type = cVar14;
-        sVar16 = moveinfo->JUMPFRAMES1;
-        plr->jump_frame = 0;
-        plr->jump_frames = sVar16 + 1;
-        fVar6 = moveinfo->JUMPHEIGHT;
-        //local_68 = CONCAT44(0x43300000,(s32)moveinfo->JUMPFRAMES2 ^ 0x80000000);
-        if (cVar14 == 3) {
-          fVar6 = fVar6 * 1.5f;
-        }
-        (plr->obj).mom.y = fVar6 / (float)((s32)moveinfo->JUMPFRAMES2);
-        plr->slam = 3;
-        plr->slam_wait = 0;
-        (plr->obj).anim.anim_time = 1.0f;
-      }
-      if (plr->fire != 0) {
-        plr->fire = plr->fire + 0xff;
-      }
-      if (plr->tap != 0) {
-        plr->tap = plr->tap + 0xff;
-      }
     }
-    else {
-LAB_80019f04:
-      if ((((((plr->obj).dead != 0) && (Level != 0x1d)) ||
-           ((Cursor.menu != -1 &&
-            ((((Cursor.menu != '\"' && (Cursor.menu != '$')) && (Cursor.menu != 0x12)) &&
+//LAB_80019f04:
+      if (((((plr->obj.dead != 0) && (Level != 0x1d)) || ((Cursor.menu != -1 &&
+            ((((Cursor.menu != 0x22 && (Cursor.menu != 0x24)) && (Cursor.menu != 0x12)) &&
              ((Cursor.menu != 0x10 || (Level != 0x1d)))))))) || (Cursor.wait != 0)) ||
-         ((((cVar8 = (plr->obj).finished, cVar8 != 0 && (sVar19 != 99)) &&
+         ((((plr->obj.finished != 0 && (sVar19 != 99)) &&
            ((sVar19 != 0xa1 && (((sVar19 != 0x36 && (sVar19 != 0x8b)) && (sVar19 != 0x81)))))) &&
           (sVar19 != 0x3b)))) {
-        cVar14 = (plr->obj).dead;
-        if (cVar14 == '\n') {
-          fVar6 = (plr->obj).pos.y;
-          (plr->obj).pos.y = ((plr->obj).layer_shadow - fVar6) * 0.04 + fVar6;
+        if (plr->obj.dead == 10) {
+          plr->obj.pos.y += (plr->obj.layer_shadow - plr->obj.pos.y) * 0.04f;
         }
-        else if ((sVar19 != 1) &&
-                (((cVar14 == 6 || (cVar14 == 0x10)) ||
-                 ((((cVar14 == 0x12 || ((cVar14 == 0x13 || (cVar14 == '\r')))) ||
+        else if ((sVar19 != 1) && (((plr->obj.dead == 6 || (plr->obj.dead == 0x10)) ||
+                 ((((plr->obj.dead == 0x12 || ((plr->obj.dead == 0x13 || (plr->obj.dead == '\r')))) ||
                    (sVar19 == 0x6b)) || ((sVar19 == 0xa0 || (sVar19 == 0x99)))))))) {
-          fVar6 = NewShadowMaskPlat(pos,0.0f,-1);
-          (plr->obj).shadow = fVar6;
-          dVar27 = 2000000.0f;
-          if (fVar6 != 2000000.0f) {
-            local_b0.x = (plr->obj).pos.x;
-            local_b0.z = (plr->obj).pos.z;
-            local_b0.y = ((plr->obj).bot + (plr->obj).top) * (plr->obj).SCALE * 0.5f +
-                         (plr->obj).pos.y;
+          plr->obj.shadow = NewShadowMaskPlat(&plr->obj.pos,0.0f,-1);
+          //dVar27 = 2000000.0f;
+          if (plr->obj.shadow != 2000000.0f) {
+            local_b0.x = plr->obj.pos.x;
+            local_b0.y = (plr->obj.bot + plr->obj.top) * plr->obj.SCALE * 0.5f +
+                         plr->obj.pos.y;
+            local_b0.z = plr->obj.pos.z;
             fVar6 = CrateTopBelow(&local_b0);
-            if ((fVar6 != dVar27) && ((plr->obj).shadow < fVar6)) {
-              (plr->obj).shadow = fVar6;
+            if ((fVar6 != 2000000.0f) && (plr->obj.shadow > fVar6)) {
+              plr->obj.shadow = fVar6;
             }
-            if ((plr->obj).dead == 0x13) {
-              (plr->obj).pos.y = (plr->obj).shadow - (plr->obj).bot * (plr->obj).SCALE;
+            if (plr->obj.dead != 0x13) {
+              fVar15 = plr->obj.mom.y + GRAVITY;
+              fVar29 = plr->obj.pos.y + fVar15;
+              fVar2 = plr->obj.SCALE * plr->obj.bot;
+              plr->obj.mom.y = plr->obj.mom.y + GRAVITY;
+              plr->obj.pos.y = plr->obj.pos.y + fVar15;
+              if (fVar29 + fVar2 < plr->obj.shadow) {
+                plr->obj.pos.y = plr->obj.shadow - fVar2;
+              }
             }
             else {
-              fVar15 = (plr->obj).mom.y + GRAVITY;
-              fVar29 = (plr->obj).pos.y + fVar15;
-              fVar6 = (plr->obj).shadow;
-              fVar2 = (plr->obj).bot * (plr->obj).SCALE;
-              (plr->obj).mom.y = fVar15;
-              (plr->obj).pos.y = fVar29;
-              if (fVar29 + fVar2 < fVar6) {
-                (plr->obj).pos.y = fVar6 - fVar2;
-              }
+              plr->obj.pos.y = plr->obj.shadow - plr->obj.bot * plr->obj.SCALE;
             }
           }
         }
         goto LAB_8001cbd4;
       }
       if ((Level != 0x1d) ||
-         (((plr->obj).dead == 0 && ((cVar8 == 0 || (in_finish_range != 0x3c)))))) {
+         ((plr->obj.dead == 0 && ((plr->obj.finished == 0 || (in_finish_range != 0x3c)))))) {
         dVar27 = 0.0f;
         local_f0.y = 0.0f;
-        if ((GameTimer.frame < 0x3c) ||
-           (((((plr->obj).finished != 0 || (plr->freeze != 0)) ||
+        if ((GameTimer.frame < 0x3c) || ((((plr->obj.finished != 0 || (plr->freeze != 0)) ||
              ((Level == 0x16 && (FireBossHoldPlayer != 0)))) ||
-            (((Cursor.menu == '\"' || (Cursor.menu == '$')) || (0 < fadeval)))))) {
+            (((Cursor.menu == 0x22 || (Cursor.menu == 0x24)) || (fadeval > 0)))))) {
           dVar27 = 0.0f;
-          (plr->obj).pad_angle = 0;
+          plr->obj.pad_angle = 0;
           plr->pad_type = 1;
           local_f0.x = 0.0f;
           local_f0.z = 0.0f;
-          (plr->obj).pad_speed = 0.0f;
-          (plr->obj).pad_dx = 0.0f;
-          (plr->obj).pad_dz = 0.0f;
+          plr->obj.pad_speed = 0.0f;
+          plr->obj.pad_dx = 0.0f;
+          plr->obj.pad_dz = 0.0f;
         }
         else {
-          uVar17 = pad->paddata;
-          if ((uVar17 & 0xf000) == 0) {
-            //local_68 = CONCAT44(0x43300000,(u32)pad->l_alg_x);
-            dVar26 = pad->l_alg_x;
-            //local_68 = CONCAT44(0x43300000,(u32)pad->l_alg_y);
-            dVar28 = ((float)dVar26 - 127.5f);
+          if ((pad->paddata & 0xf000) != 0) {
+            if ((pad->paddata & 0x8000) != 0) {
+              dVar28 = -127.5f;
+            }
+            else {
+              if ((pad->paddata & 0x2000) != 0) {
+                dVar28 = 127.5f;
+              } 
+            }
+            if ((pad->paddata & 0x4000) != 0) {
+              dVar26 = -127.5f;
+            }
+            else {
+              if ((pad->paddata & 0x1000) != 0) {
+                dVar26 = 127.5f;
+              }
+              else {
+                dVar26 = 0.0f;
+              }
+            }
+            //dVar28 = dVar27;
+            if ((dVar28 != 0.0f) || (dVar26 != 0.0f)) {
+              //cVar8 = 1;
+              plr->pad_type = 1;
+            }
+          }
+          else {
+            dVar28 = ((float)pad->l_alg_x - 127.5f);
             dVar26 = -((float)pad->l_alg_y - 127.5f);
-            if ((float)(dVar28 * dVar28 + (float)(dVar26 * dVar26)) < 1806.25) {
+            if ((dVar28 * dVar28 + (dVar26 * dVar26)) < 1806.25f) {
               dVar24 = NuFabs(dVar28);
               dVar25 = 42.5f;
               if (dVar24 < 42.5f) {
@@ -2813,146 +2491,103 @@ LAB_80019f04:
               }
             }
             if ((dVar28 != 0.0f) || (dVar26 != 0.0f)) {
-              cVar8 = 2;
-              goto LAB_8001a324;
+              //cVar8 = 2;
+              plr->pad_type = 2;
             }
           }
-          else {
-            if ((uVar17 & 0x8000) == 0) {
-              if ((uVar17 & 0x2000) != 0) {
-                dVar27 = 127.5f;
-              }
-            }
-            else {
-              dVar27 = -127.5f;
-            }
-            if ((uVar17 & 0x4000) == 0) {
-              if ((uVar17 & 0x1000) == 0) {
-                dVar26 = 0.0f;
-              }
-              else {
-                dVar26 = 127.5f;
-              }
-            }
-            else {
-              dVar26 = -127.5f;
-            }
-            dVar28 = dVar27;
-            if ((dVar27 != 0.0f) || (dVar26 != 0.0f)) {
-              cVar8 = 1;
-LAB_8001a324:
-              plr->pad_type = cVar8;
-            }
-          }
-          local_f0.z = (float)(dVar26 * 0.007843137718737125);
-          local_f0.x = (float)(dVar28 * 0.007843137718737125);
+          local_f0.z = (dVar26 * 0.007f);
+          local_f0.x = (dVar28 * 0.007f);
           NuVecMag(&local_f0);
-          Awrd = NuAtan2D(local_f0.x,local_f0.z);
+          iVar4 = NuAtan2D(local_f0.x,local_f0.z);
           local_e0.y = 0.0f;
           local_e0.x = 0.0f;
-          dVar27 = NuFabs(local_f0.x);
-          dVar26 = NuFabs(local_f0.z);
-          if (dVar27 <= dVar26) {
-            dVar27 = NuFabs(local_f0.z);
+          //dVar27 = NuFabs(local_f0.x);
+          //dVar26 = NuFabs(local_f0.z);
+          if (NuFabs(local_f0.x) > NuFabs(local_f0.z)) {
+            local_e0.z = NuFabs(local_f0.x);
           }
           else {
-            dVar27 = NuFabs(local_f0.x);
+            local_e0.z = NuFabs(local_f0.z);
           }
-          local_e0.z = (float)dVar27;
-          NuVecRotateY(&local_f0,&local_e0,Awrd);
+          //local_e0.z = dVar27;
+          NuVecRotateY(&local_f0,&local_e0,iVar4);
           fVar6 = NuVecMag(&local_f0);
-          if (0.2 <= fVar6) {
-            if (0.6 <= fVar6) {
-              dVar27 = moveinfo->RUNSPEED;
-            }
-            else {
-              dVar27 = moveinfo->WALKSPEED;
-            }
+          if (fVar6 < 0.2f) {
+            plr->obj.pad_speed = 0.0f;
+          } else if (fVar6 < 0.6f) {
+              plr->obj.pad_speed = minfo->RUNSPEED;
+          } else {
+              plr->obj.pad_speed = minfo->WALKSPEED;
           }
-          else {
-            dVar27 = 0.0f;
-          }
-          (plr->obj).pad_speed = (float)dVar27;
-          (plr->obj).pad_dx = local_f0.x;
-          (plr->obj).pad_dz = local_f0.z;
-          Awrd = NuAtan2D(local_f0.x,local_f0.z);
-          (plr->obj).pad_angle = (u16)Awrd;
+          //plr->obj.pad_speed = dVar27;
+          plr->obj.pad_dx = local_f0.x;
+          plr->obj.pad_dz = local_f0.z;
+          //iVar4 = NuAtan2D(local_f0.x,local_f0.z);
+          plr->obj.pad_angle = (u16)NuAtan2D(local_f0.x,local_f0.z);
         }
-        if (((((((VEHICLECONTROL == 1) && (sVar16 = (plr->obj).vehicle, sVar16 != 0x3b)) &&
-               (sVar16 != 0x20)) && ((sVar16 != 0x6b && (sVar16 != 0xa0)))) && (sVar16 != 0x44)) &&
-            ((sVar16 != 0xb2 && (sVar16 != 0x89)))) && ((sVar16 != 0xa1 && (sVar16 != 0x99)))) {
-          (plr->obj).boing = 0;
+        if (((((((VEHICLECONTROL == 1) && (plr->obj.vehicle != 0x3b)) &&
+               (plr->obj.vehicle != 0x20)) && ((plr->obj.vehicle != 0x6b && (plr->obj.vehicle != 0xa0)))) && (plr->obj.vehicle != 0x44)) &&
+            ((plr->obj.vehicle != 0xb2 && (plr->obj.vehicle != 0x89)))) && ((plr->obj.vehicle != 0xa1 && (plr->obj.vehicle != 0x99)))) {
+          plr->obj.boing = 0;
           MoveVehicle(plr,pad);
-          fVar6 = (plr->obj).pos.x - (plr->obj).oldpos.x;
+          fVar6 = plr->obj.pos.x - plr->obj.oldpos.x;
           dVar28 = (fVar6 * fVar6);
-          fVar6 = (plr->obj).pos.z - (plr->obj).oldpos.z;
+          fVar6 = plr->obj.pos.z - plr->obj.oldpos.z;
           dVar26 = (fVar6 * fVar6);
-          dVar27 = ((plr->obj).pos.y - (plr->obj).oldpos.y);
-          fVar6 = NuFsqrt((float)(dVar28 + dVar26));
-          (plr->obj).xz_distance = fVar6;
-          fVar6 = NuFsqrt((float)((float)(dVar27 * dVar27 + dVar28) + dVar26));
-          (plr->obj).xyz_distance = fVar6;
+          dVar27 = (plr->obj.pos.y - plr->obj.oldpos.y);
+          plr->obj.xz_distance = NuFsqrt((dVar28 + dVar26));
+          plr->obj.xyz_distance = NuFsqrt((dVar27 * dVar27 + dVar28) + dVar26);
+          //plr->obj.xyz_distance = fVar6;
           goto LAB_8001cbd4;
         }
         if ((((sVar19 == 0x6b) || (sVar19 == 0xa0)) || (sVar19 == 0x99)) ||
-           ((sVar19 == 0xa1 || (bVar21 = sVar19 != 0xb2, !bVar21)))) {
+           ((sVar19 == 0xa1 || (sVar19 == 0xb2)))) {
           bVar21 = 0;
           if ((Level == 3) && (0 < SmokeyCountDownValue)) {
             bVar21 = 1;
           }
           bVar1 = 0;
-          if ((plr->obj).ground != 0) {
-            bVar1 = (plr->obj).surface_type == '\n';
+          if (plr->obj.ground != 0) {
+            bVar1 = plr->obj.surface_type == 10;
           }
           if (Level == 3) {
-            fVar6 = SMOKEYSPEED;
-            if (plr->fire != 0) {
-              fVar6 = SMOKEYBOOSTSPEED;
-            }
-            dVar27 = (fVar6 * 0.01666667 * offroader_speedtime);
+            dVar27 = (((plr->fire != 0) ? SMOKEYBOOSTSPEED : SMOKEYSPEED) * 0.016666668f * offroader_speedtime);
             if (bVar1) {
-              dVar27 = (float)(dVar27 * 0.25);
+              dVar27 *= 0.25;
             }
           }
           else if (Level == 0x16) {
             plr->sprint = 0;
-            if (FireBossHoldPlayer == 0) {
-              if ((pad->paddata & 0x80) != 0) {
-                dVar27 = moveinfo->SPRINTSPEED;
-                cVar8 = 1;
-                goto LAB_8001a604;
-              }
-              dVar27 = moveinfo->RUNSPEED;
-            }
-            else {
+            if (FireBossHoldPlayer != 0) {
               dVar27 = 0.0f;
             }
+            else if ((pad->paddata & 0x80) != 0) {
+                dVar27 = minfo->SPRINTSPEED;
+                //cVar8 = 1;
+                plr->sprint = 1;
+            } else {
+                dVar27 = minfo->RUNSPEED;
+            }
           }
           else {
-            if (((pad->paddata & 0x88) == 0) && ((sVar19 != 0x99 || ((pad->paddata & 0x40) == 0))) )
+            if (((pad->paddata & 0x88) != 0) || ((sVar19 == 0x99 && ((pad->paddata & 0x40) != 0))) )
             {
-              dVar27 = moveinfo->RUNSPEED;
-              cVar8 = 0;
+              dVar27 = minfo->SPRINTSPEED;
+              plr->sprint = 1;
+            } else {
+              dVar27 = minfo->RUNSPEED;
+              plr->sprint = 0;
             }
-            else {
-              dVar27 = moveinfo->SPRINTSPEED;
-              cVar8 = 1;
-            }
-LAB_8001a604:
-            plr->sprint = cVar8;
           }
-          if (best_cRPos == NULL) {
-            sVartmp = (plr->obj).thdg;
+          if (best_cRPos != NULL) {
+            plr->obj.thdg = best_cRPos->angle;
           }
-          else {
-            sVartmp = best_cRPos->angle;
-          }
-          (plr->obj).thdg = sVartmp;
-          Awrd = 3;
+          //plr->obj.thdg = sVartmp;
+          iVar4 = 3;
           if ((best_cRPos != NULL) && (((best_cRPos->mode & 3) != 0 || (Level == 9)))) {
             if (Level == 3) {
               uVar17 = 0x2aab;
-              Awrd = 5;
+              iVar4 = 5;
             }
             else if (sVar19 == 0xa0) {
               uVar17 = 0x2000;
@@ -2963,550 +2598,611 @@ LAB_8001a604:
             else {
               uVar17 = 0x1000;
             }
-            //local_68 = CONCAT44(0x43300000,uVar17 ^ 0x80000000);
-            if (!bVar21) {
-              sVar16 = (short)(s32)((float)(uVar17) * (plr->obj).pad_dx);
-              if (((best_cRPos->mode & 1) == 0) || (Level == 9)) {
-                uVar12 = (plr->obj).thdg - sVar16;
+            sVar16 = (s32)((float)(uVar17) * plr->obj.pad_dx);
+            if (bVar21 == 0) {
+              if (((best_cRPos->mode & 1) == 0) || (Level != 9)) {
+                plr->obj.thdg += sVar16;
               }
               else {
-                uVar12 = (plr->obj).thdg + sVar16;
+                plr->obj.thdg -= sVar16;
               }
-              (plr->obj).thdg = uVar12;
             }
           }
-          bVar21 = !bVar21;
-          uVar12 = (plr->obj).hdg;
-          if ((bVar21) && (Awrd != 0)) {
-            uVar13 = SeekRot(uVar12,(plr->obj).thdg,Awrd);
-            (plr->obj).hdg = uVar13;
+          uVar12 = plr->obj.hdg;
+          if ((bVar21 == 0) && (iVar4 != 0)) {
+            //uVar13 = SeekRot(plr->obj.hdg,plr->obj.thdg,iVar4);
+            plr->obj.hdg = SeekRot(plr->obj.hdg,plr->obj.thdg,iVar4);
+          } else {
+              //iVar4 = RotDiff(plr->obj.hdg,plr->obj.hdg);
+              plr->obj.dyrot = RotDiff(plr->obj.hdg,plr->obj.hdg);
           }
-          Awrd = RotDiff(uVar12,(plr->obj).hdg);
-          (plr->obj).dyrot = (short)Awrd;
           if (bVar21) {
-            uVar17 = (u32)(plr->obj).hdg;
-            local_c0.x = (float)(NuTrigTable[uVar17] * dVar27);
+            uVar17 = plr->obj.hdg;
+            local_c0.x = NuTrigTable[uVar17] * dVar27;
             local_c0.z = NuTrigTable[(uVar17 + 0x4000) & 0x2ffff] * dVar27;
           }
-          (plr->obj).dangle = 0;
-          if (bVar21) {
+          plr->obj.dangle = 0;
+          if (bVar21 == 0) {
             if (Level == 3) {
-              fVar6 = (OFFROADERSEEK - 0.25) * ((plr->obj).xz_distance / 0.05) + 0.25;
+              fVar6 = (OFFROADERSEEK - 0.25f) * (plr->obj.xz_distance / 0.05f) + 0.25f;
               if (fVar6 < OFFROADERSEEK) {
                 fVar6 = OFFROADERSEEK;
               }
             }
             else {
-              fVar6 = 0.25;
+              fVar6 = 0.25f;
             }
-            fVar15 = (plr->obj).mom.x;
-            fVar29 = (plr->obj).mom.z;
-            (plr->obj).mom.z = (local_c0.z - fVar29) * fVar6 + fVar29;
-            (plr->obj).mom.x = (local_c0.x - fVar15) * fVar6 + fVar15;
+            //fVar15 = plr->obj.mom.x;
+            //fVar29 = plr->obj.mom.z;
+            plr->obj.mom.x += (local_c0.x - plr->obj.mom.x) * fVar6;
+            plr->obj.mom.z += (local_c0.z - plr->obj.mom.z) * fVar6;
           }
           else {
-            (plr->obj).mom.x = 0.0f;
-            (plr->obj).mom.z = 0.0f;
+            plr->obj.mom.x = plr->obj.mom.z = 0.0f;
           }
-          fVar6 = (plr->obj).mom.y;
-          if (-TERMINALVELOCITY <= fVar6) {
-            if (TERMINALVELOCITY < fVar6) {
-              (plr->obj).mom.y = TERMINALVELOCITY;
-            }
+          //fVar6 = plr->obj.mom.y;
+          if (plr->obj.mom.y < -TERMINALVELOCITY) {
+            plr->obj.mom.y = -TERMINALVELOCITY;
+          } else if (plr->obj.mom.y > TERMINALVELOCITY) {
+              plr->obj.mom.y = TERMINALVELOCITY;
           }
-          else {
-            (plr->obj).mom.y = -TERMINALVELOCITY;
-          }
-          if (best_cRPos == NULL) {
-            bVar1 = sVar19 == 0x20;
-            (plr->obj).direction = 0;
-          }
-          else {
-            uVar17 = RotDiff(best_cRPos->angle,(plr->obj).hdg);
-            Awrd =  (uVar17 >= 0 ? uVar17 : -uVar17);
-            //Awrd = ((s32)uVar17 >> 0x1f ^ uVar17) - ((s32)uVar17 >> 0x1f);
-            if (Awrd < 0x2aab) {
-              cVar8 = 0;
+          if (best_cRPos != NULL) {
+            uVar17 = RotDiff(best_cRPos->angle,plr->obj.hdg);
+            iVar4 =  (uVar17 >= 0 ? uVar17 : -uVar17);
+            if (iVar4 < 0x2aab) {
+              plr->obj.direction = 0;
             }
             else {
-              if (Awrd < 0x5555) {
-                bVar1 = sVar19 == 0x20;
-                (plr->obj).direction = 2;
+              if (iVar4 < 0x5555) {
+                bVar1 = sVar19 == 0x20 ? 0 : 1;
+                plr->obj.direction = 2;
                 goto LAB_8001bb80;
               }
-              cVar8 = 1;
+              plr->obj.direction = 1;
             }
-            bVar1 = sVar19 == 0x20;
-            (plr->obj).direction = cVar8;
+            bVar1 = sVar19 == 0x20 ? 0 : 1;
+            //plr->obj.direction = cVar8;
+          }
+          else {
+            bVar1 = sVar19 == 0x20 ? 0 : 1;
+            plr->obj.direction = 0;
           }
         }
         else {
-          bVar22 = (sVar19 == 0x3b) << 1;
+          //bVar22 = (sVar19 == 0x3b);
           if ((sVar19 == 0x3b) && (best_cRPos != NULL)) {
             if ((Level == 0x1d) && (GameTimer.frame < 0xb4)) {
-              local_b0.x = v000.x;
-              local_b0.z = v000.z;
-              local_b0.y = v000.y;
-              dVar27 = 0.3330000042915344;
-              (plr->obj).direction = 0;
+              local_b0 = v000;
+              dVar27 = 0.333f;
+              plr->obj.direction = 0;
             }
             else {
-              if (((plr->obj).pad_speed <= 0.0f) || (plr->tap != 0)) {
-                fVar6 = 0.333;
+              if ((plr->obj.pad_speed > 0.0f) && (plr->tap == 0)) {
+                local_b0.x = plr->obj.pad_dx * minfo->WALKSPEED;
+                local_b0.z = 0.0f;
+                local_b0.y = -plr->obj.pad_dz * minfo->WALKSPEED;
+                NuVecRotateY(&local_b0,&local_b0,best_railangle);
+                dVar27 = 1.0f;
+              }
+              else {
+                dVar27 = 0.333f;
                 local_b0 = v000;
               }
-              else {
-                local_b0.x = (plr->obj).pad_dx * moveinfo->WALKSPEED;
-                local_b0.z = 0.0f;
-                local_b0.y = -(plr->obj).pad_dz * moveinfo->WALKSPEED;
-                NuVecRotateY(&local_b0,&local_b0,(u32)best_railangle);
-                fVar6 = 1.0f;
-              }
-              dVar27 = fVar6;
-              if ((pad->paddata_db & 0x60) == 0) {
-                if (((pad->paddata & 0x60) != 0) && (Awrd = qrand(), Awrd < 0x4000)) {
-                  Awrd = qrand();
-                  if (Awrd < 0) {
-                    Awrd = Awrd + 0x1ff;
-                  }
-                  NewRumble(&plr->rumble,Awrd >> 9);
-                }
-              }
-              else {
+              //dVar27 = fVar6;
+              if ((pad->paddata_db & 0x60) != 0) {
                 NewRumble(&player->rumble,0x9f);
+              }
+              else {
+                if (((pad->paddata & 0x60) != 0) && (qrand() < 0x4000)) {
+                  iVar4 = qrand();
+                  if (iVar4 < 0) {
+                    iVar4 += 0x1ff;
+                  }
+                  NewRumble(&plr->rumble,iVar4 >> 9);
+                } 
               }
               uVar17 = pad->paddata & 0x60;
               if (plr->tap == 0) {
                 if (uVar17 == 0x40) {
-                  if ((plr->obj).direction == 0) {
-                    local_b0.x = NuTrigTable[best_railangle] * moveinfo->RUNSPEED + local_b0.x;
-                    dVar27 = 1.0f;
-                    local_b0.z = NuTrigTable[(best_railangle + 0x4000) & 0x2ffff] * moveinfo->RUNSPEED + local_b0.z;
+                  if (plr->obj.direction != 0) {
+                    plr->obj.direction = 0;
+                    plr->tap = 0x1e;
                   }
                   else {
-                    (plr->obj).direction = 0;
-                    plr->tap = '\x1e';
+                    local_b0.x = NuTrigTable[best_railangle] * minfo->RUNSPEED + local_b0.x;
+                    dVar27 = 1.0f;
+                    local_b0.z = NuTrigTable[(best_railangle + 0x4000) & 0x2ffff] * minfo->RUNSPEED + local_b0.z;
+                      
                   }
                 }
                 else if (uVar17 == 0x20) {
-                  if ((plr->obj).direction == 1) {
-                    local_b0.x = local_b0.x - NuTrigTable[best_railangle] * moveinfo->RUNSPEED;
-                    dVar27 = 1.0f;
-                    local_b0.z -= NuTrigTable[(best_railangle + 0x4000) & 0x2ffff] * moveinfo->RUNSPEED;
+                  if (plr->obj.direction != 1) {
+                    plr->obj.direction = 1;
+                    plr->tap = 0x1e;
                   }
                   else {
-                    (plr->obj).direction = 1;
-                    plr->tap = '\x1e';
+                    local_b0.x = local_b0.x - NuTrigTable[best_railangle] * minfo->RUNSPEED;
+                    dVar27 = 1.0f;
+                    local_b0.z -= NuTrigTable[(best_railangle + 0x4000) & 0x2ffff] * minfo->RUNSPEED;
                   }
                 }
               }
             }
-            uVar12 = best_railangle;
-            fVar6 = (float)(dVar27 * 0.01666666753590107);
-            fVar15 = (plr->obj).mom.x;
-            fVar29 = (plr->obj).mom.y;
-            fVar2 = (plr->obj).mom.z;
-            cVar8 = (plr->obj).direction;
-            (plr->obj).thdg = best_railangle;
-            (plr->obj).mom.z = (local_b0.z - fVar2) * fVar6 + fVar2;
-            (plr->obj).mom.x = (local_b0.x - fVar15) * fVar6 + fVar15;
-            (plr->obj).mom.y = (local_b0.y - fVar29) * fVar6 + fVar29;
-            if (cVar8 == 1) {
-              (plr->obj).thdg = uVar12 + 0x8000;
+            //uVar12 = best_railangle;
+            fVar6 = dVar27 * 0.016666668f;
+            fVar15 = plr->obj.mom.x;
+            fVar29 = plr->obj.mom.y;
+            fVar2 = plr->obj.mom.z;
+            plr->obj.thdg = best_railangle;
+            plr->obj.mom.z = (local_b0.z - fVar2) * fVar6 + fVar2;
+            plr->obj.mom.x = (local_b0.x - fVar15) * fVar6 + fVar15;
+            plr->obj.mom.y = (local_b0.y - fVar29) * fVar6 + fVar29;
+            if (plr->obj.direction == 1) {
+              plr->obj.thdg += 0x8000;
             }
-            Awrd = RotDiff((plr->obj).hdg,(plr->obj).thdg);
-            if ((plr->tap != 0) && (Awrd < 0)) {
-              Awrd = Awrd + 0x10000;
+            iVar4 = RotDiff(plr->obj.hdg,plr->obj.thdg);
+            if ((plr->tap != 0) && (iVar4 < 0)) {
+              iVar4 += 0x10000;
             }
             bVar1 = 0;
-            (plr->obj).hdg = (plr->obj).hdg + (short)(Awrd >> 4);
+            plr->obj.hdg = plr->obj.hdg + (short)(iVar4 >> 4);
           }
           else {
             if (plr->target == 0) {
               NuVecRotateY(&local_f0,&local_f0,GameCam[0].yrot);
             }
-            sVartmp = (plr->obj).hdg;
+            sVartmp = plr->obj.hdg;
             plr->fire_lock = 0;
-            Awrd = plr_target_found;
+            iVar4 = plr_target_found;
             plr_target_found = 0;
             iVar20 = (s32)plr->target;
-            if ((iVar20 == 0) && (plr_target_found = iVar20, plr->target == 0)) {
+            if (plr->target == 0) {
+                plr_target_found = plr->target;
+            }
+            if (plr->target != 0) {
+              if (plr->fire == 0) {
+                if (sVar19 == 0x44) {
+                  if (plr->obj.pad_speed > 0.0f) {
+                    iVar20 = (s32)(-plr->obj.pad_dz * 5461.0f);
+                    iVar11 = (s32)(plr->obj.pad_dx * 10923.0f);
+                  }
+                  else {
+                    iVar11 = (s32)plr->obj.target_yrot;
+                    iVar20 = (s32)plr->obj.target_xrot;
+                  }
+                  plr->obj.target_xrot += (short)(iVar20 - plr->obj.target_xrot >> 5);
+                  plr->obj.target_yrot = plr->obj.target_yrot + (short)(iVar11 - plr->obj.target_yrot >> 5);
+                  plr_target_firepos = plr_target_pos[0] = *(struct nuvec_s*)&plr->mtxLOCATOR[8][0]._30;
+                  NuVecRotateX(&plr_target_dir,&v001,-plr->obj.target_xrot & 0xffff);
+                  NuVecRotateY(&plr_target_dir,&plr_target_dir,
+                               plr->obj.hdg + plr->obj.target_yrot);
+                  fVar6 = MECHTARGETHACK;
+                }
+                else {
+                  iVar20 = (s32)plr->obj.target_yrot +
+                           (s32)(plr->obj.pad_dx * 16384.0f * 0.016666668f);
+                  if (iVar20 < -0x3555) {
+                    iVar11 = -0x3555 - iVar20;
+                    iVar20 = -0x3555;
+//LAB_8001ad90:
+                    plr->obj.hdg -= (short)(iVar11 / 2);
+                  }
+                  else if (0x3555 < iVar20) {
+                    iVar11 = 0x3555 - iVar20;
+                    iVar20 = 0x3555;
+                    plr->obj.hdg -= (short)(iVar11 / 2);
+                  }
+                  plr->obj.target_yrot = (short)iVar20;
+                  iVar20 = (s32)plr->obj.target_xrot -
+                           (s32)(plr->obj.pad_dz * 16384.0f * 0.016666668f);
+                  if (iVar20 < -0x1555) {
+                    iVar20 = -0x1555;
+                  }
+                  else if (iVar20 > 0x2aab) {
+                    iVar20 = 0x2aab;
+                  }
+                  plr->obj.target_xrot = (short)iVar20;
+                  plr_target_firepos = plr_target_pos[0] = *(struct nuvec_s*)&plr->mtxLOCATOR[8][0]._30;
+                  NuVecRotateX(&plr_target_dir,&v001,-plr->obj.target_xrot & 0xffff);
+                  NuVecRotateY(&plr_target_dir,&plr_target_dir,
+                               plr->obj.hdg + plr->obj.target_yrot);
+                  fVar6 = BAZOOKATARGETHACK;
+                }
+                plr_target_pos[0].x -= plr_target_dir.x * fVar6;
+                plr_target_pos[0].y -= plr_target_dir.y * fVar6;
+                plr_target_pos[0].z -= plr_target_dir.z * fVar6;
+                plr_target_sightpos = *(struct nuvec_s*)&plr->mtxLOCATOR[8][1]._30;
+              }
+              GameRayCast(plr_target_pos,&plr_target_dir,10.0f,plr_target_pos + 1);
+              NuMtxSetRotationX(&plr_target_mtx,-plr->obj.target_xrot);
+              NuMtxRotateY(&plr_target_mtx,plr->obj.hdg + plr->obj.target_yrot);
+              NuVecSub(&local_e0,plr_target_pos + 1,&plr_target_firepos);
+              NuVecNorm(&local_e0,&local_e0);
+              if (NuVecDot(&local_e0,&plr_target_dir) <= 0.0f) {
+                plr->fire_lock = 1;
+              }
+              if (((plr->fire_lock == 0) && (iVar4 == 0)) && (plr_target_found != 0)) {
+                GameSfx(5,&plr->obj.pos);
+              }
+              GameSfxLoop(3,NULL);
+              plr_target_frame++;
+            }
+            else {
               if (sVar19 == 0x20) {
-                if ((0.0f < (plr->obj).pad_speed) && (sVartmp == (plr->obj).thdg)) {
-                  uVar17 = (u32)(16384.0f - NuTrigTable[(plr->obj).pad_angle] * 16384.0f);
+                if ((plr->obj.pad_speed > 0.0f) && (plr->obj.hdg == plr->obj.thdg)) {
+                  uVar17 = (s32)(16384.0f - NuTrigTable[plr->obj.pad_angle] * 16384.0f);
                   uVar4 = uVar17;
                   uVar12 = (u16)uVar4;
-                  if (sVartmp == 0) {
-                    sVartmp = uVar12;
-                    if (0x4aab < uVar4) {
-                      uVar13 = 0x4000;
-LAB_8001b07c:
-                      (plr->obj).thdg = uVar13;
-                      sVartmp = uVar12;
+                  if (plr->obj.hdg == 0) {
+                    plr->obj.hdg = uVar12;
+                    if (uVar4 > 0x4aab) {
+                      //uVar13 = 0x4000;
+//LAB_8001b07c:
+                      plr->obj.thdg = 0x4000;
+                      plr->obj.hdg = uVar12;
                     }
                   }
                   else {
                     uVar13 = 0x8000;
-                    if (sVartmp == 0x8000) {
-                      sVartmp = uVar12;
+                    if (plr->obj.hdg == 0x8000) {
+                      plr->obj.hdg = uVar12;
                       if (uVar4 < 0x3555) {
-                        uVar13 = 0x4000;
-                        goto LAB_8001b07c;
+                        plr->obj.thdg = 0x4000;
                       }
                     }
                     else if (uVar4 < 0xaab) {
-                      (plr->obj).thdg = 0;
-                      sVartmp = uVar12;
+                      plr->obj.thdg = 0;
+                      plr->obj.hdg = uVar12;
                     }
                     else {
-                      sVartmp = uVar12;
-                      if (0x7555 < uVar4) goto LAB_8001b07c;
+                      plr->obj.hdg = uVar12;
+                      if (0x7555 < uVar4) plr->obj.thdg = 0x4000;
                     }
                   }
                 }
-                uVar12 = (plr->obj).hdg;
-                uVar13 = (plr->obj).thdg;
-                uVar17 = (u32)uVar12;
-                uVar4 = (u32)uVar13;
+                uVar12 = plr->obj.hdg;
+                uVar13 = plr->obj.thdg;
+                uVar17 = uVar12;
+                uVar4 = uVar13;
                 if (uVar17 < uVar4) {
                   if ((s32)(uVar4 - uVar17) < 0x2d8) {
-LAB_8001b0c0:
-                    (plr->obj).hdg = uVar13;
+                    plr->obj.hdg = uVar13;
                   }
                   else {
-                    (plr->obj).hdg = uVar12 + 0x2d8;
+                    plr->obj.hdg += 0x2d8;
                   }
                 }
                 else if (uVar4 < uVar17) {
-                  if ((s32)(uVar17 - uVar4) < 0x2d8) goto LAB_8001b0c0;
-                  (plr->obj).hdg = uVar12 - 0x2d8;
+                  if ((s32)(uVar17 - uVar4) < 0x2d8) {
+                    plr->obj.hdg = uVar13;
+                  } else {
+                    plr->obj.hdg -= 0x2d8;
+                  }
                 }
               }
               else if (VEHICLECONTROL == 2) {
-                if (0.0f < (plr->obj).pad_speed) {
-                  uVar17 = (u32)(plr->obj).pad_angle;
+                if (plr->obj.pad_speed > 0.0f) {
+                  uVar17 = plr->obj.pad_angle;
                   if (uVar17 - 0x1555 < 0x5557) {
-                    (plr->obj).thdg = 0;
+                    plr->obj.thdg = 0;
                   }
                   else if ((uVar17 + 0x6aab & 0xffff) < 0x5557) {
-                    (plr->obj).thdg = 0x8000;
+                    plr->obj.thdg = 0x8000;
                   }
                 }
-                Awrd = RotDiff((plr->obj).hdg,(plr->obj).thdg);
-                if (0 < Awrd) {
-                  Awrd = Awrd + -0x10000;
+                iVar4 = RotDiff(plr->obj.hdg,plr->obj.thdg);
+                if (iVar4 > 0) {
+                  iVar4 -= 0x10000;
                 }
-                if (Awrd < -0x2d8) {
-                  (plr->obj).hdg = (plr->obj).hdg - 0x2d8;
+                if (iVar4 < -0x2d8) {
+                  plr->obj.hdg -= 0x2d8;
                 }
                 else {
-                  (plr->obj).hdg = (plr->obj).thdg;
+                  plr->obj.hdg = plr->obj.thdg;
                 }
               }
-              else if (plr_rebound == 0) {
-                if (plr->slide == 0) {
+              else if (plr_rebound != 0) {
+                plr->obj.hdg = plr->obj.thdg;
+                plr->obj.pad_speed = 0.0f;
+              }
+              else {
+                if (plr->slide != 0) {
+                  uVar12 = plr->obj.thdg;
+                  iVar20 = 2;
+                  uVar13 = sVartmp;
+                }
+                else {
                   if (((ExtraMoves != 0) || ((Game.powerbits & 0x20) != 0)) &&
-                     ((plr->slam != 0 && ((plr->slam < 3 && ((plr->obj).ground == 0)))) ))
+                     ((plr->slam != 0 && ((plr->slam < 3 && (plr->obj.ground == 0)))) ))
                   {
-                    (plr->obj).hdg = sVartmp - 0xa3d;
+                    plr->obj.hdg = sVartmp - 0xa3d;
                     goto LAB_8001b3f4;
                   }
-                  if (Cursor.menu == '$') {
-                    Awrd = NuAtan2D(GameCam[0].pos.x - (plr->obj).pos.x,
-                                    GameCam[0].pos.z - (plr->obj).pos.z);
+                  if (Cursor.menu == 0x24) {
                     iVar20 = 3;
-                    uVar13 = (plr->obj).hdg;
-                    uVar12 = (u16)Awrd;
-                    (plr->obj).thdg = uVar12;
+                    uVar13 = plr->obj.hdg;
+                    plr->obj.thdg = NuAtan2D(GameCam[0].pos.x - plr->obj.pos.x,
+                                    GameCam[0].pos.z - plr->obj.pos.z);
+                    //uVar12 = (u16)plr->obj.thdg;
                   }
                   else {
-                    if (((((plr->slam_wait != 0) || ((plr->obj).pad_speed <= 0.0f)) ||
-                         (cVar8 = (plr->obj).dangle, cVar8 == 2)) ||
-                        (((cVar8 != 0 && (plr->spin != 0)) &&
+                    if (((((plr->slam_wait == 0) && (plr->obj.pad_speed > 0.0f)) &&
+                         (plr->obj.dangle != 2)) &&
+                        (((plr->obj.dangle != 0 && (plr->spin == 0)) ||
                          ((s32)plr->spin_frame <
-                          (s32)plr->spin_frames - (s32)plr->OnFootMoveInfo->SPINRESETFRAMES)))) ||
-                       (((plr->jump != 0 && (plr->jump_hold != 0)) ||
-                        ((bVar1 = sVar19 == 0x44, bVar1 &&
-                         (sVar16 = plr->fire, sVar16 = plr->tap, sVar16 != 0))))))
-                    goto LAB_8001b3f4;
+                          (s32)plr->spin_frames - (s32)plr->OnFootMoveInfo->SPINRESETFRAMES)))) &&
+                       (((plr->jump != 0 && (plr->jump_hold == 0)) &&
+                        ((sVar19 != 0x44 || (plr->tap != 0)))))) goto LAB_8001b3f4;
                     dVar26 = NuFabs(local_f0.x);
                     dVar28 = 0.0f;
-                    if ((0.0f < dVar26) ||
-                       (dVar26 = NuFabs(local_f0.z), dVar28 < dVar26)) {
-                      Awrd = NuAtan2D(local_f0.x,local_f0.z);
-                      (plr->obj).thdg = (u16)Awrd;
+                    if ((dVar26 > 0.0f) || (NuFabs(local_f0.z) > dVar28)) {
+                      plr->obj.thdg = NuAtan2D(local_f0.x,local_f0.z);
                     }
-                    if (((((plr->slam == 0) || (2 < plr->slam)) ||
-                         ((plr->obj).ground != 0)) &&
+                    if (((((plr->slam == 0) || (plr->slam > 2)) || (plr->obj.ground != 0)) &&
                         (((ExtraMoves == 0 && ((Game.powerbits & 4) == 0)) ||
-                         ((plr->spin == 0 ||
-                          ((s32)plr->spin_frames - (s32)plr->OnFootMoveInfo->SPINRESETFRAMES <=
-                           (s32)plr->spin_frame)))))) && (plr->target == 0)) {
-                      if ((plr->crawl != 0) ||
-                         (((bVar1 || (!bVar21)) &&
+                         ((plr->spin == 0 || (s32)plr->spin_frame >= 
+                        (s32)plr->spin_frames - (s32)plr->OnFootMoveInfo->SPINRESETFRAMES
+                           ))))) && (plr->target != 0)) {
+                      iVar20 = 5;
+                    }
+                    else {
+                      if ((plr->crawl != 0) || (((bVar1 || (!bVar21)) &&
                           ((plr->jump != 0 &&
                            ((plr->jump_type == 2 && (plr->jump_hold == 0)))))))) {
                         iVar20 = 4;
                       }
-                      else if (((plr->tiptoe != 0) || (bVar1)) || (!bVar21)) {
+                      else if (((plr->tiptoe != 0) || (bVar1 == 0)) || (!bVar21)) {
                         iVar20 = 3;
                       }
                       else {
                         iVar20 = 2;
                       }
                     }
-                    else {
-                      iVar20 = 5;
-                    }
-                    uVar13 = (plr->obj).hdg;
-                    uVar12 = (plr->obj).thdg;
-                  }
-                }
-                else {
-                  uVar12 = (plr->obj).thdg;
-                  iVar20 = 2;
-                  uVar13 = sVartmp;
+                    uVar13 = plr->obj.hdg;
+                    uVar12 = plr->obj.thdg;
+                  } 
                 }
                 uVar12 = SeekRot(uVar13,uVar12,iVar20);
-                (plr->obj).hdg = uVar12;
+                plr->obj.hdg = uVar12;
               }
-              else {
-                (plr->obj).hdg = (plr->obj).thdg;
-                (plr->obj).pad_speed = 0.0f;
-              }
-            }
-            else {
-              if (plr->fire == 0) {
-                if (sVar19 == 0x44) {
-                  if ((plr->obj).pad_speed <= 0.0f) {
-                    sVar16 = (plr->obj).target_xrot;
-                    iVar11 = (s32)(plr->obj).target_yrot;
-                    iVar20 = (s32)sVar16;
-                  }
-                  else {
-                    iVar20 = (s32)(-(plr->obj).pad_dz * 5461.0f);
-                    sVar16 = (plr->obj).target_xrot;
-                    iVar11 = (s32)((plr->obj).pad_dx * 10923.0f);
-                  }
-                  sVar3 = (plr->obj).target_yrot;
-                  plr_target_firepos.x = plr->mtxLOCATOR[8][0]._30;
-                  (plr->obj).target_xrot = sVar16 + (short)(iVar20 - sVar16 >> 5);
-                  (plr->obj).target_yrot = sVar3 + (short)(iVar11 - sVar3 >> 5);
-                  plr_target_firepos.z = plr->mtxLOCATOR[8][0]._32;
-                  plr_target_firepos.y = plr->mtxLOCATOR[8][0]._31;
-                  plr_target_pos[0].x = plr_target_firepos.x;
-                  plr_target_pos[0].y = plr_target_firepos.y;
-                  plr_target_pos[0].z = plr_target_firepos.z;
-                  NuVecRotateX(&plr_target_dir,&v001,-(u32)(u16)(plr->obj).target_xrot & 0xffff);
-                  NuVecRotateY(&plr_target_dir,&plr_target_dir,
-                               (u32)(plr->obj).hdg + (u32)(u16)(plr->obj).target_yrot);
-                  fVar6 = MECHTARGETHACK;
-                }
-                else {
-                  iVar20 = (s32)(plr->obj).target_yrot +
-                           (s32)((plr->obj).pad_dx * 16384.0f * 0.01666667);
-                  if (iVar20 < -0x3555) {
-                    iVar11 = -0x3555 - iVar20;
-                    iVar20 = -0x3555;
-LAB_8001ad90:
-                    (plr->obj).hdg = sVartmp - (short)(iVar11 / 2);
-                  }
-                  else if (0x3555 < iVar20) {
-                    iVar11 = 0x3555 - iVar20;
-                    iVar20 = 0x3555;
-                    goto LAB_8001ad90;
-                  }
-                  (plr->obj).target_yrot = (short)iVar20;
-                  iVar20 = (s32)(plr->obj).target_xrot -
-                           (s32)((plr->obj).pad_dz * 16384.0f * 0.01666667);
-                  if (iVar20 < -0x1555) {
-                    iVar20 = -0x1555;
-                  }
-                  else if (0x2aab < iVar20) {
-                    iVar20 = 0x2aab;
-                  }
-                  (plr->obj).target_xrot = (short)iVar20;
-                  plr_target_firepos.x = plr->mtxLOCATOR[8][0]._30;
-                  plr_target_firepos.z = plr->mtxLOCATOR[8][0]._32;
-                  plr_target_firepos.y = plr->mtxLOCATOR[8][0]._31;
-                  plr_target_pos[0].x = plr_target_firepos.x;
-                  plr_target_pos[0].y = plr_target_firepos.y;
-                  plr_target_pos[0].z = plr_target_firepos.z;
-                  NuVecRotateX(&plr_target_dir,&v001,-(u32)(u16)(plr->obj).target_xrot & 0xffff);
-                  NuVecRotateY(&plr_target_dir,&plr_target_dir,
-                               (u32)(plr->obj).hdg + (u32)(u16)(plr->obj).target_yrot);
-                  fVar6 = BAZOOKATARGETHACK;
-                }
-                plr_target_pos[0].x = plr_target_pos[0].x - plr_target_dir.x * fVar6;
-                plr_target_pos[0].y = plr_target_pos[0].y - plr_target_dir.y * fVar6;
-                plr_target_pos[0].z = plr_target_pos[0].z - plr_target_dir.z * fVar6;
-                plr_target_sightpos.x = plr->mtxLOCATOR[8][1]._30;
-                plr_target_sightpos.z = plr->mtxLOCATOR[8][1]._32;
-                plr_target_sightpos.y = plr->mtxLOCATOR[8][1]._31;
-              }
-              GameRayCast(plr_target_pos,&plr_target_dir,10.0f,plr_target_pos + 1);
-              NuMtxSetRotationX(&plr_target_mtx,-(plr->obj).target_xrot);
-              NuMtxRotateY(&plr_target_mtx,
-                           (u32)(plr->obj).hdg + (u32)(u16)(plr->obj).target_yrot);
-              NuVecSub(&local_e0,plr_target_pos + 1,&plr_target_firepos);
-              NuVecNorm(&local_e0,&local_e0);
-              fVar6 = NuVecDot(&local_e0,&plr_target_dir);
-              if (fVar6 <= 0.0f) {
-                plr->fire_lock = 1;
-              }
-              if (((plr->fire_lock == 0) && (Awrd == 0)) && (plr_target_found != 0)) {
-                GameSfx(5,pos);
-              }
-              GameSfxLoop(3,NULL);
-              plr_target_frame = plr_target_frame + 1;
             }
 LAB_8001b3f4:
             //bVar1 = sVar19 == 0x20;
-            Awrd = RotDiff(sVartmp,(plr->obj).hdg);
-            (plr->obj).dyrot = (short)Awrd;
+            //iVar4 = RotDiff(iVar4,plr->obj.hdg);
+            plr->obj.dyrot = (short)RotDiff(iVar4,plr->obj.hdg);
             if (sVar19 != 0x20) {
               if (((VEHICLECONTROL == 2) && (plr->spin != 0)) &&
-                 ((s32)plr->spin_frame <
+                 !((s32)plr->spin_frame <
                   (s32)plr->spin_frames - (s32)plr->OnFootMoveInfo->SPINRESETFRAMES)) {
-LAB_8001b5ec:
-                dVar27 = moveinfo->SPRINTSPEED;
-              }
-              else if (plr_rebound == 0) {
-                if (((plr->slam_wait == 0) && (plr->target == 0)) &&
-                   (((plr->jump == 0 || (plr->jump_hold == 0)) &&
-                    ((sVar19 != 0x44 ||
-                     (sVar3 = plr->fire, sVar3 = plr->tap, sVar3 == 0)))))) {
-                  if ((plr->slam == 0) || ((2 < plr->slam || ((plr->obj).ground != 0))) )
-                  {
-                    cVar8 = (plr->obj).dangle;
-                    if (cVar8 == 0) {
-                      if (plr->slide == 0) {
-                        if (plr->crawl == 0) {
-                          if (plr->tiptoe == 0) {
-                            if ((plr->obj).wade == 0) {
-                              if (plr->sprint != 0) {
-                                if (0.0f < (plr->obj).pad_speed) goto LAB_8001b5ec;
-                                goto LAB_8001b5f4;
-                              }
-                            }
-                            else if ((plr->obj).pad_speed <= 0.0f) {
-LAB_8001b5f4:
-                              dVar27 = 0.0f;
-                            }
-                            else {
-                              dVar27 = moveinfo->WADESPEED;
-                            }
-                          }
-                          else {
-                            if ((plr->obj).pad_speed <= 0.0f) goto LAB_8001b5f4;
-                            dVar27 = moveinfo->TIPTOESPEED;
-                          }
-                        }
-                        else {
-                          if ((plr->obj).pad_speed <= 0.0f) goto LAB_8001b5f4;
-                          dVar27 = moveinfo->CRAWLSPEED;
-                        }
+                  if (plr_rebound != 0) {
+                    dVar27 = minfo->WALKSPEED;
+                  }
+                  else {
+                    if (((plr->slam_wait == 0) && (plr->target == 0)) &&
+                       (((plr->jump == 0 || (plr->jump_hold == 0)) &&
+                        ((sVar19 != 0x44 ||
+                         (plr->tap == 0)))))) {
+                      if ((plr->slam == 0) || ((plr->slam > 2 || (plr->obj.ground == 0)))) {
+                        dVar27 *= 0.1f;
                       }
                       else {
-                        if ((plr->obj).character == 1) goto LAB_8001b548;
-                        dVar27 = moveinfo->SLIDESPEED;
+                        if (plr->obj.dangle != 0) {
+                          if ((plr->obj.pad_speed == 0.0f) ||
+                             (((plr->spin != 0 &&
+                               ((s32)plr->spin_frame <
+                                (s32)plr->spin_frames - (s32)plr->OnFootMoveInfo->SPINRESETFRAMES)) ||
+                              (plr->obj.dangle == 2)))) goto LAB_8001b548;
+                          dVar27 = minfo->DANGLESPEED;
+                        }
+                        else {
+                          if (plr->slide != 0) {
+                            if (plr->obj.character == 1) goto LAB_8001b548;
+                            dVar27 = minfo->SLIDESPEED;
+                          }
+                          else {
+                            if (plr->crawl != 0) {
+                              if (plr->obj.pad_speed < 0.0f) goto LAB_8001b5f4;
+                              dVar27 = minfo->CRAWLSPEED;
+                            }
+                            else {
+                              if (plr->tiptoe != 0) {
+                                if (plr->obj.pad_speed < 0.0f) goto LAB_8001b5f4;
+                                dVar27 = minfo->TIPTOESPEED;
+                              }
+                              else {
+                                if (plr->obj.wade == 0) {
+                                  if (plr->sprint != 0) {
+                                    if (plr->obj.pad_speed > 0.0f) goto LAB_8001b5ec;
+                                    goto LAB_8001b5f4;
+                                  }
+                                }
+                                else if (plr->obj.pad_speed < 0.0f) {
+LAB_8001b5f4:
+                                  dVar27 = 0.0f;
+                                }
+                                else {
+                                  dVar27 = minfo->WADESPEED;
+                                }
+                              }
+                            }
+                          } 
+                        } 
                       }
                     }
                     else {
-                      if (((plr->obj).pad_speed == 0.0f) ||
-                         (((plr->spin != 0 &&
-                           ((s32)plr->spin_frame <
-                            (s32)plr->spin_frames - (s32)plr->OnFootMoveInfo->SPINRESETFRAMES)) ||
-                          (cVar8 == 2)))) goto LAB_8001b548;
-                      dVar27 = moveinfo->DANGLESPEED;
-                    }
-                  }
-                  else {
-                    dVar27 = (float)(dVar27 * 0.1000000014901161);
-                  }
-                }
-                else {
 LAB_8001b548:
-                  dVar27 = 0.0f;
-                }
+                      dVar27 = 0.0f;
+                    } 
+                  }
               }
               else {
-                dVar27 = moveinfo->WALKSPEED;
+LAB_8001b5ec:
+                dVar27 = minfo->SPRINTSPEED;
               }
             }
-            in_speed = (float)dVar27;
+            in_speed = dVar27;
             in_s_friction = 0.005f;
             in_f_friction = 0.005f;
-            if (bVar1) {
-              in_s_friction = 0.001;
-              NuVecRotateX(&local_e0,&v001,-(u32)(plr->obj).xrot);
+            if (bVar1 == 0) {
+              in_s_friction = 0.001f;
+              NuVecRotateX(&local_e0,&v001,-plr->obj.xrot);
               dVar27 = 0.0f;
-              if ((plr->obj).pad_speed <= 0.0f) {
-                local_e0.z = 0.0f;
-                local_e0.y = 0.0f;
-              }
-              else {
-                dVar26 = NuFabs((plr->obj).pad_dx);
-                if (0.3333333432674408 <= dVar26) {
-                  local_e0.z = local_e0.z * (plr->obj).pad_speed;
+              if (plr->obj.pad_speed > 0.0f) {
+                dVar26 = NuFabs(plr->obj.pad_dx);
+                if (dVar26 < 0.333f) {
+                  local_e0.z = dVar27;
                 }
                 else {
-                  local_e0.z = (float)dVar27;
+                  local_e0.z *= plr->obj.pad_speed;
                 }
-                if (0x8000 < (plr->obj).pad_angle) {
+                if (plr->obj.pad_angle > 0x8000) {
                   local_e0.z = -local_e0.z;
                 }
-                local_e0.y = local_e0.y * (plr->obj).pad_speed;
-              }
-              fVar6 = (plr->obj).mom.z;
-              if (fVar6 <= local_e0.z) {
-                if ((fVar6 < local_e0.z) &&
-                   (fVar6 = fVar6 + in_s_friction, (plr->obj).mom.z = fVar6, local_e0.z < fVar6))
-                goto LAB_8001b6fc;
+                local_e0.y = local_e0.y * plr->obj.pad_speed;
               }
               else {
-                fVar6 = fVar6 - in_s_friction;
-                (plr->obj).mom.z = fVar6;
-                if (fVar6 < local_e0.z) {
-LAB_8001b6fc:
-                  (plr->obj).mom.z = local_e0.z;
+                local_e0.y = 0.0f;
+                local_e0.z = 0.0f;
+              }
+              if (plr->obj.mom.z > local_e0.z) {
+                plr->obj.mom.z -= in_s_friction;
+                if (plr->obj.mom.z < local_e0.z) {
+                  plr->obj.mom.z = local_e0.z;
                 }
               }
-              fVar6 = (plr->obj).mom.y;
-              if (fVar6 <= local_e0.y) {
-                if ((fVar6 < local_e0.y) &&
-                   (fVar6 = fVar6 + in_s_friction, (plr->obj).mom.y = fVar6, local_e0.y < fVar6))
-                goto LAB_8001b740;
+              else if (plr->obj.mom.z < local_e0.z) {
+                    plr->obj.mom.z += in_s_friction;
+                    if (plr->obj.mom.z > local_e0.z) {
+                      plr->obj.mom.z = local_e0.z;
+                    }
               }
-              else {
-                fVar6 = fVar6 - in_s_friction;
-                (plr->obj).mom.y = fVar6;
-                if (fVar6 < local_e0.y) {
-LAB_8001b740:
-                  (plr->obj).mom.y = local_e0.y;
+              fVar6 = plr->obj.mom.y;
+              if (plr->obj.mom.y > local_e0.y) {
+                plr->obj.mom.y -= in_s_friction;
+                if (plr->obj.mom.y < local_e0.y) {
+                  plr->obj.mom.y = local_e0.y;
                 }
+              }
+              else if (plr->obj.mom.y < local_e0.y) {
+                    plr->obj.mom.y += in_s_friction;
+                    if (plr->obj.mom.y > local_e0.y) {
+                      plr->obj.mom.y = local_e0.y;
+                    }
               }
               if (pos_START != NULL) goto LAB_8001b970;
 LAB_8001b980:
               fVar6 = 0.0f;
             }
             else {
-              if (VEHICLECONTROL != 2) {
-                if (plr->slide == 0) {
-                  if (plr->freeze == 0) {
-                    if ((plr->obj).ground != 0) {
-                      fVar6 = TerSurface[(plr->obj).surface_type].friction;
-                      fVar15 = TerSurface[(plr->obj).surface_type].friction;
-                      goto LAB_8001baf8;
+              if (VEHICLECONTROL == 2) {
+                  if (((plr->spin == 0) || (plr->spin_frame <= plr->spin_frames)) &&
+                     (plr->tap == 0)) {
+                    in_s_friction *= 0.0005f;
+                  }
+                  NuVecRotateX(&local_e0,&v001,-plr->obj.xrot);
+                  if (plr->obj.thdg == 0x8000) {
+                    local_e0.z = -local_e0.z;
+                  }
+                  //bVar21 = plr->spin != 0;
+                  if (((plr->spin != 0) &&
+                      ((s32)plr->spin_frame <
+                       (s32)plr->spin_frames - (s32)plr->OnFootMoveInfo->SPINRESETFRAMES)) ||
+                     (plr->tap > 5)) {
+                    fVar15 = minfo->SPRINTSPEED;
+                    fVar6 = minfo->SPRINTSPEED;
+                    local_e0.z = local_e0.z * fVar15;
+                    local_e0.y = local_e0.y * fVar6;
+                  }
+                  else {
+                    if (((plr->spin != 0) && ((s32)plr->spin_frame >
+                         (s32)plr->spin_frames - (s32)plr->OnFootMoveInfo->SPINRESETFRAMES)) 
+                        || ((char)(plr->tap - 1) < 5)) {
+                        fVar15 = minfo->RUNSPEED;
+                        fVar6 = minfo->RUNSPEED;
+                        local_e0.z *= fVar15;
+                        local_e0.y *= fVar6;
+                    }
+                    dVar27 = 0.0f;
+                    if (plr->obj.pad_speed > 0.0f) {
+                      dVar26 = NuFabs(plr->obj.pad_dx);
+                      if (dVar26 < 0.333f) {
+                        local_e0.z = dVar27;
+                      }
+                      else {
+                        local_e0.z *= plr->obj.pad_speed;
+                      }
+                      local_e0.y *= plr->obj.pad_speed;
+                    }
+                    else {
+                      local_e0.y = -0.0041666669f;  
+                      local_e0.z = 0.0f;
+                    }
+                  }
+              } else {
+                if (plr->slide != 0) {
+                  fVar6 = 3.0f;
+LAB_8001ba80:
+                  in_s_friction = fVar6 * 0.005f;
+                  in_f_friction = in_s_friction;
+                }
+                else {
+                  if (plr->freeze != 0) {
+                    if (plr->obj.ground == 0) {
+                      fVar6 = 0.5f;
+                    }
+                    else {
+                      fVar6 = 0.15f;
+                    }
+                    in_s_friction = fVar6 * 0.005f;
+                    in_f_friction = fVar6 * 0.005f;
+                  }
+                  else {
+              if (plr->obj.mom.z <= local_e0.z) {
+                if ((plr->obj.mom.z < local_e0.z) &&
+                   (plr->obj.mom.z += in_s_friction, local_e0.z < plr->obj.mom.z))
+                goto LAB_8001b91c;
+              }
+              else {
+                plr->obj.mom.z -= in_s_friction;
+                if (plr->obj.mom.z < local_e0.z) {
+LAB_8001b91c:
+                  plr->obj.mom.z = local_e0.z;
+                }
+              }
+              if (plr->obj.mom.y <= local_e0.y) {
+                if ((plr->obj.mom.y < local_e0.y) &&
+                   (plr->obj.mom.y += in_s_friction, local_e0.y < plr->obj.mom.y))
+                goto LAB_8001b960;
+              }
+              else {
+                plr->obj.mom.y -= in_s_friction;
+                if (plr->obj.mom.y < local_e0.y) {
+LAB_8001b960:
+                  plr->obj.mom.y = local_e0.y;
+                }
+              }
+              if (pos_START == NULL) goto LAB_8001b980;
+LAB_8001b970:
+              fVar6 = pos_START->x - plr->obj.pos.x;            
+              }
+            }
+            plr->obj.mom.x = fVar6;
+          }
+                    if (plr->obj.ground != 0) {
+                      fVar6 = TerSurface[plr->obj.surface_type].friction;
+                      fVar15 = TerSurface[plr->obj.surface_type].friction;
+                      in_s_friction = fVar15 * 0.005f;
+                      in_f_friction = fVar6 * 0.005f;
                     }
                     if (((ExtraMoves != 0) || ((Game.powerbits & 4) != 0)) &&
                        ((plr->spin != 0 &&
                         ((s32)plr->spin_frame <
                          (s32)plr->spin_frames - (s32)plr->OnFootMoveInfo->SPINRESETFRAMES)))) {
-                      fVar6 = 0.3333333;
-                      goto LAB_8001ba80;
+                      fVar6 = 0.3333333f;
+                      in_s_friction = fVar15 * 0.005f;
+                      in_f_friction = fVar6 * 0.005f;
                     }
-                    if (plr->jump != 0) {
+                    else if (plr->jump != 0) {
                       if (plr->jump_type == 0) {
                         fVar6 = 0.5f;
                         fVar15 = fVar6;
@@ -3515,7 +3211,7 @@ LAB_8001b980:
                         if (((sVar19 != 0x44) && (bVar21)) ||
                            ((plr->jump_type != 2 || (plr->jump_hold != 0))))
                         goto LAB_8001bafc;
-                        fVar6 = 0.25;
+                        fVar6 = 0.25f;
                         fVar15 = fVar6;
                       }
 LAB_8001baf8:
@@ -3523,257 +3219,416 @@ LAB_8001baf8:
                       in_f_friction = fVar6 * 0.005f;
                     }
                   }
-                  else {
-                    if ((plr->obj).ground == 0) {
-                      fVar6 = 0.5f;
-                    }
-                    else {
-                      fVar6 = 0.15;
-                    }
-                    in_s_friction = fVar6 * 0.005f;
-                    in_f_friction = fVar6 * 0.005f;
-                  }
-                }
-                else {
-                  fVar6 = 3.0f;
-LAB_8001ba80:
-                  in_s_friction = fVar6 * 0.005f;
-                  in_f_friction = in_s_friction;
                 }
 LAB_8001bafc:
-                if (((s32)((bVar22 & 2) >> 1)) && (best_cRPos != NULL)) {
+                if ((sVar19 == 0x3b) && (best_cRPos != NULL)) { //plr->obj.invincible
                   in_s_friction = in_s_friction * 0.1f;
                   in_f_friction = in_f_friction * 0.1f;
-                  Awrd = NuAtan2D(local_f0.x,local_f0.z);
-                  sVartmp = (u16)Awrd;
+                  sVartmp = NuAtan2D(local_f0.x,local_f0.z);
+                  //sVartmp = (u16)iVar4;
                   MoveLoopXZ(&plr->obj,gotlist);
+                } else {
+                  MoveLoopXZ(&plr->obj,&plr->obj.thdg);
                 }
-                else {
-                  MoveLoopXZ(&plr->obj,&(plr->obj).thdg);
+                if (plr->obj.mom.y < -TERMINALVELOCITY) {
+                  plr->obj.mom.y = -TERMINALVELOCITY;
                 }
-                fVar6 = (plr->obj).mom.y;
-                if (-TERMINALVELOCITY <= fVar6) {
-                  if (TERMINALVELOCITY < fVar6) {
-                    (plr->obj).mom.y = TERMINALVELOCITY;
-                  }
-                }
-                else {
-                  (plr->obj).mom.y = -TERMINALVELOCITY;
+                else if (plr->obj.mom.y > TERMINALVELOCITY) {
+                    plr->obj.mom.y = TERMINALVELOCITY;
                 }
                 goto LAB_8001bb80;
-              }
-              if (((plr->spin == 0) || (plr->spin_frames <= plr->spin_frame)) &&
-                 (plr->tap == 0)) {
-                in_s_friction = 0.0005;
-              }
-              NuVecRotateX(&local_e0,&v001,-(u32)(plr->obj).xrot);
-              if ((plr->obj).thdg == 0x8000) {
-                local_e0.z = -local_e0.z;
-              }
-              bVar21 = plr->spin != 0;
-              if (((bVar21) &&
-                  ((s32)plr->spin_frame <
-                   (s32)plr->spin_frames - (s32)plr->OnFootMoveInfo->SPINRESETFRAMES)) ||
-                 (5 < plr->tap)) {
-                fVar15 = moveinfo->SPRINTSPEED;
-                fVar6 = moveinfo->SPRINTSPEED;
-LAB_8001b86c:
-                local_e0.z = local_e0.z * fVar15;
-                local_e0.y = local_e0.y * fVar6;
-              }
-              else {
-                if (((bVar21) &&
-                    ((s32)plr->spin_frames - (s32)plr->OnFootMoveInfo->SPINRESETFRAMES <=
-                     (s32)plr->spin_frame)) || ((char)(plr->tap - 1) < 5)) {
-                  fVar15 = moveinfo->RUNSPEED;
-                  fVar6 = moveinfo->RUNSPEED;
-                  goto LAB_8001b86c;
-                }
-                dVar27 = 0.0f;
-                if ((plr->obj).pad_speed <= 0.0f) {
-                  local_e0.z = 0.0f;
-                  local_e0.y = -0.004166667;
-                }
-                else {
-                  dVar26 = NuFabs((plr->obj).pad_dx);
-                  if (0.3333333432674408 <= dVar26) {
-                    local_e0.z = local_e0.z * (plr->obj).pad_speed;
-                  }
-                  else {
-                    local_e0.z = (float)dVar27;
-                  }
-                  local_e0.y = local_e0.y * (plr->obj).pad_speed;
-                }
-              }
-              fVar6 = (plr->obj).mom.z;
-              if (fVar6 <= local_e0.z) {
-                if ((fVar6 < local_e0.z) &&
-                   (fVar6 = fVar6 + in_s_friction, (plr->obj).mom.z = fVar6, local_e0.z < fVar6))
-                goto LAB_8001b91c;
-              }
-              else {
-                fVar6 = fVar6 - in_s_friction;
-                (plr->obj).mom.z = fVar6;
-                if (fVar6 < local_e0.z) {
-LAB_8001b91c:
-                  (plr->obj).mom.z = local_e0.z;
-                }
-              }
-              fVar6 = (plr->obj).mom.y;
-              if (fVar6 <= local_e0.y) {
-                if ((fVar6 < local_e0.y) &&
-                   (fVar6 = fVar6 + in_s_friction, (plr->obj).mom.y = fVar6, local_e0.y < fVar6))
-                goto LAB_8001b960;
-              }
-              else {
-                fVar6 = fVar6 - in_s_friction;
-                (plr->obj).mom.y = fVar6;
-                if (fVar6 < local_e0.y) {
-LAB_8001b960:
-                  (plr->obj).mom.y = local_e0.y;
-                }
-              }
-              if (pos_START == NULL) goto LAB_8001b980;
-LAB_8001b970:
-              fVar6 = pos_START->x - (plr->obj).pos.x;
-            }
-            (plr->obj).mom.x = fVar6;
-          }
         }
 LAB_8001bb80:
-        if (((LIFTPLAYER != 0) && ((pad->paddata & 0x10) != 0)) && ((plr->obj).transporting == 0)
+        if (((LIFTPLAYER != 0) && ((pad->paddata & 0x10) != 0)) && (plr->obj.transporting == 0)
            ) {
-          fVar6 = (plr->obj).pos.y;
-          (plr->obj).gndflags.all = 0;
-          (plr->obj).pos.y = fVar6 + 0.1f;
-          (plr->obj).mom.y = 0.0f;
-          (plr->obj).ground = 0;
+          //fVar6 = plr->obj.pos.y;
+          plr->obj.gndflags.all = 0;
+          plr->obj.pos.y += 0.1f;
+          plr->obj.mom.y = 0.0f;
+          plr->obj.ground = 0;
         }
         if (FRAME == 0) {
           tbslotBegin(app_tbset,7);
         }
-        if ((plr->obj).transporting == 0) {
-          local_d0.x = (plr->obj).pos.x;
-          local_d0.y = (plr->obj).bot * (plr->obj).SCALE + (plr->obj).pos.y;
-          local_d0.z = (plr->obj).pos.z;
-          if ((((plr->obj).ground == 1) && ((plr->obj).mom.x == 0.0f)) &&
-             (((plr->obj).mom.z == 0.0f && (0.1f < local_d0.y - (plr->obj).shadow)))) {
-            (plr->obj).gndflags.all = 0;
+        if (plr->obj.transporting == 0) {
+          local_d0.x = plr->obj.pos.x;
+          local_d0.y = plr->obj.bot * plr->obj.SCALE + plr->obj.pos.y;
+          local_d0.z = plr->obj.pos.z;
+          if (((plr->obj.ground == 1) && (plr->obj.mom.x == 0.0f)) &&
+             ((plr->obj.mom.z == 0.0f && (0.1f < local_d0.y - plr->obj.shadow)))) {
+            plr->obj.gndflags.all = 0;
           }
           fVar6 = 0.0f;
-          if ((plr->obj).pad_speed <= 0.0f) {
-            fVar6 = 0.003;
+          if (plr->obj.pad_speed <= 0.0f) {
+            fVar6 = 0.003f;
           }
-          fVar15 = (plr->obj).RADIUS;
-          NewTerrainScaleY(&local_d0,&(plr->obj).mom,&(plr->obj).gndflags.chrs,
+          fVar15 = plr->obj.RADIUS;
+          NewTerrainScaleY(&local_d0,&plr->obj.mom,&plr->obj.gndflags.chrs,
                            (u32)&plr[0x9eb25].lights.dir2.Direction.y / 0xce4,fVar6,fVar15,
-                           (((plr->obj).top - (plr->obj).bot) * (plr->obj).SCALE) / (fVar15 + fVar15));
-          fVar6 = (plr->obj).SCALE;
-          fVar15 = (plr->obj).bot;
-          (plr->obj).pos.x = local_d0.x;
-          (plr->obj).pos.y = local_d0.y - fVar15 * fVar6;
-          (plr->obj).pos.z = local_d0.z;
+                           ((plr->obj.top - plr->obj.bot) * plr->obj.SCALE) / (fVar15 + fVar15));
+          fVar6 = plr->obj.SCALE;
+          fVar15 = plr->obj.bot;
+          plr->obj.pos.x = local_d0.x;
+          plr->obj.pos.y = local_d0.y - plr->obj.bot * plr->obj.SCALE;
+          plr->obj.pos.z = local_d0.z;
         }
         else {
-          NuVecAdd(pos,pos,&(plr->obj).mom);
+          NuVecAdd(&plr->obj.pos,&plr->obj.pos,&plr->obj.mom);
         }
         if (FRAME == 0) {
           tbslotEnd(app_tbset,7);
         }
-        Awrd = PlatformCrush();
-        if (Awrd != 0) {
-          Awrd = Awrd + -1;
-          if (Awrd < 9) {
-            if ((Awrd < 7) && (Awrd != 5)) {
-              if (Awrd == 6) {
-                Awrd = 0x13;
-              }
-              else {
-LAB_8001bd90:
-                Awrd = GetDieAnim(&plr->obj,-1);
-              }
-            }
-            else {
-              Awrd = 0x12;
-            }
-          }
-          else if (Awrd == 9) {
-            Awrd = 9;
-          }
-          else {
-            if (Awrd != 10) goto LAB_8001bd90;
-            Awrd = 0x11;
-          }
-          KillPlayer(&plr->obj,Awrd);
+        iVar4 = PlatformCrush();
+        switch(iVar4) {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+                iVar4--;
+            break;
+            case 5:
+                iVar4 = 0x12;
+            break;
+            case 6:
+                iVar4 = 0x13;
+            break;
+            case 9:
+                iVar4 = 9;
+            break;
+            case 10:
+                iVar4 = 0x11;
+            break;
+            default:
+                iVar4 = GetDieAnim(&plr->obj,-1);
+            break;
         }
-        if ((((plr->obj).mask != NULL) && (2 < (plr->obj).mask->active)) &&
-           ((plr->obj).mask->active = (plr->obj).mask->active + -1, ((plr->obj).mask)->active == 2)) {
+        KillPlayer(&plr->obj,iVar4);
+        if (((plr->obj.mask != NULL) && (2 < plr->obj.mask->active)) &&
+           (plr->obj.mask->active = plr->obj.mask->active + -1, (plr->obj.mask)->active == 2)) {
           GameMusic((s32)LDATA->music[0],0);
         }
-        (plr->obj).transporting = 0;
+        plr->obj.transporting = 0;
         BonusTransporter(plr);
         DeathTransporter(plr);
         GemPathTransporter(plr);
-        if ((plr->obj).dead == 0) {
-          if ((((plr->obj).transporting == 0) && (GetTopBot(plr), sVar19 != 0x89)) &&
+        if (plr->obj.dead == 0) {
+          if (((plr->obj.transporting == 0) && (GetTopBot(plr), sVar19 != 0x89)) &&
              (sVar19 != 0xa1)) {
             PlayerCreatureCollisions(&plr->obj);
-            if ((plr->obj).dangle != 0) {
+            if (plr->obj.dangle != 0) {
               plr->slam = 3;
             }
             HitItems(&plr->obj);
           }
-          if ((plr->obj).dead == 0) {
-            if ((plr->obj).transporting == 0) {
+          if (plr->obj.dead == 0) {
+            if (plr->obj.transporting == 0) {
               GetTopBot(plr);
               NewTopBot(&plr->obj);
               if ((Level == 1) &&
-                 ((Awrd = PlayerObjectAnimCollision(&plr->obj,ObjTab[58].obj.special,0.4), Awrd != 0 ||
-                  (Awrd = PlayerObjectAnimCollision(&plr->obj,ObjTab[59].obj.special,0.4), Awrd != 0))))  {
+                 ((PlayerObjectAnimCollision(&plr->obj,ObjTab[58].obj.special,0.4f) != 0 ||
+                  (PlayerObjectAnimCollision(&plr->obj,ObjTab[59].obj.special,0.4f) != 0))))  {
                 KillPlayer(&plr->obj,3);
               }
             }
-            if (((((plr->obj).dead == 0) && ((plr->obj).transporting == 0)) &&
+            if ((((plr->obj.dead == 0) && (plr->obj.transporting == 0)) &&
                 (GetTopBot(plr), sVar19 != 0x89)) && (sVar19 != 0xa1)) {
               CrateCollisions(&plr->obj);
             }
           }
         }
-        bVar22 = (plr->obj).boing;
-        if (bVar22 == 0) {
+        if (plr->obj.boing != 0) {
+          plr->jump = 1;
+          plr->ok_slam = 1;
+          plr->somersault = 0;
+          plr->land = 0;
+          plr->jump_type = (plr->obj.boing & 2) ? 3 : 1;
+          plr->jump_frames = minfo->JUMPFRAMES1 + 1;
+          plr->jump_frame = 0;
+          fVar6 = minfo->JUMPHEIGHT;
+          if (plr->jump_type == 3) {
+            fVar6 *= 1.5f;
+          }
+          plr->obj.mom.y = fVar6 / ((float)minfo->JUMPFRAMES2);
+          plr->obj.anim.anim_time = 1.0f;
+          plr->obj.ground = 0;
+        }
+        else {
           if ((temp_crate_y_ceiling_adjust != 0) && (plr->jump != 0)) {
             plr->jump = 6;
             plr->jump_frame = plr->jump_frames;
             plr->jump_type = 4;
-          }
-        }
-        else {
-          plr->land = 0;
-          plr->ok_slam = 1;
-          cVar8 = 1;
-          plr->jump = 1;
-          plr->somersault = 0;
-          if ((bVar22 & 2) != 0) {
-            cVar8 = 3;
-          }
-          plr->jump_type = cVar8;
-          sVar16 = moveinfo->JUMPFRAMES1;
-          plr->jump_frame = 0;
-          plr->jump_frames = sVar16 + 1;
-          fVar6 = moveinfo->JUMPHEIGHT;
-          //local_68 = CONCAT44(0x43300000,(s32)moveinfo->JUMPFRAMES2 ^ 0x80000000);
-          if (cVar8 == 3) {
-            fVar6 = fVar6 * 1.5f;
-          }
-          (plr->obj).mom.y = fVar6 / (float)((s32)moveinfo->JUMPFRAMES2);
-          (plr->obj).anim.anim_time = 1.0f;
-          (plr->obj).ground = 0;
+          } 
         }
         if (((temp_crate_y_floor_adjust != 0) || (temp_crate_y_ceiling_adjust != 0)) ||
            (temp_crate_xz_adjust != 0)) {
-          (plr->obj).pos_adjusted = 1;
+          plr->obj.pos_adjusted = 1;
         }
         goto LAB_8001c028;
+      }
+    }
+    else {
+LAB_8001c028:
+      fVar6 = NewShadowMaskPlatRot(&plr->obj.pos,0.0f,-1);
+      if (fVar6 == 2000000.0f) {
+        plr_terrain_ok = (s32)plr->obj.transporting;
+        if (plr_terrain_ok != 0) goto LAB_8001c0a8;
+        if (((NOTERRAINSTOP == 0) || (Level == 8)) || (Level == 6)) goto LAB_8001c0b0;
+        //fVar6 = plr->obj.oldpos.z;
+        plr->obj.pos.x = plr->obj.oldpos.x;
+        plr->obj.pos.z = plr->obj.oldpos.z;
+        plr->obj.mom.z = 0.0f;
+        plr->obj.dangle = plr->obj.transporting;
+        plr->obj.mom.x = 0.0f;
+      }
+      else {
+LAB_8001c0a8:
+        plr_terrain_ok = 1;
+LAB_8001c0b0:
+        unaff_r19 = (s32)plr->obj.layer_type;
+        if ((plr->obj.got_shadow == 0) ||
+           (((plr->obj.transporting == 0 && (fVar6 != 2000000.0f)) && (fVar6 > plr->obj.shadow)))) {
+          plr->obj.got_shadow = 0;
+          plr->obj.shadow = fVar6;
+          GetSurfaceInfo(&plr->obj,2,fVar6);
+        }
+        else {
+          GetSurfaceInfo(&plr->obj,0,fVar6);
+        }
+      }
+      plr->obj.wade = 0;
+      if (plr->obj.layer_type != -1) {
+        if (plr->obj.top * plr->obj.SCALE + plr->obj.pos.y < plr->obj.layer_shadow) {
+          if (plr->obj.submerged < 0x3c) {
+            plr->obj.submerged++;
+          }
+          else if (((Level != 0x25) && (bVar1 != 0)) && (VEHICLECONTROL != 2)) {
+            KillPlayer(&plr->obj,10);
+          }
+        } else {
+          plr->obj.submerged = 0;
+        }
+        if ((plr->obj.bot + plr->obj.top) * plr->obj.SCALE * 0.5f + plr->obj.pos.y <
+            plr->obj.layer_shadow) {
+          plr->obj.wade = 1;
+        }
+        iVar4 = 1;
+        local_e0.x = plr->obj.pos.x;
+        iVar20 = -1;
+        local_e0.y = plr->obj.layer_shadow;
+        local_e0.z = plr->obj.pos.z;
+        switch(plr->obj.layer_type) {
+            case 1:
+                //dVar27 = 0.0000015258789f;
+                local_a0.x = (float)qrand() * 0.0000015258789f + local_e0.x;
+                local_a0.y = ((float)qrand() * 0.0000015258789f + local_e0.y);
+                uVar17 = qrand();
+                plr->obj.ddr = 0x40;
+                plr->obj.ddwater = 0x78;
+                local_a0.z = ((float)uVar17 * 0.0000015258789f + local_e0.z);
+                plr->obj.ddg = 0x78;
+                plr->obj.ddb = -0x80;
+                if ((plr->obj.idle_gametime != 0.0f) ? qrand() > 0xfff : qrand() > 0x7fff) {
+                  NuRndrAddWaterRipple(&local_a0,0.2f,0.4f,0x20,0x60706050);
+                }
+            break;
+            case 2:
+LAB_8001c324:
+                iVar20 = 1;
+            break;
+            case 3:
+                goto LAB_8001c324;
+            break;
+            case 4:
+                if (plr->obj.idle_gametime == 0.0f) {
+                    iVar20 = 1;
+                    iVar4 = 2;
+                    local_e0.y = local_e0.y + 0.03f;
+                }
+            break;
+        }
+        if (((Paused == 0) && (iVar20 > 0)) && (jonframe1 % iVar4) == 0) {
+          AddVariableShotDebrisEffect(GDeb[iVar20].i,&local_e0,1,0,0);
+        }
+      }
+      else {
+        plr->obj.submerged = 0;
+      }
+      if (plr->obj.surface_type > 0) {
+        local_e0.x = plr->obj.pos.x;
+        iVar4 = 1;
+        local_e0.y = plr->obj.pos.y;
+        iVar20 = -1;
+        local_e0.z = plr->obj.pos.z;
+        switch(plr->obj.surface_type) {
+            case 8:
+              if ((plr->obj.idle_gametime == 0.0f) && (Level != 3)) {
+                iVar20 = 4;
+                iVar4 = 4;
+                local_e0.y += 0.03f;
+              }
+            break;
+            case 1:
+            case 12:
+            case 13:
+                if (plr->obj.idle_gametime == 0.0f) {
+                  iVar20 = 2;
+                  iVar4 = 2;
+                }
+            break;
+            case 2:
+              if (plr->obj.idle_gametime == 0.0f) {
+                iVar20 = 1;
+                iVar4 = 2;
+                local_e0.y += 0.03f;
+              }
+            break;
+            default:
+            break;
+        }
+        if ((((Paused == 0) && (iVar20 > 0)) && (plr->obj.ground != 0)) &&
+                (jonframe1 % iVar4) == 0) {
+            AddVariableShotDebrisEffect(GDeb[iVar20].i,&local_e0,1,0,0);
+        }
+      }
+      iVar4 = (s32)plr->obj.roof_type;
+      if (((iVar4 != -1) && ((TerSurface[iVar4].flags & 0x10) != 0)) && (VEHICLECONTROL != 1)) {
+        fVar6 = plr->obj.SCALE;
+        fVar15 = plr->obj.roof_y - minfo->DANGLEGAP;
+        if ((fVar15 >= plr->obj.top * fVar6 + plr->obj.pos.y) || (cVar14 != 0)) {
+          fVar29 = plr->obj.max.y;
+          plr->obj.dangle = 1;
+          plr->obj.pos.y = fVar15 - fVar29 * fVar6;
+          if (cVar14 == 0) {
+            GameSfx(0x1b,&plr->obj.pos);
+          }
+        }
+      }
+      else {
+        plr->obj.dangle = 0;
+        if (cVar14 != 0) {
+          plr->jump = 6;
+          plr->obj.mom.y = 0.0f;
+          plr->jump_frame = plr->jump_frames;
+          plr->jump_type = 4;
+          GameSfx(0x1c,&plr->obj.pos);
+        }
+      }
+      if ((plr->obj.layer_type == 1) && (unaff_r19 == -1)) {
+        GameSfx(0x47,&plr->obj.pos);
+      }
+      else if ((plr->obj.layer_type == -1) && (unaff_r19 == 1)) {
+        GameSfx(0x47,&plr->obj.pos);
+      }
+      TerrainFailsafe(&plr->obj);
+      if (plr->obj.got_shadow != 0) {
+        bVar21 = plr->obj.bot * plr->obj.SCALE + plr->obj.pos.y <= plr->obj.shadow;
+      }
+      else {
+        bVar21 = (plr->obj.bot * plr->obj.SCALE + plr->obj.pos.y) - plr->obj.shadow < 0.025f;
+      }
+      plr->obj.ground = 0;
+      if (plr->obj.gndflags.chrs != 0) {
+        plr->obj.ground = 1;
+      }
+      if (bVar21) {
+        plr->obj.ground |= 2;
+      }
+      if (plr->obj.ground != 0) {
+        plr->obj.last_ground = plr->obj.ground;
+      }
+      if (((plr->obj.ground & 2U) != 0) && (plr->obj.dead == 0)) {
+        if ((((TerSurface[plr->obj.surface_type].flags & 1) == 0) ||
+            (((plr->obj.invincible != 0 && (plr->obj.layer_type == -1)) ||
+             (sVar19 == 0x20)))) || (VEHICLECONTROL != 2)) {
+          if ((VEHICLECONTROL == 1) && (plr->obj.vehicle != -1)) {
+            iVar4 = 0xb;
+          }
+          else {
+            if (plr->obj.character == 0) {
+              if (((plr->obj.layer_type != -1) && (CRemap[79] != -1)) && (Level == 7)) {
+                iVar4 = 8;
+              }
+              else {
+                if ((plr->obj.character == 0) && ((plr->obj.surface_type == 7)) && (CRemap[151] == -1)) goto LAB_8001c7b0;
+                iVar4 = 0xd;
+              }
+            }
+            else {
+LAB_8001c7b0:
+              iVar4 = 5;
+              if ((plr->obj.layer_type != -1) && (plr->obj.submerged != 0)) {
+                iVar4 = 10;
+              }
+            }
+          }
+          bVar21 = 0;
+          if (((plr->obj.mask != NULL) && (plr->obj.mask->active != 0)) && ((LDATA->flags & 0xe00) == 0))  {
+            bVar21 = plr->obj.mask->active > 2;
+          }
+          if ((((plr->obj.layer_type != -1) && (plr->obj.submerged == 0)) && (Level == 2)) && (Bonus == 0))  {
+              if (((plr->obj.mask != NULL) && (plr->obj.mask->active == 0)) ||
+                      ((LDATA->flags & 0xe00) == 0)) {
+                if ((plr->obj.mask->active < 3) && (plr->obj.invincible == 0)) {
+                    LoseMask(&plr->obj);
+                }
+              } else {
+                    KillGameObject(&plr->obj,iVar4);
+              }
+          } else {
+            plr->obj.invincible = 0;
+            KillGameObject(&plr->obj,iVar4);
+            if (((plr->obj.mask != NULL) && (plr->obj.mask->active != 0)) &&
+               (uVar12 = LDATA->flags, (uVar12 & 0xe00) == 0)) {
+              AddMaskFeathers(plr->obj.mask);
+              (plr->obj.mask)->active = uVar12 & 0xe00;
+            }
+          }
+          if (((plr->obj.dead != 0) && (bVar21)) && (NuSoundKeyStatus(4) == 1)) {
+            NuSoundStopStream(4);
+          }
+        } else if ((TerSurface[plr->obj.surface_type].flags & 2) != 0) {
+            plr->obj.boing = plr->obj.boing | 2;
+            GameSfx(2,&plr->obj.pos);
+            NewRumble(&player->rumble,0x7f);
+            NewBuzz(&player->rumble,0xc);
+        }
+      }
+      ObjectRotation(&plr->obj,2,(sVar19 == -1) ? 0 : 1);
+      if (((plr->obj.transporting == 0) && (sVar19 != 0x89)) && (sVar19 != 0xa1)) {
+        WumpaCollisions(&plr->obj);
+      }
+      plr_allow_jump = (s32)plr->allow_jump;
+      if (plr->obj.ground != 0) {
+        plr->allow_jump = 0xc;
+      } else if (plr->allow_jump != 0) {
+          plr->allow_jump--;
+      }
+      if (plr->obj.boing != 0) {
+        plr->ok_slam = 1;
+        plr->jump = 1;
+        plr->somersault = 0;
+        plr->land = 0;
+        if ((plr->obj.boing & 2) != 0) {
+          plr->jump_type = 3;
+        } else {
+          plr->jump_type = 1;
+        }
+        plr->jump_frame = 0;
+        plr->jump_frames = minfo->JUMPFRAMES1 + 1;
+        fVar6 = minfo->JUMPHEIGHT;
+        if (plr->jump_type == 3) {
+          fVar6 = fVar6 * 1.5f;
+        }
+        plr->obj.mom.y = fVar6 / (float)((s32)minfo->JUMPFRAMES2);
+        plr->slam = 3;
+        plr->slam_wait = 0;
+        plr->obj.anim.anim_time = 1.0f;
+      }
+      if (plr->fire != 0) {
+        plr->fire--;
+      }
+      if (plr->tap != 0) {
+        plr->tap--;
       }
     }
     if (sVar19 == 0x20) {
@@ -3803,7 +3658,7 @@ LAB_8001bd90:
     else if (sVar19 == 0x99) {
       MoveOFFROADER(plr,pad);
     }
-    else if ((plr->obj).character == 1) {
+    else if (plr->obj.character == 1) {
       MoveCOCO(plr,pad);
     }
     else if (VEHICLECONTROL == 2) {
@@ -3812,94 +3667,88 @@ LAB_8001bd90:
     else {
       MoveCRASH(plr,pad);
     }
-    (plr->obj).boing = 0;
+    plr->obj.boing = 0;
   }
 LAB_8001cbd4:
-  if (((plr->obj).dead != 0) && (InvincibilityCHEAT != 0)) {
-    (plr->obj).dead = 0;
+  if ((plr->obj.dead != 0) && (InvincibilityCHEAT != 0)) {
+    plr->obj.dead = 0;
     plr_lives.count = (short)Game.lives;
   }
   if (Adventure != 0) {
     Game.wumpas = (u8)plr_wumpas.count;
     Game.lives = (u8)plr_lives.count;
-    if (((plr->obj).mask != NULL) && (Game.mask = 2, (plr->obj).mask->active < 3)) {
-      Game.mask = *(u8 *)((s32)&(plr->obj).mask->active + 1);
+    if ((plr->obj.mask != NULL) && (Game.mask = 2, plr->obj.mask->active < 3)) {
+      Game.mask = *(u8 *)((s32)&plr->obj.mask->active + 1);
     }
   }
   BonusTiming(plr);
-  fVar6 = (plr->obj).pos.x - (plr->obj).oldpos.x;
+  fVar6 = plr->obj.pos.x - plr->obj.oldpos.x;
   dVar28 = (fVar6 * fVar6);
-  fVar6 = (plr->obj).pos.z - (plr->obj).oldpos.z;
+  fVar6 = plr->obj.pos.z - plr->obj.oldpos.z;
   dVar26 = (fVar6 * fVar6);
-  dVar27 = ((plr->obj).pos.y - (plr->obj).oldpos.y);
-  fVar6 = NuFsqrt((float)(dVar28 + dVar26));
-  (plr->obj).xz_distance = fVar6;
-  fVar29 = NuFsqrt((float)((float)(dVar27 * dVar27 + dVar28) + dVar26));
-  fVar15 = vtog_duration;
-  fVar6 = vtog_time;
-  sVar19 = (plr->obj).anim.action;
-  (plr->obj).xyz_distance = fVar29;
-  (plr->obj).anim.oldaction = sVar19;
-  if ((fVar6 < fVar15) && (vtog_blend != 0)) {
-    AnimateDIVE(plr,fVar6 / fVar15);
+  dVar27 = (plr->obj.pos.y - plr->obj.oldpos.y);
+  plr->obj.xz_distance = NuFsqrt(dVar28 + dVar26);
+  plr->obj.xyz_distance = NuFsqrt((dVar27 * dVar27 + dVar28) + dVar26);
+  plr->obj.anim.oldaction = plr->obj.anim.action;
+  if ((vtog_time < vtog_duration) && (vtog_blend != 0)) {
+    AnimateDIVE(plr,vtog_time / vtog_duration);
     goto LAB_8001ce44;
   }
   if (VEHICLECONTROL == 1) {
-    sVar19 = (plr->obj).vehicle;
-    if (sVar19 == 0x53) {
+    if (plr->obj.vehicle == 0x53) {
       AnimateATLASPHERE(plr);
       goto LAB_8001ce44;
     }
-    if (sVar19 == 0x20) {
+    if (plr->obj.vehicle == 0x20) {
       AnimateSUBMARINE(plr);
       goto LAB_8001ce44;
     }
-    if (sVar19 == 0x6b) {
+    if (plr->obj.vehicle == 0x6b) {
       AnimateSCOOTER(plr);
       goto LAB_8001ce44;
     }
-    if (sVar19 == 0xa0) {
+    if (plr->obj.vehicle == 0xa0) {
       AnimateSNOWBOARD(plr);
       goto LAB_8001ce44;
     }
-    if (sVar19 == 0x36) {
+    if (plr->obj.vehicle == 0x36) {
       AnimateGLIDER(plr);
       goto LAB_8001ce44;
     }
-    if (sVar19 == 0x81) {
+    if (plr->obj.vehicle == 0x81) {
       AnimateDROPSHIP(plr);
       goto LAB_8001ce44;
     }
-    if (sVar19 == 0x3b) {
+    if (plr->obj.vehicle == 0x3b) {
       AnimateGYRO(plr,pad);
       goto LAB_8001ce44;
     }
-    if (sVar19 == 0x44) {
+    if (plr->obj.vehicle == 0x44) {
       AnimateMECH(plr);
       goto LAB_8001ce44;
     }
-    if (sVar19 == 0xb2) {
+    if (plr->obj.vehicle == 0xb2) {
       AnimateFIREENGINE(plr);
       goto LAB_8001ce44;
     }
-    if (sVar19 == 99) {
+    if (plr->obj.vehicle == 99) {
       AnimateJEEP(plr);
       goto LAB_8001ce44;
     }
-    if (1) {
-      if (sVar19 == 0x89) {
+    if (VEHICLECONTROL == 1) {
+      if (plr->obj.vehicle == 0x89) {
         AnimateMINECART(plr);
         goto LAB_8001ce44;
       }
-      if (sVar19 == 0xa1) {
+      if (plr->obj.vehicle == 0xa1) {
         AnimateMINETUB(plr);
         goto LAB_8001ce44;
       }
-      if (sVar19 == 0x8b) {
+      if (plr->obj.vehicle == 0x8b) {
         AnimateMOSQUITO(plr);
         goto LAB_8001ce44;
       }
-      if (sVar19 == 0x99) {
+      if (plr->obj.vehicle == 0x99) {
         AnimateOFFROADER(plr);
         goto LAB_8001ce44;
       }
@@ -3908,57 +3757,50 @@ LAB_8001cbd4:
   if (VEHICLECONTROL == 2) {
     AnimateSWIMMING(plr);
   }
-  else if ((plr->obj).character == 1) {
+  else if (plr->obj.character == 1) {
     AnimateCOCO(plr);
   }
   else {
     AnimateCRASH(plr);
   }
 LAB_8001ce44:
-  cVar14 = (plr->obj).dead;
-  if (cVar14 == 0) {
-    if ((VEHICLECONTROL == 2) && (CRemap[115] != -1)) {
-      mod = CModel + CRemap[115];
-    }
-    else {
-      mod = (plr->obj).model;
-    }
+  if (plr->obj.dead != 0) {
+    model = &CModel[plr->obj.die_model[0]];
   }
   else {
-    mod = CModel + (plr->obj).die_model[0];
+    if ((VEHICLECONTROL == 2) && (CRemap[115] != -1)) {
+      model = &CModel[CRemap[115]];
+    }
+    else {
+      model = plr->obj.model;
+    }
+      
   }
-  if ((cVar14 != 0x16) && (cVar14 != 4)) {
-    UpdateAnimPacket(mod,&(plr->obj).anim,0.5f,(plr->obj).xz_distance);
+  if ((plr->obj.dead != 0x16) && (plr->obj.dead != 4)) {
+    UpdateAnimPacket(model,&plr->obj.anim,0.5f,plr->obj.xz_distance);
   }
-  (plr->obj).frame = (plr->obj).frame + 1;
-  if ((Cursor.menu == -1) && (GameMode != 1)) {
-    if (Level == 0x25) {
-      Awrd = InLoadSaveZone(plr);
-      if (Awrd == 0) {
-        loadsave_frame = 0;
-      }
-      else {
-        if ((pad == NULL) || ((pad->paddata_db & 0x40) == 0)) {
-          loadsave_frame = loadsave_frame + 1;
-        }
-        else {
+  plr->obj.frame++;
+  if ((Cursor.menu != -1) || (GameMode == 1)) {
+    loadsave_frame = 0;
+  } else if (Level == 0x25) {
+      if (InLoadSaveZone(plr) != 0) {
+        if ((pad != NULL) && ((pad->paddata_db & 0x40) != 0)) {
           loadsave_frame = 0x3c;
+        } else {
+          loadsave_frame++;
         }
-        if (0x3c < loadsave_frame) {
+        if (loadsave_frame > 0x3c) {
           loadsave_frame = 0x3d;
         }
+      } else {
+        loadsave_frame = 0;
       }
       if (loadsave_frame == 0x3c) {
         NewMenu(&Cursor,0x15,4,-1);
         loadsave_frame = 0x3d;
         GameSfx(0x36,NULL);
       }
-    }
   }
-  else {
-    loadsave_frame = 0;
-  }
-  return;
 }
 
 //NGC MATCH
