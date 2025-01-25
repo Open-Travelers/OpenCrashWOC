@@ -11,9 +11,7 @@ s32 gamecut; //cut.c
 	LoadCharacterModels MATCH (Check)
 	MovePlayer 83%*
 	DrawCharacterModel 96%
-	UpdateAnimPacket 99%*
 	DrawCreatures 90%
-	
 */
 
 /*
@@ -1171,14 +1169,11 @@ Exit:
     return Drawn;
 }
 
-//99% NGC //regswap
+//PS2 MATCH //NGC MATCH
 void UpdateAnimPacket(struct CharacterModel *mod,struct anim_s *anim,float dt,float xz_distance) {
     float t;
-  
-    if (mod == NULL) {
-        return;
-    }
-    if (anim == NULL) {
+    
+    if ((mod == NULL) || (anim == NULL)) {
         return;
     }
     
@@ -1192,7 +1187,7 @@ void UpdateAnimPacket(struct CharacterModel *mod,struct anim_s *anim,float dt,fl
     }
     else if (anim->newaction != anim->oldaction) {
         if ((((anim->oldaction != -1) && (anim->newaction != -1)) && (mod->anmdata[anim->oldaction] != NULL)) && (((mod->anmdata[anim->newaction] != NULL &&
-        (1 < mod->animlist[anim->oldaction]->blend_out_frames)) && (1 < mod->animlist[anim->newaction]->blend_in_frames)))) {
+        (mod->animlist[anim->oldaction]->blend_out_frames > 1)) && (mod->animlist[anim->newaction]->blend_in_frames > 1)))) {
             anim->blend = 1;
             anim->blend_src_action = anim->oldaction;
             anim->blend_dst_action = anim->newaction;
@@ -1207,10 +1202,10 @@ void UpdateAnimPacket(struct CharacterModel *mod,struct anim_s *anim,float dt,fl
             
             if (((mod->character == 0) && (PLAYERCOUNT != 0)) && (player->used != 0)) {
                 if (anim->blend_dst_action == 3) {
-                    anim->blend_dst_time = ((float)(player->crouch_pos) * (mod->anmdata[2]->time - 1.0f)) / (float)(player->OnFootMoveInfo->CROUCHINGFRAMES);
+                    anim->blend_dst_time = ((float)(player->crouch_pos) * (mod->anmdata[anim->blend_dst_action]->time - 1.0f)) / (float)(player->OnFootMoveInfo->CROUCHINGFRAMES);
                 }
                 else if (anim->blend_dst_action == 5) {
-                    anim->blend_dst_time = ((float)(player->OnFootMoveInfo->CROUCHINGFRAMES - player->crouch_pos) * (mod->anmdata[4]->time - 1.0f)) / (float)player->OnFootMoveInfo->CROUCHINGFRAMES;
+                    anim->blend_dst_time = ((float)(player->OnFootMoveInfo->CROUCHINGFRAMES - player->crouch_pos) * (mod->anmdata[anim->blend_dst_action]->time - 1.0f)) / (float)player->OnFootMoveInfo->CROUCHINGFRAMES;
                 }
             }
             anim->blend_frame = 0;
@@ -1227,44 +1222,39 @@ void UpdateAnimPacket(struct CharacterModel *mod,struct anim_s *anim,float dt,fl
         anim->action = anim->newaction;
         anim->blend = 0;
     }
-    
     anim->flags = 0;
     if (anim->blend != 0) {
-        if (mod->anmdata[anim->blend_src_action] == NULL) {
-            return;
-        }
-        if (mod->anmdata[anim->blend_dst_action] == NULL) {
+        if ((mod->anmdata[anim->blend_src_action] == NULL) || (mod->anmdata[anim->blend_dst_action] == NULL)) {
             return;
         }
         t = dt * mod->animlist[anim->blend_src_action]->speed;
         if ((mod->animlist[anim->blend_src_action]->flags & 0x10) != 0) {
             t *= xz_distance * 10.0f;
         }
-        
         anim->blend_src_time += t;
-        if (anim->blend_src_time > mod->anmdata[anim->blend_src_action]->time) {
+        t = mod->anmdata[anim->blend_src_action]->time;
+        if (anim->blend_src_time > t) {
             if ((mod->animlist[anim->blend_src_action]->flags & 1) != 0) {
-                anim->blend_src_time -= (mod->anmdata[anim->blend_src_action]->time - 1.0f);
+                anim->blend_src_time -= (t - 1.0f);
             }
             else {
-                anim->blend_src_time = mod->anmdata[anim->blend_src_action]->time;
+                anim->blend_src_time = t;
             }
         }
         t = dt * mod->animlist[anim->blend_dst_action]->speed;
         if ((mod->animlist[anim->blend_dst_action]->flags & 0x10) != 0) {
             t *= xz_distance * 10.0f;
         }
-        
         anim->blend_dst_time += t;
-        
-        if (anim->blend_dst_time > mod->anmdata[anim->blend_dst_action]->time) {
+        t = mod->anmdata[anim->blend_dst_action]->time;
+        if (anim->blend_dst_time > t) {
             if ((mod->animlist[anim->blend_dst_action]->flags & 1) != 0) {
-                anim->blend_dst_time -= (mod->anmdata[anim->blend_dst_action]->time - 1.0f);
                 anim->flags = anim->flags | 2;
-            } else {
-                anim->blend_dst_time = mod->anmdata[anim->blend_dst_action]->time;
-                anim->flags = anim->flags | 1;
+                anim->blend_dst_time -= (t - 1.0f);
+                return;
             }
+            anim->blend_dst_time = t;
+            anim->flags = anim->flags | 1;
         }
     }
     else {
@@ -1275,20 +1265,18 @@ void UpdateAnimPacket(struct CharacterModel *mod,struct anim_s *anim,float dt,fl
         if ((mod->animlist[anim->action]->flags & 0x10) != 0) {
             t *= xz_distance * 10.0f;
         }
-        
         anim->anim_time += t;
-        if (anim->anim_time > mod->anmdata[anim->action]->time) {
+        t = mod->anmdata[anim->action]->time;
+        if (anim->anim_time > t) {
             if ((mod->animlist[anim->action]->flags & 1) != 0) {
-                anim->anim_time -= (mod->anmdata[anim->action]->time - 1.0f);
                 anim->flags = 2;
-            } else {
-                anim->anim_time = mod->anmdata[anim->action]->time;
-                anim->flags = 1;
+                anim->anim_time -= (t - 1.0f);
+                return;
             }
+            anim->anim_time = t;
+            anim->flags = 1;
         }
-        
     }
-    return;
 }
 
 //90.69% NGC

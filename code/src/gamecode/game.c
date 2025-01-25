@@ -11,7 +11,7 @@ NewLevelTime 87%**
 BonusTiming 98% (regswap)
 DrawProbeFX  95% (regswap)
 Draw3DObject 98% (branch)
-DrawMenu 19%**
+DrawMenu 84%*
 
 HubDrawItems 89%
 ToggleVehicle 73%
