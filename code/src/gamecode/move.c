@@ -130,6 +130,130 @@ void CheckPlayerEvents(struct obj_s *obj) {
   return;
 }
 
+//97.37% NGC
+void AnimateCRASH(struct creature_s* plr) {
+    struct MoveInfo* minfo;
+    struct nuvec_s pos;
+
+    minfo = &CrashMoveInfo;
+    if ((u32)plr->obj.dead >= 2) {
+        plr->obj.anim.newaction = plr->obj.die_action;
+    } else if (GameMode == 1) {
+        plr->obj.anim.newaction = 0x22;
+    } else if (((Level == 0x25) && (tumble_time < tumble_duration)) && (last_hub != -1)) {
+        plr->obj.anim.newaction = tumble_action;
+    } else if (plr_tumblehack != 0) {
+        plr->obj.anim.newaction = 0x22;
+    } else if (plr_rebound != 0) {
+        plr->obj.anim.newaction = 0x19;
+    } else if (plr->freeze != 0) {
+        plr->obj.anim.newaction = 0x1e;
+    } else if (plr->target != 0) {
+        if (plr->fire != 0) {
+            plr->obj.anim.newaction = 0x4f;
+        } else if (plr->obj.dyrot != 0) {
+            plr->obj.anim.newaction = 0x50;
+        } else {
+            plr->obj.anim.newaction = 0x4e;
+        }
+    } else if (plr->obj.dangle != 0) {
+        if (plr->obj.dangle == 2) {
+            plr->obj.anim.newaction = 0x36;
+        } else {
+            plr->obj.anim.newaction = (plr->obj.pad_speed == 0.0f) ? 0x20 : 0x4d;
+        }
+    } else if (plr->slam_wait != 0) {
+        plr->obj.anim.newaction = 0x1f;
+    } else if (plr->slam == 2) {
+        plr->obj.anim.newaction = 0x4b;
+    } else if (plr->slam == 1) {
+        plr->obj.anim.newaction = 0x41;
+    } else if (plr->slide != 0) {
+        plr->obj.anim.newaction = 0x43;
+    }
+    else if ((plr->jump != 0) && ((plr->obj.ground == 0 || (plr->jump_frame < plr->jump_frames))))
+    {
+        if (plr->somersault != 0) {
+            plr->obj.anim.newaction = 0x44;
+        } else if (plr->jump_type == 4) {
+            plr->obj.anim.newaction = 0x19;
+        } else if (plr->jump_type == 0) {
+            plr->obj.anim.newaction = (plr->jump_subtype == 1) ? 0x2d : 0x2e;
+        } else {
+            plr->obj.anim.newaction = (plr->jump != 5) ? 0x2c : 0x44;
+        }
+    } else if ((plr->land != 0) && (plr->obj.pad_speed == 0.0f)) {
+        plr->obj.anim.newaction = 0x30;
+    } else if (((plr->crouch_pos > 0) && (plr->crouch_pos < plr->OnFootMoveInfo->CROUCHINGFRAMES)) && (plr->obj.pad_speed == 0.0f))
+    {
+        plr->obj.anim.newaction = (plr->crawl != 0) ? 3 : 5;
+    } else {
+        if ((plr->crawl != 0) && ((plr->jump == 0) || (plr->obj.ground != 0))) {
+            if (plr->obj.pad_speed == 0.0f) {
+                plr->obj.anim.newaction = 4;
+            } else {
+                plr->obj.anim.newaction = 2;
+            }
+        } else {
+            if (plr->obj.wade != 0 && plr->obj.ground != 0 && plr->obj.pad_speed != 0.0f) {
+                plr->obj.anim.newaction = 0x72;
+            } else if ((plr->obj.ground != 0 || (plr->allow_jump) != 0) && 
+                    (TerSurface[plr->obj.surface_type].flags & 0x20) && 
+                    ((plr->obj.pad_speed != 0.0f || (plr->obj.xz_distance >= minfo->IDLESPEED)))) {
+                plr->obj.anim.newaction = (plr->obj.pad_speed == 0.0f) ? 0x40 : 0x3f;
+            } else if (((plr->obj.ground == 0) && (plr->allow_jump == 0)) && (plr->obj.mom.y < -FALLONCRATEBREAKSPEED)) {
+                plr->obj.anim.newaction = 0x19;
+            } else {
+                if ((plr->obj.pad_speed == 0.0f)
+                    && ((
+                        plr->pad_type != 1
+                        || !(((plr->obj.mom.x * plr->obj.mom.x + plr->obj.mom.z * plr->obj.mom.z))
+                            >= (plr->OnFootMoveInfo->IDLESPEED * plr->OnFootMoveInfo->IDLESPEED))
+                    )))
+                {
+                    if (((plr->obj.ground == 1) || ((plr->obj.last_ground == 1 && (plr->allow_jump != 0))))
+                        && ((plr->obj.pos.y + plr->obj.bot * plr->obj.SCALE) - plr->obj.shadow > 0.25f))
+                    {
+                        plr->obj.anim.newaction = 0x51;
+                    } else {
+                        plr->obj.anim.newaction = 0x22;
+                    }
+                } else {
+                    if (plr->tiptoe != 0) {
+                        plr->obj.anim.newaction = 0x53;
+                    } else if (plr->sprint != 0) {
+                        plr->obj.anim.newaction = 0x48;
+                    } else if (plr->obj.pad_speed == minfo->WALKSPEED) {
+                        plr->obj.anim.newaction = 0x74;
+                    } else {
+                        plr->obj.anim.newaction = 0x3a;
+                    }
+                }
+            } 
+        }
+    }
+
+    UpdateChaseRunAnim(plr);
+    if (((plr->obj.anim.newaction == 2) || (plr->obj.anim.newaction == 0x43)) || (plr->obj.anim.newaction == 4)) {
+        plr->crouch_pos = minfo->CROUCHINGFRAMES;
+    } else if ((plr->obj.pad_speed != 0.0f) || ((plr->obj.anim.newaction != 3 && (plr->obj.anim.newaction != 5))))
+    {
+        plr->crouch_pos = 0;
+    }
+    
+    UpdateCharacterIdle(plr, 0);
+    if (((plr->obj.dead == 0) && (plr->spin != 0))
+        && ((s32)plr->spin_frame < (s32)plr->spin_frames - (s32)plr->OnFootMoveInfo->SPINRESETFRAMES)) {
+        pos.x = plr->obj.pos.x;
+        pos.y = (plr->obj.top - plr->obj.bot * plr->obj.SCALE) * ((float)qrand() * 0.000015259022f - 0.5f) +
+            (plr->obj.bot + plr->obj.top * plr->obj.SCALE * 0.5f) + plr->obj.pos.y;
+        pos.z = plr->obj.pos.z;
+        
+        AddGameDebrisRot(0xb, &pos, 1, 0x4000, qrand());
+        AddGameDebrisRot(0xc, &plr->obj.pos, 1, 0x2000, qrand());
+    }
+}
+
 //NGC MATCH
 void AnimateCOCO(struct creature_s *plr) {
   struct MoveInfo* minfo = &CocoMoveInfo;

@@ -2,7 +2,7 @@
 WIP 
 
 AddAward 99% (regswap)
-DrawAwards 98% (regswap)
+DrawAwards MATCH (check)
 UpdateWumpa 98%**
 UpdateMask  95% (regswap)
 ProcMenu 99% (merge)
@@ -1730,74 +1730,72 @@ void UpdateAwards(void) {
   return;
 }
 
-//NGC 98% (float)
+//NGC MATCH (check)
 void DrawAwards(void) {
     struct award_s* award;
     struct nuvec_s pos;
     float f;
     float scale;
-    float t;
-    s32 uVar2;
     s32 i;
     s32 i_obj;
     s32 i_chr;
 
     award = Award;
-    for (i = 0; i < 3; i++) {
-        t = award->time;
-        if (t < 1.0f) {
+    for (i = 0; i < 3; i++, award++) {
+        f = award->time;
+        if (f < 1.0f) {
             if (award->wait != 0) {
                 pos = award->oldpos0;
-                t =
+                scale =
                     (((player->obj).anim.anim_time - (tumble_item_starttime + 1.0f))
                      / (tumble_item_addtime - (tumble_item_starttime + 1.0f)));
-                if (t > 1.0f) {
-                    t = 1.0f;
+                if (scale > 1.0f) {
+                    scale = 1.0f;
                 }
-                if (t < 0.333f) {
+                
+                if (scale < 0.333f) {
                     scale = 0.0f;
                 } else {
-                    scale = ((t - 0.333f) / 0.667f);
+                    scale = ((scale - 0.333f) / 0.667f);
                 }
-            } else {
-                if (t < 0.666f) {
+            } else if (f < 0.666f) {
                     scale = 1.0f;
                     pos = award->oldpos0;
-                } else {
+            } else {
                     scale = 1.0f;
-                    f = (t - 0.666f) / 0.33399999f;
-                    pos.x = (award->newpos.x - award->oldpos0.x) * f + award->oldpos0.x;
-                    pos.y = (award->newpos.y - award->oldpos0.y) * f + award->oldpos0.y;
-                    pos.z = (award->newpos.z - award->oldpos0.z) * f + award->oldpos0.z;
-                }
+                    f = (f - 0.666f) / 0.33399999f;
+                    pos.x = award->oldpos0.x + (award->newpos.x - award->oldpos0.x) * f;
+                    pos.y = award->oldpos0.y + (award->newpos.y - award->oldpos0.y) * f;
+                    pos.z = award->oldpos0.z + (award->newpos.z - award->oldpos0.z) * f;
             }
+            
             i_obj = -1;
             i_chr = -1;
+            
             if ((award->got & 4) != 0) {
                 i_obj = 1;
             } else if ((award->got & 2) != 0) {
                 i_obj = 2;
             } else if ((award->got & 1) != 0) {
                 i_obj = 3;
-            } else {
-                if (award->got == 8) {
-                    i_obj = 0xc1;
-                } else if (award->got == 0x10) {
-                    i_obj = 0xc2;
-                } else if (award->got == 0x20) {
-                    i_obj = 0xc3;
-                } else if (award->got == 0x40) {
-                    i_obj = 0xc4;
-                } else if (award->got == 0x80) {
-                    i_obj = 0xc5;
-                } else if (award->got == 0x100) {
-                    i_obj = 0xc6;
-                } else if (award->got == 0x200) {
-                    i_obj = 200;
-                } else if (award->got == 0x400) {
-                    i_obj = 199;
-                }
+            } else if (award->got == 8) {
+                i_obj = 0xc1;
+            } else if (award->got == 0x10) {
+                i_obj = 0xc2;
+            } else if (award->got == 0x20) {
+                i_obj = 0xc3;
+            } else if (award->got == 0x40) {
+                i_obj = 0xc4;
+            } else if (award->got == 0x80) {
+                i_obj = 0xc5;
+            } else if (award->got == 0x100) {
+                i_obj = 0xc6;
+            } else if (award->got == 0x200) {
+                i_obj = 200;
+            } else if (award->got == 0x400) {
+                i_obj = 199;
             }
+
             if (i_obj != -1) {
                 f = (scale * 0.76999998f);
                 if (ObjTab[i_obj].obj.special != NULL) {
@@ -1808,13 +1806,14 @@ void DrawAwards(void) {
             } else if (i_chr != -1) {
                 f = (scale * 0.76999998f);
                 if (CRemap[i_chr] != -1) {
-                    F(&pos, 0, award->yrot, 0, &CModel[CRemap[i_chr]], -1, f, 1.0f, 0);
+                    Draw3DCharacter(&pos, 0, award->yrot, 0, &CModel[CRemap[i_chr]], -1, f, 1.0f, 0);
                 }
             }
+            else if (award->got == 0x10) {
+                i_obj = 0; // ????????
+            }
         }
-        award++;
     }
-    return;
 }
 
 //NGC MATCH

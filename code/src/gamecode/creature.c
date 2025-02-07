@@ -7,14 +7,323 @@ s32 gamecut; //cut.c
 /*
 	//TODO
 	ManageCreatures 93%
-	LoadCharacterModel 95%
+	LoadCharacterModel MATCH
 	LoadCharacterModels MATCH (Check)
 	MovePlayer 83%*
-	DrawCharacterModel 96%
+	DrawCharacterModel MATCH
 	DrawCreatures 90%
 */
 
-/*
+//93.54% NGC
+void ManageCreatures(void) {
+  struct nuvec_s *p0;
+  float d;
+  float dist;
+  float range2;
+  s32 i;
+  s32 j;
+  s32 iVar8;
+  s32 iVar10;
+  s32 index;
+  struct aitab_s *pAI;
+  
+  //pcVar6 = player;
+  if ((Level == 0x25) || (LDATA->flags & 0x202) != 0) {
+    d = LDATA->farclip;
+  } else {
+    d = AIVISRANGE;  
+  }
+  range2 = d;
+  if (LDATA->farclip < range2) {
+    range2 = LDATA->farclip;
+  }
+  range2 *= range2;
+  if (((player != NULL) && (player->used != 0)) && (player->obj.dead != 0)) {
+    player->obj.die_time += 0.01666667f;
+    //iVar8 = new_mode;
+        if (player->obj.die_time >= player->obj.die_duration) {
+            player->obj.die_time = player->obj.die_duration;
+            if ((new_mode == -1) && (new_level == -1)) {
+                  if (Demo != 0) {
+                    new_level = 0x23;
+                  }
+                  else {
+                        if (Bonus == 2) {
+                          if (((plr_bonus_wumpas.count == 0) && (bonus_wumpa_delay == 0)) &&
+                             ((!(bonus_wumpa_wait > 0.0f) && ((((bonus_finish_frame >= save_bonus_crates_destroyed * 6 + 6 &&
+                                 !(bonus_crates_wait > 0.0f)) && (bonus_lives == 0)) &&
+                               ((bonus_life_delay == 0 && !(bonus_lives_wait > 0.0f)))))))) {
+                            NuSoundStopStream(0);
+                            NuSoundStopStream(1);
+                            bonus_restart = 1;
+                            new_mode = GameMode;
+                          }
+                        }
+                        else if (TimeTrial != 0) {
+                          new_mode = GameMode;
+                        }
+                        else {
+                          if (plr_lives.count != 0) {
+                            plr_lives.count = plr_lives.count + -1;
+                            if (Adventure != 0) {
+                              LivesLost = LivesLost + 1;
+                              Game.lives = (u8)plr_lives.count;
+                            }
+                            new_mode = GameMode;
+                            player->jump_hold = 0;
+                          }
+                          else {
+                            new_level = 0x26;
+                          }
+                          plr_died = 1;
+                        }
+                  }
+            }
+       }
+  }
+  //dVar13 = 0.016666668f;
+  iVar8 = -1;
+  //i = 1;
+  //iVar10 = 0xce4;
+  for (i = 1; i < 9; i++) {
+    if (Character[i].used != 0) {
+            if (Character[i].on == 0) {
+                  if (Character[i].off_wait != 0) {
+                          Character[i].off_wait--;
+                        if (Character[i].off_wait == 0) {
+                        RemoveCreature(&Character[i]);
+                      }    
+                  }
+            }
+            else if (Character[i].obj.dead != 0) {
+                  Character[i].obj.die_time += 0.016666668f;
+                  if (Character[i].obj.die_time >= Character[i].obj.die_duration) {
+                    Character[i].obj.die_time = Character[i].obj.die_duration;
+                    Character[i].on = 0;
+                    Character[i].off_wait = 2;
+                    if ((Character[i].i_aitab != -1) && (AITab[Character[i].i_aitab].delay <= 0.0f)) {
+                      AITab[Character[i].i_aitab].status = 0;
+                    }
+                  }
+            }
+            else {
+                  if ((NuVecDistSqr(&AITab[Character[i].i_aitab].origin,&player->obj.pos,NULL) > range2) ||
+                     ((level_part_2 != 0 && (AITab[Character[i].i_aitab].ai_type != 0x4f)))) {
+                    Character[i].on = 0;
+                    Character[i].off_wait = 2;
+                    if (Character[i].obj.character == 0x76) {
+                      clock_ok = 0;
+                    }
+                  }
+            }
+    }
+    else if (iVar8 == -1) {
+            iVar8 = i;
+          }
+    //i = i + 1;
+    //iVar10 = iVar10 + 0xce4;
+    //pcVar6 = c;
+  } //while (i < 9);
+  if (iVar8 == -1) {
+      c_slot++;
+    if (c_slot == 9) {
+        c_slot = 1;
+    }
+  } else {
+      c_slot = iVar8;
+  }
+  //c_slot = iVar8;
+  p0 = &player->obj.pos;
+  index = -1;
+  if (Character[c_slot].used != 0) {
+      index = Character[c_slot].i_aitab;
+      if (index != -1) {
+        dist = NuVecDistSqr(p0,AITab[Character[c_slot].i_aitab].pos,NULL);
+        //dist = range2;
+      }
+  }
+  //i = iVar8;
+    iVar10 = index;
+    //dVar13 = 0.0f;
+    pAI = AITab;
+    //iVar10 = 0;
+    for (i = 0; i < LEVELAICOUNT; i++) {
+      if ((0.0f < pAI->delay) && (0.0f < pAI->time)) {
+         pAI->time -= 0.016666668f;
+            if (pAI->time < 0.0f) {
+                pAI->time = 0.0f;
+            }     
+       }
+      //i = iVar10 + 1;
+      //j = 8;
+      //pcVar6 = Character;
+      for (j = 1; j < 9; j++) {
+            //pcVar6 = pcVar6 + 1;
+            if (((Character[j].used != 0) && (Character[j].i_aitab == i)) &&
+               ((!(pAI->delay > 0.0f) || (pAI->time != 0.0f)))) goto LAB_80017f48;
+            //j = j + -1;
+      } //while (j != 0);
+      if (((level_part_2 == 0) || (pAI->ai_type == 0x4f)) && ((pAI->status != 0 &&
+              (CRemap[AIType[pAI->ai_type].character] != -1)))) {
+
+   switch (pAI->ai_type) {
+    case 0x4c:
+    case 0x4d: // > 0x4c
+                    if ((Game.level[Level].flags & 8) == 0) {
+                      //bVar1 = (plr_items & 1) == 0;
+    //LAB_80017ed4:
+                      if ((plr_items & 1) == 0) {  //goto LAB_80017f20;
+                              d = NuVecDistSqr(p0,pAI->pos,NULL);
+                              if ((index == -1) || (d < dist)) {
+                                index = i;
+                                dist = d;
+                              }
+                      }
+                    }
+    break;
+    case 0x4e:
+    case 0x4f:
+Skip:
+            if (((Demo == 0) && ((Hub == 5 || ((Game.level[Level].flags & 8) != 0)))) &&
+                          (TimeTrial == 0)) //goto joined_r0x80017f1c;
+                            if (clock_ok != 0) {  //goto LAB_80017f20;
+                              d = NuVecDistSqr(p0,pAI->pos,NULL);
+                              if ((index == -1) || (d < dist)) {
+                                index = i;
+                                dist = d;
+                              }
+                            }
+    break;
+    case 0x50:
+    case 0x51:
+            if ((Game.level[Level].flags & 0x10) == 0) {
+                  //bVar1 = (plr_items & 2) == 0;
+                  //goto LAB_80017ec8;
+                  if ((plr_items & 2) == 0) goto LAB_1;
+            }
+    break;
+    case 0x52:
+    case 0x53:
+            if (((((Game.level[Level].flags & 0x20) == 0) && ((plr_items & 4) == 0)) &&
+                                   (TimeTrial == 0)) && ((LDATA->flags & 0x200) == 0)) {
+// joined_r0x80017f1c:
+                            if (bonusgem_ok == 0) {  //goto LAB_80017f20;
+                              d = NuVecDistSqr(p0,pAI->pos,NULL);
+                              if ((index == -1) || (d < dist)) {
+                                index = i;
+                                dist = d;
+                              } 
+                            }
+            }
+    break;
+    case 0x54:
+                if ((Game.level[Level].flags & 0x40) == 0) {
+                  //bVar1 = (plr_items & 8) == 0;
+    //LAB_80017ec8:
+                  if ((plr_items & 8) == 0) goto LAB_1;
+                }
+    break;
+    case 0x55:
+                if ((Game.level[Level].flags & 0x80) == 0) {
+                  if ((plr_items & 0x20) == 0) goto LAB_1;      
+                }
+    break;
+    case 0x56:
+        if ((Game.level[Level].flags & 0x100) != 0 || ((plr_items & 0x10) == 0)) {
+               goto LAB_1;
+        }
+    break;
+    case 0x57:
+                    if ((Game.level[Level].flags & 0x200) == 0) { //goto LAB_80017f20;
+                        if ((plr_items & 0x40) != 0) goto LAB_1;
+                    }
+    break;
+  /*  case 0x5a:
+//LAB_80017f20:
+              range2 = NuVecDistSqr(p0,pAI->pos,NULL);
+              if ((index == -1) || (range2 < dist)) {
+                index = i;
+                dist = range2;
+              }
+    break;*/
+
+    case 0x58:
+                    if ((Game.level[Level].flags & 0x400) == 0) {
+                        //bVar1 = (plr_items & 0x80) == 0;
+                          if ((plr_items & 0x80) == 0) {
+LAB_1:
+                            //bVar1 = TimeTrial == 0;
+                            //goto LAB_80017ed4;
+                            if ((TimeTrial == 0) && ((LDATA->flags & 0x200) == 0)) {
+                              d = NuVecDistSqr(p0,pAI->pos,NULL);
+                              if ((index == -1) || (d < dist)) {
+                                index = i;
+                                dist = d;
+                              }
+                            }
+                          }
+                      }
+    break;
+    case 0x5a:
+        if ((Game.powerbits & 0x20) == 0) {
+                  d = NuVecDistSqr(p0,pAI->pos,NULL);
+                  if ((index == -1) || (d < dist)) {
+                    index = i;
+                    dist = d;
+                  }
+        }
+    break;
+    case 0x59: //< 0x5f
+    case 0x5b:
+    case 0x5c:
+    case 0x5d:
+    case 0x5e:
+              if (boss_dead == 1) {
+                if (LBIT & 0x3e00000 != 0) //goto LAB_80017f20;
+                  d = NuVecDistSqr(p0,pAI->pos,NULL);
+                  if ((index == -1) || (d < dist)) {
+                    index = i;
+                    dist = d;
+                  }
+              }
+    break;
+    default:
+        d = NuVecDistSqr(p0,pAI->pos,NULL);
+        if ((index == -1) || (d < dist)) {
+          index = i;
+          dist = d;
+        }
+    break;
+    }
+    }
+    LAB_80017f48:
+          pAI++;
+          //iVar10 = i;
+    } //while (i < LEVELAICOUNT);
+  if ((index != -1) && (index != iVar10)) {
+      if (((!(AITab[index].delay > 0.0f) || !(AITab[index].time > 0.0f)))) {
+        if (Character[c_slot].used != 0) {
+              //bVar1 = Character[c_slot].obj.character != 0x76;
+              if ((Character[c_slot].obj.character != 0x76) || (Level != 0x22)) {
+                    Character[c_slot].on = 0;
+                    Character[c_slot].off_wait = 2;
+                    if (Character[c_slot].obj.character == 0x76) {
+                      clock_ok = 0;
+                    }
+              }
+        }
+        else {
+              if (NuVecDistSqr(&AITab[index].origin,&player->obj.pos,NULL) < dist) {
+                    AddCreature(AIType[AITab[index].ai_type].character,c_slot,index);
+                    if (0.0f < AITab[index].delay) {
+                      AITab[index].time = AITab[index].delay;
+                    }
+              }
+        }
+      }   
+  }
+}
+
 //NGC MATCH
 void ResetPlayer(s32 set) {
     struct creature_s* c;
@@ -176,7 +485,7 @@ void ResetPlayerMoves(struct creature_s *c) {
     c->obj.ground = 3;
     return;
 }
-*/
+
 //NGC MATCH
 void RemoveCreature(struct creature_s *c) {
   RemoveGameObject(&c->obj);
@@ -251,30 +560,25 @@ float ModelAnimDuration(u32 character,u32 action,float start,float end)
     return t * (1.0f / model->animlist[action]->speed) * 0.033333335f;
 }
 
-volatile int crash_loaded; //main.c
+volatile s32 crash_loaded; //main.c
 
-//95% NGC
+//NGC MATCH
 s32 LoadCharacterModel(s32 character, s32 level, s32* cmodel_index, s32 clist_entry, s32* remap) {
-    s32 k;
-    s32 iVar2;
-    struct CharacterModel* model;
-    struct animlist* anim;
-    s32 cnt;
     char path[64];
-    struct cdata_s* cdata;
-    struct {
-        s32 character;
-        struct animlist animlist[5];
-    } * space;
+    struct CharacterModel* model;
+    CharacterData* cdata;
+    struct AnimList* anim;
+    s32 k;
+    SPACEANIM* space;
 
     model = &CModel[*cmodel_index];
     if (level == 0x28) {
-        space = (struct space_s*)SpaceGameCutTab[gamecut][0];
+        space = (SPACEANIM*)SpaceGameCutTab[0][gamecut * 2];
     } else {
         space = NULL;
     }
-    if ((character != 0xff) && (0x31 > *remap)) {
-
+    
+    if ((character != 0xff) && (*remap < 0x31)) {
         memset(model, 0, sizeof(struct CharacterModel));
         strcpy(path, "chars\\");
         cdata = &CData[character];
@@ -286,31 +590,31 @@ s32 LoadCharacterModel(s32 character, s32 level, s32* cmodel_index, s32 clist_en
             strcat(tbuf, ".hgo");
             model->hobj = NuHGobjRead(&superbuffer_ptr, tbuf);
             if (character == 0 || character == 1) {
-                if (model->hobj == NULL)
-                    goto LAB_800185e0;
-                crash_loaded = 1;
+                if (model->hobj != NULL) {
+                    crash_loaded = 1;
+                }
             }
-            if (model->hobj == NULL)
-                goto LAB_800185e0;
         }
-        for (cnt = 0; cnt < 16; cnt++) {
-            model->pLOCATOR[cnt] = NuHGobjGetPOI(model->hobj, (u8)cnt);
-        }
-        if ((character == 0x54) || (character == 0x9f)) {
-            strcpy(path, "chars\\");
-            strcat(path, CData[0].path);
-            strcat(path, "\\");
-        }
-        anim = cdata->anim;
-        if (level == 0x28) {
-            anim = space[clist_entry].animlist;
-        } else if (character == 0) {
-            //(0x01002000)
-            // 0x00001000
-            if ((LBIT & 0x0000001001002000) && (level != 0x1e)) {
-                anim = CrashAnim_GLIDER;
-            } else {
-                if ((LBIT & 0x40000) != 0) {
+        
+        if (model->hobj != NULL) {
+            for (k = 0; k < 16; k++) {
+                model->pLOCATOR[k] = NuHGobjGetPOI(model->hobj, (u8)k);
+            }
+            
+            if ((character == 0x54) || (character == 0x9f)) {
+                strcpy(path, "chars\\");
+                strcat(path, CData[0].path);
+                strcat(path, "\\");
+            }
+            
+            anim = cdata->anim;
+            
+            if (level == 0x28) {
+                anim = space[clist_entry].animlist;
+            } else if (character == 0) {
+                if ((LBIT & 0x0000001001002000) && (level != 0x1e)) {
+                    anim = CrashAnim_GLIDER;
+                } else if ((LBIT & 0x40000) != 0) {
                     anim = CrashAnim_MOSQUITO;
                 } else if ((LBIT & 0x0000000100210801) != 0) {
                     anim = CrashAnim_ATLASPHERE;
@@ -321,46 +625,52 @@ s32 LoadCharacterModel(s32 character, s32 level, s32* cmodel_index, s32 clist_en
                 } else if (level == 0x2b) {
                     anim = CrashAnim_CREDITS;
                 }
+            } else if ((character == 1) && (LBIT & 0x4000000)) {
+                anim = CocoAnim_DROPSHIP;
             }
-        } else if ((character == 1) && (LBIT & 0x4000000)) {
-            anim = CocoAnim_DROPSHIP;
-        }
-        while ((anim != NULL) && (anim->file != NULL) && (anim->action >= 0) && anim->action < 0x76) {
-            if (anim->levbits & LBIT) {
-                if (((anim->flags & 2) != 0) && (model->anmdata[anim->action]) == 0) {
-                    strcpy(tbuf, path);
-                    strcat(tbuf, anim->file);
-                    strcat(tbuf, ".ani");
-                    model->anmdata[anim->action] = InstAnimDataLoad(tbuf);
-                    if (model->anmdata[anim->action] != 0) {
-                        model->animlist[anim->action] = anim;
+            
+            while ((anim != NULL) && (anim->file != NULL) && (anim->action >= 0) && anim->action < 0x76) {
+                if (anim->levbits & LBIT) {
+                    if (((anim->flags & 2) != 0) && (model->anmdata[anim->action]) == 0) {
+                        strcpy(tbuf, path);
+                        strcat(tbuf, anim->file);
+                        strcat(tbuf, ".ani");
+                        model->anmdata[anim->action] = InstAnimDataLoad(tbuf);
+                        if (model->anmdata[anim->action] != 0) {
+                            model->animlist[anim->action] = anim;
+                        }
+                    }
+                    
+                    if (((anim->flags & 4) != 0) && ((model->fanmdata[anim->action]) == 0)) {
+                        strcpy(tbuf, path);
+                        strcat(tbuf, anim->file);
+                        strcat(tbuf, ".bsa");
+                        model->fanmdata[anim->action] = InstAnimDataLoad(tbuf);
+                        if (model->fanmdata[anim->action] != 0) {
+                            model->fanimlist[anim->action] = anim;
+                        }
                     }
                 }
-                if (((anim->flags & 4) != 0) && ((model->fanmdata[anim->action]) == 0)) {
-                    strcpy(tbuf, path);
-                    strcat(tbuf, anim->file);
-                    strcat(tbuf, ".bsa");
-                    model->fanmdata[anim->action] = InstAnimDataLoad(tbuf);
-                    if (model->fanmdata[anim->action] != 0) {
-                        model->fanimlist[anim->action] = anim;
-                    }
-                }
+                
+                anim++;
             }
-            anim = anim + 1;
+            
+            model->character = character;
+            CRemap[character] = *cmodel_index;
+            *cmodel_index += 1;
+            *remap += 1;
         }
-        model->character = character;
-        CRemap[character] = cmodel_index[0];
-        *cmodel_index = *cmodel_index + 1;
-        *remap = *remap + 1;
-    LAB_800185e0:	//Problem with this for loop
+        
         for (k = 0; k < 26; k++) {
-            if (((Font3DObjTab[k].flags & 1)) && (Font3DObjTab[k].i == character)) {
-                CLetter[character] = (char)k + 'a';
+            if ((Font3DObjTab[k].flags & 1) && (Font3DObjTab[k].i == character)) {
+                CLetter[character] = (char)k + 0x61;
                 k = 26;
             }
         }
+        
         return 1;
     }
+    
     return 0;
 }
 
@@ -998,76 +1308,62 @@ void StoreLocatorMatrices(struct CharacterModel *model,struct numtx_s *mC,struct
   return;
 }
 
-/*
-
-//96% NGC
+//NGC MATCH
 s32 DrawCharacterModel(struct CharacterModel* model,struct anim_s* anim,struct numtx_s* mC,struct numtx_s* mS,
     s32 render,struct numtx_s* mR,struct numtx_s* loc_mtx,struct nuvec_s* loc_mom,struct obj_s* obj) {
-    short sVar1;
-    float dVar2;
+
     float** dwa;
-    s32 cVar3;
-    s32 iVar4;
-    s32 iVar5;
-    s32 pafVar5;
-    s32 Drawn = 0;
-    struct NUJOINTANIM_s* pJ;
-    struct CharacterModel* model2;
     s32 action;
     float time;
+    struct CharacterModel* model2;
+    s32 Drawn = 0;
     struct NUJOINTANIM_s joint[4];
+    struct NUJOINTANIM_s* pJ;
+    s32 nJ;
+    s32 i;
     short layertab[2] = { 0, 1 };
-    short* local_58;
-    s32 numjoints;
+    short* layer;
+    s32 nlayers;
 
     if (jeep_draw != 0) {
-        dVar2 = ((GameTimer.frame % 0x3c) * 0x10000) / 0x3c;
-        for (iVar5 = 0; iVar5 < 4; iVar5++) {
-            joint[iVar5].rx = dVar2 * 9.58738e-05f;
-            joint[iVar5].ry = 0;
-            joint[iVar5].rz = 0;
-            joint[iVar5].tx = 0;
-            joint[iVar5].ty = 0;
-            joint[iVar5].tz = 0;
-            joint[iVar5].sx = 1;
-            joint[iVar5].sy = 1;
-            joint[iVar5].sz = 1;
-            joint[iVar5].joint_id = iVar5;
+        for (i = 0; i < 4; i++) {
+            joint[i].rx = ((GameTimer.frame % 0x3c) * 0x10000) / 0x3c * 9.58738e-05f;
+            joint[i].ry = 0;
+            joint[i].rz = 0;
+            joint[i].tx = joint[i].ty = joint[i].tz = 0;
+            joint[i].sx = joint[i].sy = joint[i].sz = 1;
+            joint[i].joint_id = i;
         }
     } else {
         joint->rx = (f32)((u16)-(player->obj).target_xrot) * 9.58738e-05f;
         joint->ry = (f32)((u16)-(player->obj).target_yrot) * 9.58738e-05f;
         joint->rz = 0.0f;
-        joint->tx = 0.0f;
-        joint->ty = 0.0f;
-        joint->tz = 0.0f;
-        joint->sx = 1.0f;
-        joint->sy = 1.0f;
-        joint->sz = 1.0f;
+        joint->tx = joint->ty = joint->tz = 0.0f;
+        joint->sx = joint->sy = joint->sz = 1.0f;
         joint->joint_id = (u8)jointnum;
-        joint->flags = '\x01';
+        joint->flags = 1;
     }
     if (mC == NULL) {
+        Drawn = 0;
         goto Exit;
     }
-    iVar4 = 1;
+    nlayers = 1;
     if (model->character == 0) {
-        iVar4 = 2;
+        nlayers = 2;
     }
-    
     if (anim != NULL) {
         if ((anim->blend != 0)
-            && (((0x75 >= (u16)anim->blend_src_action) && (model->fanmdata[anim->blend_src_action] != NULL))
-                && ((0x75 >= (u16)anim->blend_dst_action) && (model->fanmdata[anim->blend_dst_action] != NULL))))
+            && ((((u16)anim->blend_src_action <= 0x75) && (model->fanmdata[anim->blend_src_action] != NULL))
+                && (((u16)anim->blend_dst_action <= 0x75) && (model->fanmdata[anim->blend_dst_action] != NULL))))
         {
             dwa = NuHGobjEvalDwaBlend(
-                iVar4, (short*)&layertab[0], model->fanmdata[anim->blend_src_action], anim->blend_src_time,
+                nlayers, (short*)&layertab[0], model->fanmdata[anim->blend_src_action], anim->blend_src_time,
                 model->fanmdata[anim->blend_dst_action], anim->blend_dst_time,
                 (float)anim->blend_frame / (float)anim->blend_frames
             );
         } else if (
             (anim->blend == 0) &&
-            (((0x75 >= (u16)anim->action) && (model->fanmdata[anim->action] != NULL)))) {
+            ((((u16)anim->action <= 0x75) && (model->fanmdata[anim->action] != NULL)))) {
             dwa = NuHGobjEvalDwa(1, NULL, model->fanmdata[anim->action], anim->anim_time);
         } else {
             dwa = NULL;
@@ -1077,66 +1373,58 @@ s32 DrawCharacterModel(struct CharacterModel* model,struct anim_s* anim,struct n
     }
     
     model2 = model;
-    cVar3 = model->character;
-    if (cVar3 == 0x54) {
+    if (model->character == 0x54) {
         if ((LBIT & 0x0000000400000040)) {
-            cVar3 = (s32)CRemap[115];
-        } else {
-            cVar3 = (s32)CRemap[0];
+            if ((s32)CRemap[115] != -1) {
+                model2 = &CModel[(s32)CRemap[115]];
+            }
+        } else if ((s32)CRemap[0] != -1) {
+                model2 = &CModel[(s32)CRemap[0]];
+        }
+    } else if (model->character == 0x9f) {
+        if (CRemap[8] != -1) {
+            model2 = &CModel[CRemap[8]];
         }
     }
-    else {
-        if (cVar3 == 0x9f) {
-            cVar3 = (s32)CRemap[8];
-        }
-        else {
-            // TODO: Fix this
-            goto after;
-        }
-    }
-    if (cVar3 != -1) {
-        model2 = &CModel[cVar3];
-    }
-    after:
     pJ = NULL;
-    numjoints = 0;
+    nJ = 0;
     if ((((jeep_draw == 0) && (plr_render != 0))
-         && ((player->target != '\0' && ((VEHICLECONTROL != 1 || ((player->obj).vehicle == -1))))))
-        && ((sVar1 = model2->character, sVar1 == 0 || ((sVar1 == 0x54 || (sVar1 == 0x8c))))))
+         && ((player->target != 0 && ((VEHICLECONTROL != 1 || ((player->obj).vehicle == -1))))))
+        && ((model2->character == 0 || ((model2->character == 0x54 || (model2->character == 0x8c))))))
     {
         pJ = joint;
-        numjoints = 1;
+        nJ = 1;
     }
     if (ChrisJointOveride != 0) {
         pJ = ChrisJointList;
-        numjoints = ChrisNumJoints;
+        nJ = ChrisNumJoints;
     }
     if (anim != NULL) {
-        if (anim->blend != '\0') {
+        if (anim->blend != 0) {
             if (((((u16)anim->blend_src_action < 0x76) && (model2->anmdata[anim->blend_src_action] != NULL))
                  && ((u16)anim->blend_dst_action < 0x76))
-                && (model2->anmdata[anim->blend_dst_action] != NULL))
-            {
+                && (model2->anmdata[anim->blend_dst_action] != NULL)) {
                 NuHGobjEvalAnimBlend(
                     model2->hobj, model2->anmdata[anim->blend_src_action], (f32)anim->blend_src_time,
                     model2->anmdata[anim->blend_dst_action], (f32)anim->blend_dst_time,
-                    (f32)anim->blend_frame / (f32)anim->blend_frames, numjoints, pJ, tmtx);
+                    (f32)anim->blend_frame / (f32)anim->blend_frames, nJ, pJ, tmtx);
                 action = (s32)anim->blend_dst_action;
                 time = anim->blend_dst_time;
-            } else if (anim->blend != '\0'){
-                 goto LAB_8001dcdc;      
+                goto LAB_8001dcf8;
+            } 
+            if (anim->blend != 0) {
+                 goto NoModelAnim;      
             }
-
         }
-        else if (((u16)anim->action < 0x76) && (model2->anmdata[anim->action] != NULL)) {
-            NuHGobjEvalAnim(model2->hobj, model2->anmdata[anim->action], anim->anim_time, numjoints, pJ, tmtx);
-            action = (s32)anim->action;
-            time = anim->anim_time;
-            goto LAB_8001dcf8;
+        if (((u16)anim->action > 0x75) || (model2->anmdata[anim->action] == NULL)) {
+            goto NoModelAnim;
         }
+        NuHGobjEvalAnim(model2->hobj, model2->anmdata[anim->action], anim->anim_time, nJ, pJ, tmtx);
+        action = (s32)anim->action;
+        time = anim->anim_time;
     } else {
-        LAB_8001dcdc:
-        NuHGobjEval(model2->hobj, numjoints, pJ, tmtx);
+NoModelAnim:
+        NuHGobjEval(model2->hobj, nJ, pJ, tmtx);
         action = -1;
     }
 LAB_8001dcf8:
@@ -1147,19 +1435,19 @@ LAB_8001dcf8:
         AddAnimDebris(model, loc_mtx, action, (float)time, obj);
     }
     if (render != 0) {
-        if (((plr_render != 0) && (model->character == 0)) && ((player->obj).dead == '\x12')) {
-            iVar4 = 1;
+        if (((plr_render != 0) && (model->character == 0)) && ((player->obj).dead == 0x12)) {
+            nlayers = 1;
         }
-        Drawn = NuHGobjRndrMtxDwa(model->hobj, mC, iVar4, (short*)&layertab, tmtx, dwa);
+        Drawn = NuHGobjRndrMtxDwa(model->hobj, mC, nlayers, (short*)&layertab, tmtx, dwa);
         if (((Drawn != 0) && (obj != NULL)) && (obj->character == 0xb1)) {
             DrawProbeFX(obj);
         }
         if (mR != NULL) {
-            NuHGobjRndrMtxDwa(model->hobj, mR, iVar4, (short*)&layertab, tmtx, dwa);
+            NuHGobjRndrMtxDwa(model->hobj, mR, nlayers, (short*)&layertab, tmtx, dwa);
         }
         if (mS != NULL) {
             NuMtlSetStencilRender(NUSTENCIL_REPLACE_NODRAW);
-            NuHGobjRndrMtx(model->hobj, mS, iVar4, (short*)&layertab, tmtx);
+            NuHGobjRndrMtx(model->hobj, mS, nlayers, (short*)&layertab, tmtx);
             NuMtlSetStencilRender(NUSTENCIL_NOSTENCIL);
         }
     }

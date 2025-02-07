@@ -1172,9 +1172,9 @@ s32 main(int argc /* r3 */, char * * argv /* r4 */) {
 */
 
 
-//89% NGC (86% PS2)
+//92.85% NGC (86% PS2)
 /*
-s32 main(s32 argc,char **argv) {
+int main(s32 argc,char **argv) {
   //s32 bVar1;
   //s32 bVar2;
   float fVar3;
@@ -1183,6 +1183,7 @@ s32 main(s32 argc,char **argv) {
   float fVar6;
   s32 iVar8;
   s32 iVar9;
+  s32 iVar10;
   //char **in_r5;
   struct creature_s *plr;
   //struct cammtx_s *GameCam_;
@@ -1347,7 +1348,7 @@ LAB_80051ba4:
   ResetGemPath();
   game_music = -1;
   LostLife = 0;
-  if ((Cursor.menu != '\x13') && (GameMode != 1)) {
+  if ((Cursor.menu != 0x13) && (GameMode != 1)) {
     GameMusic((s32)LDATA->music[0],0);
   }
   USELIGHTS = 1;
@@ -1358,7 +1359,7 @@ LAB_80051ba4:
   while( 1 ) {
     NuSoundSetLevelAmbience();
     NuSoundUpdate();
-    if (((Cursor.menu != '\x13') && (game_music != LDATA->music[0])) && (GameMode != 1)) {
+    if (((Cursor.menu != 0x13) && (game_music != LDATA->music[0])) && (GameMode != 1)) {
       GameMusic((s32)LDATA->music[0],0);
     }
     InitCrateExplosions();
@@ -1382,8 +1383,8 @@ LAB_80051ba4:
     InitGameMode(iVar9);
     ResetBug();
     ResetLevel();
-    ResetVehicleControl((s32)(player->obj).RPos.iRAIL,(s32)(player->obj).RPos.iALONG,
-                        (player->obj).RPos.fALONG);
+    ResetVehicleControl((s32)player->obj.RPos.iRAIL,(s32)player->obj.RPos.iALONG,
+                        player->obj.RPos.fALONG);
     InitDeb3();
     NuSoundUpdate();
     ResetProjectiles();
@@ -1491,7 +1492,7 @@ LAB_80051ba4:
                         mask_crates = Paused;
                         RotateDirectionalLight(ldir,-0x2000,((GameTimer.frame % 0x1e0) * 0x10000) / 0x1e0);
                         for (iVar9 = 0; iVar9 < 9; iVar9++) {
-                          Character[iVar9].anim_processed = '\0';
+                          Character[iVar9].anim_processed = 0;
                         }
                         SetLevelLights();
                         SetTexAnimSignals();
@@ -1524,7 +1525,7 @@ LAB_80051ba4:
                         }
                         TBCODEEND(1);
                         TBCODESTART(2,"Update");
-                        if (Cursor.menu == '\x13') {
+                        if (Cursor.menu == 0x13) {
                           UpdateCutMovie();
                         }
                         if (level_part_2 == 0) {
@@ -1544,11 +1545,11 @@ LAB_80051ba4:
                         ProcDeb3();
                         if ((NODEBRIS == 0) &&
                            ((Debris(0), GLASSPLAYER == 0 || !(5.0f > plr_invisibility_time)))) {
-                          pos.x = (player->obj).pos.x;
-                          pos.y = (((player->obj).bot + (player->obj).top) * (player->obj).SCALE) * 0.5f 
-                                          + (player->obj).pos.y;
-                          pos.z = (player->obj).pos.z;
-                          iVar9 = DebrisCollisionCheck(&pos,(player->obj).RADIUS);
+                          pos.x = player->obj.pos.x;
+                          pos.y = ((player->obj.bot + player->obj.top) * player->obj.SCALE) * 0.5f 
+                                          + player->obj.pos.y;
+                          pos.z = player->obj.pos.z;
+                          iVar9 = DebrisCollisionCheck(&pos,player->obj.RADIUS);
                           if (iVar9 != -1) {
                             KillPlayer(&player->obj,0x14);
                           }
@@ -1566,7 +1567,7 @@ LAB_80051ba4:
                         UpdatePanelDebris();
                   }
                   if ((FRAME == FRAMES - 1) && (pause_rndr_on == 0)) {
-                    AddBugLight();
+                    AddBugLight(plr);
                   }
                   GameTiming();
                   if (FRAME == 0) {
@@ -1623,7 +1624,7 @@ LAB_80051ba4:
                       }
                     }
                     //bVar1 = FRAME == FRAMES - 1;
-                   // local_9c[1] = (s32)((plr->obj).dead == '\x02');
+                   // local_9c[1] = (s32)(plr->obj.dead == 2);
                    // uVar5 = ((uint)(char)(bVar1 << 1) << 0x1c) >> 0x1d;
                     if ((FRAME == FRAMES - 1) << 0x1d) {
                       tbslotBegin(app_tbset,0xc);
@@ -1632,7 +1633,7 @@ LAB_80051ba4:
                       if (FRAME == FRAMES - 1) {
                         TBDRAWSTART(1,"Crash");
                       }
-                      if (((plr->obj).contact == 0) &&
+                      if ((plr->obj.contact == 0) &&
                          (((GLASSPLAYER == 0 || !(5.0f > plr_invisibility_time)) || (Level == 0x17)))) {
                         pCam = GameCam;
                         DrawCreatures(Character,1,uVar5,1);
@@ -1710,11 +1711,11 @@ LAB_80051ba4:
           TBDRAWEND(5);
           TBDRAWSTART(6,"Misc");
           if ((LDATA->flags & 1) != 0) {
-            if (((((plr->used != '\0') && ((plr->obj).mask != NULL)) &&
-                 ((plr->obj).mask->active != 0)) && ((LDATA->flags & 0xe00) == 0)) &&
+            if (((((plr->used != 0) && (plr->obj.mask != NULL)) &&
+                 (plr->obj.mask->active != 0)) && ((LDATA->flags & 0xe00) == 0)) &&
                (((VEHICLECONTROL != 1 || ((LBIT & 0x0000000105042000) == 0)) &&
-                ((Cursor.menu != '$' && (advice_wait == 0)))))) {
-              DrawMask((plr->obj).mask);
+                ((Cursor.menu != 0x24 && (advice_wait == 0)))))) {
+              DrawMask(plr->obj.mask);
             }
             DrawMaskFeathers();
           }
@@ -1733,7 +1734,7 @@ LAB_80051ba4:
           NuRndrWaterRip(DebMat[4]);
         }
         TBDRAWEND(6);
-        if (Cursor.menu == '\x13') {
+        if (Cursor.menu == 0x13) {
           DrawCutMovie();
         }
         if (cut_on == 0) {
@@ -1756,17 +1757,17 @@ LAB_80051ba4:
         tbslotEnd(app_tbset,0xe);
         tbslotBegin(app_tbset,2);
         NuRndrBeginScene(1);
-        if ((((LBIT & 0x200000a1) != 0) && (cut_on == 0)) &&
-           ((Level != 7 || ((sVar4 = (player->obj).RPos.iALONG, sVar4 < 0x67 || (0x91 < sVar4))))) )
+        if ((((LBIT & 0x200000a1) != 0) && (cut_on != 0)) ||
+           ((Level == 7) && (player->obj.RPos.iALONG > 0x66) && (player->obj.RPos.iALONG < 0x92)))
         {
-          if ((Level == 5) && ((sVar4 = (player->obj).RPos.iALONG, 0x6d < sVar4 && (sVar4 < 0x79)) ))
+          if ((Level == 5) && (player->obj.RPos.iALONG > 0x6d) && (player->obj.RPos.iALONG < 0x79))
           {
-            if (sVar4 == 0x6e) {
-              snowflake_scale = (1.0f - (player->obj).RPos.fALONG);
+            if (player->obj.RPos.iALONG == 0x6e) {
+              snowflake_scale = (1.0f - player->obj.RPos.fALONG);
               DoClouds(Paused);
             }
-            if ((player->obj).RPos.iALONG == 0x78) {
-              snowflake_scale = (player->obj).RPos.fALONG;
+            if (player->obj.RPos.iALONG == 0x78) {
+              snowflake_scale = player->obj.RPos.fALONG;
               DoClouds(Paused);
             }
           }
@@ -1786,32 +1787,33 @@ LAB_80051ba4:
       TBDRAWSTART(7,"Panel");
       iVar9 = NuRndrBeginScene(1);
       if (iVar9 != 0) {
-       // bVar1 = (plr->obj).dead == '\x02';
-        if (((plr->obj).dead != '\x02') && (PLAYERCOUNT != 0)) {
-          fVar6 = (plr->obj).die_time * 3.0f;
-          if (fVar6 > (plr->obj).die_duration) {
-            fVar6 = (plr->obj).die_duration;
+       // bVar1 = plr->obj.dead == 2;
+        if ((plr->obj.dead != 2) && (PLAYERCOUNT != 0)) {
+          fVar6 = plr->obj.die_time * 3.0f;
+          if (fVar6 > plr->obj.die_duration) {
+            fVar6 = plr->obj.die_duration;
           }
-          uVar5 = ((fVar6 / (plr->obj).die_duration) * 255.0f);
+          uVar5 = ((fVar6 / plr->obj.die_duration) * 255.0f);
           NuRndrRect2di(0,0,SWIDTH << 4,SHEIGHT << 3,uVar5 | uVar5 << 8 | uVar5 << 0x10 | 0x80000000,fade_mtl);
             
         }
         else {
           if (Cursor.menu == 0x22) {
-            iVar9 = (s32)(1.0f - (((POWERTEXTY + 0.7f) + 1.0f) * 0.5f)) * (SHEIGHT);
-            NuRndrRect2di(0,iVar9,SWIDTH,(s32)((1.0f - ((POWERTEXTY - 0.75f) + 1.0f) * 0.5f) * 
-                                                (SHEIGHT)) - iVar9,0x18777777, fade_mtl);
+            iVar9 = (s32)((1.0f - (((POWERTEXTY + 0.7f) + 1.0f) * 0.5f)) * (SHEIGHT));
+            iVar10 = (s32)((1.0f - ((POWERTEXTY - 0.75f) + 1.0f) * 0.5f) * 
+                                                (SHEIGHT)) - iVar9;
+            NuRndrRect2di(0,iVar9,SWIDTH,iVar10,0x18777777, fade_mtl);
           }
         }
         NuRndrClear(10,0,1.0f);
-        if ((plr->obj).dead != '\x02') {
+        if (plr->obj.dead != 2) {
           DrawCreatures(Character,1,1,0);
         }
-        if ((((((LDATA->flags & 1) != 0) && (plr->used != '\0')) && (((plr->obj).mask != NULL &&
-              (((plr->obj).mask->active != 0 && ((LDATA->flags & 0xe00) == 0)))))) &&
+        if ((((((LDATA->flags & 1) != 0) && (plr->used != 0)) && ((plr->obj.mask != NULL &&
+              ((plr->obj.mask->active != 0 && ((LDATA->flags & 0xe00) == 0)))))) &&
             ((VEHICLECONTROL != 1 || ((LBIT & 0x0000000105042000) == 0)))) &&
-           ((Cursor.menu == '$' || (advice_wait != 0)))) {
-          DrawMask((plr->obj).mask);
+           ((Cursor.menu == 0x24 || (advice_wait != 0)))) {
+          DrawMask(plr->obj.mask);
         }
         DrawPanel();
         if ((new_mode != -1) || (new_level != -1)) {
@@ -1827,8 +1829,8 @@ LAB_80051ba4:
       TBDRAWEND(7);
       tbslotEnd(app_tbset,0);
       iVar9 = nuvideo_global_vbcnt - frameout_count;
-      frameout_count = nuvideo_global_vbcnt;
       frameout = iVar9 - 1;
+      frameout_count = nuvideo_global_vbcnt;
       if (frameout < 0) {
         frameout = 0;
       }
@@ -1843,7 +1845,7 @@ LAB_80051ba4:
       DBTimerEnd(1);
       NuRndrSwapScreen(1);
       NuDynamicWaterUpdate(0);
-      Reseter();
+      Reseter(0);
       GC_DiskErrorPoll();
     }
     pause_dir = 0;
@@ -1888,7 +1890,7 @@ LAB_80051ba4:
   font3d_scene = NULL;
   CloseXboxEffectSystem();
   if (PLAYERCOUNT != 0) {
-    last_character = (s32)(plr->obj).character;
+    last_character = (s32)plr->obj.character;
   }
   else {
     last_character = iVar8;
