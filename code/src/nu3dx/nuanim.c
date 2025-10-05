@@ -329,84 +329,51 @@ struct nuanimdata_s* NuAnimDataRead(s32 fh)
     return animdata;
 }
 
-
-void NuAnimCurveDestroy(struct nuanimcurve_s *curve)
-{
+//NGC MATCH
+void NuAnimCurveDestroy(struct nuanimcurve_s *curve) {
   if (curve->animkeys != NULL) {
     NuMemFree(curve->animkeys);
   }
   NuMemFree(curve);
-  return;
 }
 
-void NuAnimCurveSetDestroy(struct nuanimcurveset_s* animcurveset, s32 destroy_curves) //CHECK
-{
-    s32 var_r29;
+//NGC MATCH
+void NuAnimCurveSetDestroy(struct nuanimcurveset_s* animcurveset, s32 destroy_curves) {
     s32 i;
-    struct nuanimcurve_s* curve;
 
-  /*  if ((animcurveset != NULL) && ((struct nuanimcurve_s** ) animcurveset->set != NULL) && (destroy_curves != 0)) {
-        i = 0;
-        if ((s8) (u8) animcurveset->ncurves > 0) {
-            var_r29 = 0;
-            do {
-                curve = *(animcurveset->set[var_r29]);
-                if (curve != NULL) {
-                    NuAnimCurveDestroy(curve);
-                }
-                i += 1;
-                var_r29 += 4;
-            } while (i < (s8) (u8) animcurveset->ncurves);
+    if ((animcurveset != NULL) && (animcurveset->set != NULL) && (destroy_curves != 0)) { 
+        for (i = 0; i < (s8) (u8) animcurveset->ncurves; i++) {
+            if (animcurveset->set[i] != NULL) {
+                NuAnimCurveDestroy(animcurveset->set[i]);
+            }
         }
-    }*/
+    }
 }
 
-void NuAnimDataDestroy(struct nuanimdata_s *animdata)
-
-{
-  struct nuanimdatachunk_s **chunk;
+//NGC MATCH
+void NuAnimDataChunkDestroy(struct nuanimdatachunk_s *animdata) {
   s32 i;
+  s32 destroycurves;
 
-  if (((animdata != NULL) &&
-      (chunk = animdata->chunks, chunk != NULL)) &&
-     (i = 0, 0 < animdata->nchunks)) {
-    while( true ) {
-      NuAnimDataChunkDestroy(chunk[i]);
-      if (animdata->nchunks <= i + 1) break;
-      chunk = animdata->chunks;
-      i = i + 1;
+  destroycurves = (animdata->curves == NULL) ? 1 : 0;
+  for (i = 0; i < animdata->numnodes; i++) {
+      for(i = 0; i < animdata->numnodes; i++) {
+          if (animdata->animcurvesets[i] != NULL) {
+            NuAnimCurveSetDestroy(animdata->animcurvesets[i],destroycurves);
+          }
+      }
+  }
+}
+
+//NGC MATCH
+void NuAnimDataDestroy(struct nuanimdata_s *animdata) {
+  s32 k;
+
+  if ((animdata != NULL) && (animdata->chunks != NULL)) {
+    for(k = 0;  k < animdata->nchunks; k++) {
+      NuAnimDataChunkDestroy(animdata->chunks[k]);
     }
   }
-  return;
-}
-
-void NuAnimDataChunkDestroy(struct nuanimdatachunk_s *animdata)
-{
-  struct nuanimcurve_s *destroycurves;
-  struct nuanimcurveset_s *animcurveset;
-  s32 nnodes;
-  s32 i;
-/*
-  destroycurves = animdata->curves;
-  nnodes = animdata->numnodes;
-  if (0 < nnodes) {
-    do {
-      i = 0;
-      if (0 < nnodes) {
-        nnodes = 0;
-        do {
-          animcurveset = *(struct nuanimcurveset_s **)(nnodes + (int)animdata->animcurveset);
-          if (animcurveset != NULL) {
-            NuAnimCurveSetDestroy(animcurveset,(u32)(destroycurves == NULL));
-          }
-          i = i + 1;
-          nnodes = nnodes + 4;
-        } while (i < animdata->numnodes);
-      }
-      nnodes = animdata->numnodes;
-    } while (i + 1 < nnodes);
-  }*/
-  return;
 }
 
 //PS2 96%

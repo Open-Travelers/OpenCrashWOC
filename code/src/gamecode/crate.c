@@ -1098,3 +1098,334 @@ s32 GotoCheckpoint(struct nuvec_s *pos,s32 direction) {
     }
     return 0;
 }
+
+//NGC MATCH (temp var)
+s32 CrateBounceReaction(CrateCubeGroup *group, CrateCube *crate, s32 type, s32 hit) {
+    s32 gone;
+    s32 sfx;
+    s32 bounce;
+
+    bounce = 0;
+    gone = 0;
+    sfx = -1;
+
+    if (type != 0xf) {
+        if (type == 9) {
+            if ((crate->timer > 0.0f) && (crate->newtype != -1)) {
+                goto LAB_80013a4c;
+            }
+            if (((TimeTrial == 0) ? crate->type1 : crate->type2) == 8) {
+                if ((crate->newtype == -1) && (crate->subtype == 0x09)) {
+                    sfx = 2;
+                    bounce |= 1;
+                    crate->newtype = 9;
+                    crate->timer = 0.01666667f;
+                    goto LAB_80013a4c;
+                }
+            }
+            if (type == 9) {
+                if (crate->timer == 0.0f) {
+                    sfx = 2;
+                    bounce |= 1;
+                    crate->timer += 0.01666667f;
+                }
+                goto LAB_80013a4c;
+            }
+        }
+        
+        if (type == 0xe) {
+            if (crate->action == -1) {
+                sfx = 0xe;
+                bounce |= 1;
+                if (NewCrateAnimation(crate, 0xe, 0x35, 0) == 0) {
+                    StartExclamationCrateSequence(group, crate);
+                }
+            }
+        } else if (type == 0x11) {
+            if (crate->action == -1) {
+                sfx = 0xe;
+                bounce |= 1;
+                if (NewCrateAnimation(crate, 0x11, 0x35, 0) == 0) {
+                    DestroyAllNitroCrates(group, crate);
+                }
+            }
+        } else if (type == 0x13) {
+            NewCrateAnimation(crate, 0x13, 0x58, 0);
+            GameSfx(0x38, &crate->pos);
+        } else if (type == 6) {
+            sfx = 2;
+            if (crate->timer == 0.0f) {
+                crate->timer += 0.01666667f;
+            }
+            if (crate->counter > 1) {
+                crate->counter--;
+                if ((TimeTrial == 0) && ((player->obj).dead == 0)) {
+                    AddScreenWumpa((crate->pos).x, (crate->pos).y + 0.25f, (crate->pos).z, 2);
+                }
+                NewCrateAnimation(crate, type, (hit == 2) ? 0x58 : 0x16, 0);
+            } else {
+                float f = crate->timer;
+                if (((crate->flags & 0x20) != 0 && (f < 2.5f)) ||
+                    ((crate->flags & 0x20) == 0 && (f < 5.0f))
+                   ) {
+                    if ((TimeTrial == 0) && ((player->obj).dead == 0)) {
+                        AddScreenWumpa((crate->pos).x, (crate->pos).y + 0.25f, (crate->pos).z, 2);
+                    }
+                }
+                gone = CrateOff(group, crate, 0, 0);
+            }
+            bounce |= 1;
+        } else {
+            if ((type == 4) || (type == 0xd)) {
+                NewCrateAnimation(crate, type, 0x58, 0);
+                bounce |= 3;
+                sfx = 0xe;
+                if (type == 4) {
+                    sfx = 2;
+                }
+            } else {
+                gone = CrateOff(group, crate, 0, 0);
+                sfx = 2;
+                bounce |= 1;
+            }
+        }
+    }
+
+LAB_80013a4c:
+    if (VEHICLECONTROL != 2) {
+        temp_crate_bounce = temp_crate_bounce | bounce;
+        if (bounce != 0) {
+            NewRumble(&player->rumble, 0x7f);
+            NewBuzz(&player->rumble, 0xc);
+        }
+    }
+
+    if (sfx != -1) {
+        GameSfx(sfx, &crate->pos);
+    }
+
+    return gone;
+}
+
+//NGC MATCH
+void CrateSafety(CrateCubeGroup *group,CrateCube *crate,struct obj_s *obj) {
+  CrateCube *crate2;
+  CrateCube *crate3;
+  float size;
+  s32 i;
+  
+  if ((Level == 7) && (Bonus == 2)) {
+    obj->pos.y = crate->pos.y - obj->top * obj->SCALE;
+  }
+  else {
+    size = (obj->top - obj->bot) * obj->SCALE;
+    if ((obj->bot + obj->top) * obj->SCALE * 0.5f + obj->pos.y < crate->pos.y + 0.25f) {
+      crate2 = &Crate[group->iCrate];
+      crate3 = crate;
+      for(i = 0; i < group->nCrates; i++, crate2++) {
+          if (((crate2->on != 0) && (crate2->dx == crate3->dx)) && (crate2->dz == crate3->dz)) {
+            if (crate2->pos.y < crate3->pos.y) {
+                if (crate3->pos.y - (crate2->pos.y + 0.5f) > size) {
+                    break;
+                }
+                crate3 = crate2;
+            }
+          }
+      }
+      obj->pos.y = crate3->pos.y - obj->top * obj->SCALE;
+      if ((crate3->shadow != 2000000.0f) && (crate3->pos.y - crate3->shadow > size))
+      goto SetBot;
+    }
+    crate2 = &Crate[group->iCrate];
+    crate3 = crate;
+    for(i = 0; i < group->nCrates; i++, crate2++) {
+        if (((crate2->on != 0) && (crate2->dx == crate3->dx)) && (crate2->dz == crate3->dz)) {
+            if (crate2->pos.y > crate3->pos.y) {
+                if (crate2->pos.y - (crate3->pos.y + 0.5f) > size) {
+                    break;
+                }
+                crate3 = crate2;
+            }
+        }
+    }
+    obj->pos.y = (crate3->pos.y + 0.5f) - obj->bot * obj->SCALE;
+  }
+SetBot:
+  NewTopBot(obj);
+  OldTopBot(obj);
+  obj->mom.y = 0.0f;
+}
+
+//NGC MATCH
+float CrateBottomAbove(struct nuvec_s *pos) {
+  CrateCubeGroup *group;
+  CrateCube *crate;
+  s32 i;
+  s32 j;
+  s32 type;
+  float bot;
+  float y;
+  struct nuvec_s vNew;
+  
+  y = 2000000.0f;
+  group = CrateGroup;
+  for (i = 0; i < CRATEGROUPCOUNT; i++, group++) {
+      if ((( !(pos->x < group->minclip.x) && !(pos->x > group->maxclip.x)) &&
+          !(pos->z < group->minclip.z)) && !(pos->z > group->maxclip.z)) {
+        vNew.x = pos->x - group->origin.x;
+        vNew.z = pos->z - group->origin.z;
+        NuVecRotateY(&vNew,&vNew,-(u32)group->angle);
+        crate = &Crate[group->iCrate];
+        for (j = 0; j < group->nCrates; j++, crate++) {
+            if ((crate->on != 0)) {
+                type = GetCrateType(crate,0);
+                if ((type == 0 || type == -1)) continue;
+                bot = crate->pos.y;
+                if (!(pos->y > bot)) {
+                    if ( ( (vNew.x < crate->dx  * 0.5f) || (vNew.x > crate->dx  * 0.5f + 0.5f))) continue;
+                    if ((vNew.z < crate->dz  * 0.5f) || (vNew.z > crate->dz  * 0.5f + 0.5f)) continue;
+                    if (y != 2000000.0f && !(crate->pos.y < y)) continue;
+                    y = crate->pos.y;
+                }
+
+            }
+        }
+      }
+  }
+  return y;
+}
+
+//NGC MATCH
+void DrawCrates(void) {
+  s32 i;
+  s32 j;
+  s32 k;
+  s32 type;
+  s32 shadow;
+  CrateCubeGroup *group;
+  CrateCube *crate;
+  struct nuspecial_s *obj;
+  struct nuvec_s pos;
+  struct numtx_s *m;
+  float dx;
+  float dz;
+  float d;
+  float r2;
+  float shadow_r2;
+  struct numtx_s mGROUP;
+  struct numtx_s mCRATE;
+  struct CharacterModel *model;
+  float **dwa;
+  
+  shadow = 0;
+  if (((((LDATA->flags & 0x200) == 0) && (Level != 0x1d)) || (VEHICLECONTROL != 1)) &&
+     ((Level != 0x1c && (Level != 3)))) {
+    r2 = 45.0f;
+    if ((float)((s32)LDATA->farclip) < 45.0f) {
+      r2 = (float)LDATA->farclip;
+    }
+    r2 *= r2;
+  }
+  else {
+    r2 = (float)(s32)(LDATA->farclip * LDATA->farclip);
+  }
+  if (((((DRAWCRATESHADOWS != 0) && (VEHICLECONTROL != 2)) &&
+       ((VEHICLECONTROL != 1 || ((player->obj).vehicle != 0x20)))) && ((LDATA->flags & 0x1000) == 0)
+      ) && (((((LDATA->flags & 0x200) == 0 && (Level != 0x1d)) || (VEHICLECONTROL != 1)) &&
+            (Level != 0xb)))) {
+    shadow = 1;
+    shadow_r2 = r2;
+  }
+  group = CrateGroup;
+  for(i = 0; i < CRATEGROUPCOUNT; i++, group++) {
+      NuMtxSetRotationY(&mGROUP,(uint)group->angle);
+      crate = &Crate[group->iCrate];
+      for(j = 0; j < group->nCrates; j++, crate++) {
+          crate->in_range = 0;
+          type = GetCrateType(crate,1);
+          if (((type != -1) && ((crate->on != 0 || (type == 7)))) &&
+             (((((LDATA->flags & 0x200) != 0 || (Level == 0x1d)) && (VEHICLECONTROL == 1)) ||
+              (dx = pCam->pos.x - crate->pos.x, dz = pCam->pos.z - crate->pos.z,
+              d = (dx * dx + dz * dz), !(d > r2))))) {
+                crate->in_range = 1;
+                pos.x = crate->pos.x;
+                pos.y = crate->pos.y + 0.25f;
+                pos.z = crate->pos.z;
+                if ((crate->xrot != 0) || (crate->zrot != 0)) {
+                  m = &mCRATE;
+                  NuMtxSetRotationY(&mCRATE,(uint)group->angle);
+                  NuMtxRotateZ(&mCRATE,(uint)crate->zrot);
+                  NuMtxRotateX(&mCRATE,(uint)crate->xrot);
+                } else {
+                   m = &mGROUP;
+                }
+                m->_30 = pos.x;
+                m->_31 = pos.y;
+                m->_32 = pos.z;
+                if ((crate->flags & 0x400) != 0) {
+                  j = (type == 5) ? 0x43 : 0x41;
+                  if (ObjTab[j].obj.special != NULL) {
+                    obj = ObjTab[j].obj.special;
+                    NuRndrGScnObj((ObjTab[j].obj.scene)->gobjs[obj->instance->objid],m);
+                  }
+                }
+                k = crate_list[type].character;
+                if (((u32)k < 0xbf) && (CRemap[k] != -1)) {
+                  model = &CModel[CRemap[k]];
+                  if ((crate->action != -1) && ((s32)crate->character == k)) {
+                    if (model->fanmdata[crate->action] != NULL) {
+                      dwa = NuHGobjEvalDwa(1,NULL,model->fanmdata[crate->action],crate->anim_time);
+                    }
+                    else {
+                      dwa = NULL;
+                    }
+                    if (model->anmdata[crate->action] != NULL) {
+                      NuHGobjEvalAnim(model->hobj,model->anmdata[crate->action],crate->anim_time,0,NULL,tmtx);
+                    }
+                    else {
+                      NuHGobjEval(model->hobj,0,NULL,tmtx);
+                    }
+                  }
+                  else {
+                    NuHGobjEval(model->hobj,0,NULL,tmtx);
+                    dwa = NULL;
+                  }
+                  NuHGobjRndrMtxDwa(model->hobj,m,1,NULL,tmtx,dwa);
+                  if ((crate->flags & 0x200) != 0) {
+                    mCRATE = *m;
+                    mCRATE._01 = -mCRATE._01;
+                    mCRATE._11 = -mCRATE._11;
+                    mCRATE._21 = -mCRATE._21;
+                    mCRATE._31 = crate->shadow - (mCRATE._31 - crate->shadow);
+                    NuHGobjRndrMtxDwa(model->hobj,&mCRATE,1,NULL,tmtx,dwa);
+                  }
+                }
+                else {
+                  obj = crate_list[type].obj.special;
+                  if ((obj != NULL) && (NuRndrGScnObj(crate_scene->gobjs[obj->instance->objid],m),
+                     (crate->flags & 0x200) != 0)) {
+                    mCRATE = *m;
+                    mCRATE._01 = -mCRATE._01;
+                    mCRATE._11 = -mCRATE._11;
+                    mCRATE._21 = -mCRATE._21;
+                    mCRATE._31 = crate->shadow - (mCRATE._31 - crate->shadow);
+                    NuRndrGScnObj(crate_scene->gobjs[obj->instance->objid],&mCRATE);
+                  }
+                }
+                if (((((shadow) && (type != 7)) && (type != 0)) &&
+                    ((((crate->flags & 0x2000) != 0 && (crate->shadow != 2000000.0f)) &&
+                     ((crate->pos.y > crate->shadow &&
+                      ((d < shadow_r2 && (ObjTab[21].obj.special != NULL)))))))) &&
+                   (LowestActiveCrate(group,crate) != 0)) {
+                  NuMtxSetRotationY(&mCRATE,(uint)group->angle);
+                  NuMtxRotateZ(&mCRATE,(uint)crate->surface_zrot);
+                  NuMtxRotateX(&mCRATE,(uint)crate->surface_xrot);
+                  mCRATE._30 = crate->pos.x;
+                  mCRATE._31 = crate->shadow + 0.025f;
+                  mCRATE._32 = crate->pos.z;
+                  NuRndrGScnObj((ObjTab[21].obj.scene)->gobjs[(ObjTab[21].obj.special)->instance->objid],&mCRATE);
+                }
+          }
+      }
+  }
+}

@@ -74,42 +74,24 @@ void GS_XFormLightVec(struct _GS_VECTOR3 *XFlight_pos,struct _GS_VECTOR4 *light_
   return;
 }
 
-//81% NGC
+//NGC MATCH
 void GS_SetLightingNone(void) {
     struct _GXColor col;
-    u8 diff_b;
-    u8 diff_r;
-    u8 diff_g;
-    u8 diff_a;
 
-    col = GX_White;
-  GXSetChanAmbColor(GX_COLOR0A0,col);
-    diff_a = (s8) (GS_CurrentMaterial.Diffuse.a * 255.0f); 
-    diff_r = (s8) (GS_CurrentMaterial.Diffuse.r * 255.0f);
-    diff_g = (s8) (GS_CurrentMaterial.Diffuse.g * 255.0f);
-    diff_b = (s8) (GS_CurrentMaterial.Diffuse.b * 255.0f);
+    GXSetChanAmbColor(GX_COLOR0A0,GX_White);
+    col.a = (s8) (GS_CurrentMaterial.Diffuse.a * 255.0f); 
+    col.r = (s8) (GS_CurrentMaterial.Diffuse.r * 255.0f);
+    col.g = (s8) (GS_CurrentMaterial.Diffuse.g * 255.0f);
+    col.b = (s8) (GS_CurrentMaterial.Diffuse.b * 255.0f);
     
-    *(u32*)&col = (u32)(
-        ((s32) (255.0f * GS_CurrentMaterial.Diffuse.b) << 8) & 0xff00 | 
-        ((s32) (255.0f * GS_CurrentMaterial.Diffuse.g) << 0x10) & 0xff0000 | 
-        ((s32) (255.0f * GS_CurrentMaterial.Diffuse.r) << 0x18) | 
-        (s32) (255.0f * GS_CurrentMaterial.Diffuse.a) & 0xFF
-    );
-    
- /* col = //(struct _GXColor)
-        (((int)(GS_CurrentMaterial.Diffuse.b * 255.0) & 0xffU) << 8 |
-        ((int)(GS_CurrentMaterial.Diffuse.g * 255.0) & 0xffU) << 0x10 |
-        (int)(GS_CurrentMaterial.Diffuse.r * 255.0) << 0x18 |
-        (int)(GS_CurrentMaterial.Diffuse.a * 255.0) & 0xffU);*/
-  GXSetChanMatColor(GX_COLOR0A0,col);
-  if ((GS_MaterialSourceEmissive != 0) || (ShadowBodge != GX_TEVSTAGE0)) {
-    GXSetChanCtrl(GX_COLOR0A0,0,GX_SRC_REG,GX_SRC_VTX,0,GX_DF_NONE,GX_AF_NONE);
-  }
-  else {
-    GXSetChanCtrl(GX_COLOR0A0,0,GX_SRC_REG,GX_SRC_REG,0,GX_DF_NONE,GX_AF_NONE);
-  }
-  GXSetNumChans(1);
-  return;
+    GXSetChanMatColor(GX_COLOR0A0,col);
+    if ((GS_MaterialSourceEmissive != 0) || (ShadowBodge != GX_TEVSTAGE0)) {
+      GXSetChanCtrl(GX_COLOR0A0,0,GX_SRC_REG,GX_SRC_VTX,0,GX_DF_NONE,GX_AF_NONE);
+    }
+    else {
+      GXSetChanCtrl(GX_COLOR0A0,0,GX_SRC_REG,GX_SRC_REG,0,GX_DF_NONE,GX_AF_NONE);
+    }
+    GXSetNumChans(1);
 }
 
 void GS_SetPointLighting(void)
@@ -161,14 +143,14 @@ void GS_SetLightingMatrix(struct _GSMATRIX * mtx);
 //void GS_SetLightingMatrix2 (struct _GSMATRIX * m);                    
 void GS_SetLightingNone ();                             
 void GS_XFormLightVec(struct _GS_VECTOR3 * XFlight_pos, struct _GS_VECTOR4 * light_pos, struct _GSMATRIX * curmat);                    
-void GXInitLightColor(struct _GXLightObj* lt_obj, struct _GXColor* color);                   
+void GXInitLightColor(struct _GXLightObj* lt_obj, struct _GXColor color);                   
 void GXInitLightPos(struct _GXLightObj* lt_obj, float x, float y, float z);               
 void GXLoadLightObjImm(struct _GXLightObj* lt_obj, enum _GXLightID light);                  
-void GXSetChanAmbColor(enum _GXChannelID chan, struct _GXColor* amb_color);               
+void GXSetChanAmbColor(enum _GXChannelID chan, struct _GXColor amb_color);               
 void GXSetChanCtrl(enum _GXChannelID chan, unsigned char enable, enum _GXColorSrc amb_src, 
                         enum _GXColorSrc mat_src, unsigned long light_mask, 
                                             enum _GXDiffuseFn diff_fn, enum _GXAttnFn attn_fn);               
-void GXSetChanMatColor(enum _GXChannelID chan, struct _GXColor* mat_color);                      
+void GXSetChanMatColor(enum _GXChannelID chan, struct _GXColor mat_color);                      
 void GXSetNumChans(unsigned char nChans);                                
 s32 IsTitleScreen();                               
 //void MatReorder(struct _GSMATRIX* MatrixA);                               
@@ -182,82 +164,63 @@ extern struct _GS_VECTOR3 XFLightPos;
 */
 
 
-//81% NGC
+//NGC MATCH
 void GS_Set3Lights(struct _GS_VECTOR4 *LIGHT1_POS,struct _GS_VECTOR4 *LIGHT2_POS,struct _GS_VECTOR4 *LIGHT3_POS,
-                  struct _D3DCOLORVALUE *LIGHT1_COLOR,struct _D3DCOLORVALUE *LIGHT2_COLOR,
-                    struct _D3DCOLORVALUE *LIGHT3_COLOR, struct _D3DCOLORVALUE *AMB_COLOR) {
-    struct _GXColor col;
+                  struct _GS_VECTOR4 *LIGHT1_COLOR,struct _GS_VECTOR4 *LIGHT2_COLOR,
+                    struct _GS_VECTOR4 *LIGHT3_COLOR, struct _GXColor* AMB_COLOR) {
+    
     struct _GXColor ambient;
-    //struct _GXColor mat_color;
+    struct _GXColor colour;
+    struct _GXColor mat_color;
     
     if (GS_EnableLightingFlag == 0) {
         GS_SetLightingNone();
+        return;
     }
-    else {
-        *(u32*)&ambient = ((u32)AMB_COLOR & 0xff | 0x33333300);
-        GXSetChanAmbColor(GX_COLOR0A0,&ambient);
-          col.a = (s32)(GS_CurrentMaterial.Diffuse.a * 255.0f);
-          col.r = (s32)(GS_CurrentMaterial.Diffuse.r * 255.0f);
-          col.g = (s32)(GS_CurrentMaterial.Diffuse.g * 255.0f);
-          col.b = (s32)(GS_CurrentMaterial.Diffuse.b * 255.0f);
-    /*    col = (struct _GXColor)
-              (((int)(GS_CurrentMaterial.Diffuse.b * 255.0f) & 0xffU) << 8 |
-              ((int)(GS_CurrentMaterial.Diffuse.g * 255.0f) & 0xffU) << 0x10 |
-              (int)(GS_CurrentMaterial.Diffuse.r * 255.0f) << 0x18 |
-              (int)(GS_CurrentMaterial.Diffuse.a * 255.0f) & 0xffU);    */
-        GXSetChanMatColor(GX_COLOR0A0,&col);
-        if (IsTitleScreen() != 0) {
-            GS_CurMat = GS_LightMat;
-            MatReorder(&GS_CurMat);
-            GS_SetLightingMatrix2(&GS_CurMat);
-        }
-        else {
-            GS_LightMat = GS_CurMat;
-            GS_SetLightingMatrix(&GS_CurMat);
-            GS_CurMat = GS_LightViewMat;
-        }
-        GS_XFormLightVec(&XFLightPos,LIGHT1_POS,&GS_CurMat);
-        GXInitLightPos(&GSLights[1],XFLightPos.x,XFLightPos.y,XFLightPos.z);
-        //dVar6 = 255.0;
-        //col = (struct _GXColor)
-         //     (((int)(LIGHT1_COLOR->z * 255.0f) & 0xffU) << 8 |
-        //      ((int)(LIGHT1_COLOR->y * 255.0f) & 0xffU) << 0x10 |
-          //    (int)(LIGHT1_COLOR->x * 255.0f) << 0x18 | (int)(LIGHT1_COLOR->w * 255.0f) & 0xffU);
-          col.a = (s32)(LIGHT1_COLOR->a * 255.0f);
-          col.r = (s32)(LIGHT1_COLOR->r * 255.0f);
-          col.g = (s32)(LIGHT1_COLOR->g * 255.0f);
-          col.b = (s32)(LIGHT1_COLOR->b * 255.0f);
-        GXInitLightColor(&GSLights[0],&col);
-        GXLoadLightObjImm(&GSLights[0],GX_LIGHT0);
-        GS_XFormLightVec(&XFLightPos,LIGHT2_POS,&GS_CurMat);
-        GXInitLightPos(&GSLights[1],XFLightPos.x,XFLightPos.y,XFLightPos.z);
-          col.a = (s32)(LIGHT2_COLOR->a * 255.0f);
-          col.r = (s32)(LIGHT2_COLOR->r * 255.0f);
-          col.g = (s32)(LIGHT2_COLOR->g * 255.0f);
-          col.b = (s32)(LIGHT2_COLOR->b * 255.0f);
-        //col = (struct _GXColor)
-         //     (((int)((double)LIGHT2_COLOR->z * 255.0f) & 0xffU) << 8 |
-         //     ((int)((double)LIGHT2_COLOR->y * 255.0f) & 0xffU) << 0x10 |
-         //     (int)((double)LIGHT2_COLOR->x * 255.0f) << 0x18 |
-          //    (int)((double)LIGHT2_COLOR->w * 255.0f) & 0xffU);
-        GXInitLightColor(&GSLights[0],&col);
-        GXLoadLightObjImm(&GSLights[1],GX_LIGHT1);
-        GS_XFormLightVec(&XFLightPos,LIGHT3_POS,&GS_CurMat);
-        GXInitLightPos(&GSLights[2],XFLightPos.x,XFLightPos.y,XFLightPos.z);
-          col.a = (s32)(LIGHT3_COLOR->a * 255.0f);
-          col.r = (s32)(LIGHT3_COLOR->r * 255.0f);
-          col.g = (s32)(LIGHT3_COLOR->g * 255.0f);
-          col.b = (s32)(LIGHT3_COLOR->b * 255.0f);
-        //col = (struct _GXColor)
-         //     (((int)((double)LIGHT3_COLOR->z * 255.0f) & 0xffU) << 8 |
-          //    ((int)((double)LIGHT3_COLOR->y * 255.0f) & 0xffU) << 0x10 |
-          //    (int)((double)LIGHT3_COLOR->x * 255.0f) << 0x18 |
-           //   (int)((double)LIGHT3_COLOR->w * 255.0f) & 0xffU);
-        GXInitLightColor(&GSLights[2],&col);
-        GXLoadLightObjImm(&GSLights[2],GX_LIGHT2);
-        GXSetChanCtrl(GX_COLOR0,1,GX_SRC_REG,GX_SRC_REG,7,GX_DF_CLAMP,GX_AF_NONE);
-        GXSetChanCtrl(GX_ALPHA0,0,GX_SRC_REG,GX_SRC_VTX,0,GX_DF_CLAMP,GX_AF_NONE);
-        GXSetNumChans(1);
+    //ambient = (_GXColor)((uint)AMB_COLOR & 0xff | 0x33333300);
+    ambient.r = 0x33;
+    ambient.g = 0x33;
+    ambient.b = 0x33;
+    GXSetChanAmbColor(GX_COLOR0A0,ambient);
+    mat_color.a = (s32)(GS_CurrentMaterial.Diffuse.a * 255.0f);
+    mat_color.r = (s32)(GS_CurrentMaterial.Diffuse.r * 255.0f);
+    mat_color.g = (s32)(GS_CurrentMaterial.Diffuse.g * 255.0f);
+    mat_color.b = (s32)(GS_CurrentMaterial.Diffuse.b * 255.0f);
+    GXSetChanMatColor(GX_COLOR0A0,mat_color);
+    if (IsTitleScreen() != 0) {
+        GS_CurMat = GS_LightMat;
+        MatReorder(&GS_CurMat);
+        GS_SetLightingMatrix2(&GS_CurMat);
+    } else {
+        GS_CurMat = GS_LightMat;
+        GS_SetLightingMatrix(&GS_CurMat);
+        GS_CurMat = GS_LightViewMat;
     }
-    return;
+    GS_XFormLightVec(&XFLightPos,LIGHT1_POS,&GS_CurMat);
+    GXInitLightPos(&GSLights[0],XFLightPos.x,XFLightPos.y,XFLightPos.z);
+    colour.a = (s32)(LIGHT1_COLOR->w * 255.0f);
+    colour.r = (s32)(LIGHT1_COLOR->x * 255.0f);
+    colour.g = (s32)(LIGHT1_COLOR->y * 255.0f);
+    colour.b = (s32)(LIGHT1_COLOR->z * 255.0f);
+    GXInitLightColor(&GSLights[0],colour);
+    GXLoadLightObjImm(&GSLights[0],GX_LIGHT0);
+    GS_XFormLightVec(&XFLightPos,LIGHT2_POS,&GS_CurMat);
+    GXInitLightPos(&GSLights[1],XFLightPos.x,XFLightPos.y,XFLightPos.z);
+    colour.a = (s32)(LIGHT2_COLOR->w * 255.0f);
+    colour.r = (s32)(LIGHT2_COLOR->x * 255.0f);
+    colour.g = (s32)(LIGHT2_COLOR->y * 255.0f);
+    colour.b = (s32)(LIGHT2_COLOR->z * 255.0f);
+    GXInitLightColor(&GSLights[1],colour);
+    GXLoadLightObjImm(&GSLights[1],GX_LIGHT1);
+    GS_XFormLightVec(&XFLightPos,LIGHT3_POS,&GS_CurMat);
+    GXInitLightPos(&GSLights[2],XFLightPos.x,XFLightPos.y,XFLightPos.z);
+    colour.a = (s32)(LIGHT3_COLOR->w * 255.0f);
+    colour.r = (s32)(LIGHT3_COLOR->x * 255.0f);
+    colour.g = (s32)(LIGHT3_COLOR->y * 255.0f);
+    colour.b = (s32)(LIGHT3_COLOR->z * 255.0f); 
+    GXInitLightColor(&GSLights[2],colour);
+    GXLoadLightObjImm(&GSLights[2],GX_LIGHT2);
+    GXSetChanCtrl(GX_COLOR0,1,GX_SRC_REG,GX_SRC_REG,7,GX_DF_CLAMP,GX_AF_NONE);
+    GXSetChanCtrl(GX_ALPHA0,0,GX_SRC_REG,GX_SRC_VTX,0,GX_DF_CLAMP,GX_AF_NONE);
+    GXSetNumChans(1);
 }
