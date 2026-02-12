@@ -1063,15 +1063,14 @@ void NuRndrRectUV2di(s32 x,s32 y,s32 w,s32 h,float tx,float ty,float tw,float th
 
 //NGC MATCH
 void NuRndrParticleGroup(struct _sceDmaTag* data, struct PartHeader_testretail *setup,struct numtl_s *mtl,float time,struct numtx_s *wm) {
-    s32 instruction; //
-    s32 address; //
-    s32 qcount; //
-    void* retaddress; //
-    struct rdata_s* rdat; //
-    s32 s; //
-    s32 t; //
-    struct _sceDmaTag* data2; //
-	//char pad[7];
+    s32 instruction;
+    s32 address;
+    s32 qcount;
+    void* retaddress;
+    struct rdata_s* rdat;
+    s32 s;
+    s32 t;
+    struct _sceDmaTag* data2;
 
     setup->gtime = time;
     rdat = data;
@@ -1081,7 +1080,7 @@ void NuRndrParticleGroup(struct _sceDmaTag* data, struct PartHeader_testretail *
             return;
         }
         retaddress = (void*)rdat->dmadata[0];
-        data2 = (struct _sceDmaTag *)rdat->dmadata[1];
+        data2 = (struct _sceDmaTag *)(s32)rdat->dmadata[1];
         switch (rdat->dmadata[0]) {
             case 0:
                 if (data2 != NULL) {
@@ -1112,73 +1111,6 @@ void DebMtxTransform(struct nuvec_s *v,struct nuvec_s *v0) {
     return;
 }
 
-/*
-DWARF renderpsdma
-
-// Size: 0x410
-    struct
-    {
-        int dmadata[2]; // Offset: 0x0
-        int unpackdata[2]; // Offset: 0x8
-        // Size: 0x20
-        struct
-        {
-            float x; // Offset: 0x0
-            float y; // Offset: 0x4
-            float z; // Offset: 0x8
-            float time; // Offset: 0xC
-            float mx; // Offset: 0x10
-            float my; // Offset: 0x14
-            float mz; // Offset: 0x18
-            float etime; // Offset: 0x1C
-        } debris[32]; // Offset: 0x10
-    }* rdat; //
-    // Size: 0x20
-    struct
-    {
-        float x; // Offset: 0x0
-        float y; // Offset: 0x4
-        float z; // Offset: 0x8
-        float time; // Offset: 0xC
-        float mx; // Offset: 0x10
-        float my; // Offset: 0x14
-        float mz; // Offset: 0x18
-        float etime; // Offset: 0x1C
-    }* rdeb;
-    int s;
-    int index;
-    // Size: 0x28
-    struct
-    {
-        nuvec_s vt[3]; // Offset: 0x0
-        int colour; // Offset: 0x24
-    }* pdat;
-    // Size: 0x28
-    struct
-    {
-        nuvec_s vt[3]; // Offset: 0x0
-        int colour; // Offset: 0x24
-    }* hpdat;
-    nuvec_s* pdatpt;
-    float grav; //
-    float elapsed; //
-    float r; //
-    float g; //
-    float b; //
-    float a; //
-    float u1; //
-    float v1; //
-    float u2; //
-    float v2; //
-    nuvec_s pos1; //
-    nuvec_s pos2; //
-    nuvec_s pos3; //
-    nuvec_s pos4; //
-    int numverts; //
-    int size; //
-    int numprims; //
-*/
-
 //NGC MATCH
 void* renderpsdma(s32 count, struct rdata_s* rdata, struct PartHeader_testretail* setup, struct numtl_s* mtl, float time, struct numtx_s* wm) {
     s32 index;
@@ -1193,7 +1125,8 @@ void* renderpsdma(s32 count, struct rdata_s* rdata, struct PartHeader_testretail
     float u1, v1, u2, v2;
     float grav = setup->grav;
     struct PartList_s* pdat;
-    struct PartList_s * hpdat; // r23
+    struct PartList_s * hpdat;
+
 
     grav /= gravdiv;
     rdeb = &rdata->debris[0];
@@ -1266,37 +1199,181 @@ void* renderpsdma(s32 count, struct rdata_s* rdata, struct PartHeader_testretail
     return rdeb;
 }
 
-void GenericDebinfoDmaTypeUpdate(struct debtab *debinfo)
-{
-	/* DWARF INFO
-// Size: 0x28
-    struct
-    {
-        nuvec_s vt[3]; // Offset: 0x0
-        int colour; // Offset: 0x24
-    }* PartData; //
-    int i; //
-    int j; //
-    float time; //
-    float dt; //
-    float tt; //
-    float vr; //
-    float vg; //
-    float vb; //
-    float va; //
-    float vw; //
-    float vh; //
-    float vrot; //
-    float vjx; //
-    float vjy; //
-    float x0; //
-    float y0; //
-    float x1; //
-    float y1; //
-    float dx; //
-    float dy; //
+//89.61% NGC
+void GenericDebinfoDmaTypeUpdate(struct debinftype* debinfo) {
+    struct PartList_s* PartData;
+    s32 i;
+    s32 j;
+    float time;
+    float dt;
+    float tt;
+    float vr;
+    float vg;
+    float vb;
+    float va;
+    float vw;
+    float vh;
+    float vrot;
+    float vjx;
+    float vjy;
+    float x0;
+    float y0;
+    float x1;
+    float y1;
+    float dx;
+    float dy;
 
-	*/
+    if (debinfo->DmaDebTypePointer == NULL) {
+        debinfo->DmaDebTypePointer = DmaDebTypes[freeDmaDebType++];
+    }
+
+    debinfo->DmaDebTypePointer->grav = debinfo->grav;
+    debinfo->DmaDebTypePointer->u0 = ((u32)debinfo->u1 & 511) / 256.0f;
+    debinfo->DmaDebTypePointer->v0 = ((u32)debinfo->v1 & 511) / 256.0f;
+    debinfo->DmaDebTypePointer->u1 = ((u32)debinfo->u2 & 511) / 256.0f;
+    debinfo->DmaDebTypePointer->v1 = ((u32)debinfo->v2 & 511) / 256.0f;
+
+    for (i = 0; i < 64; i++) {
+        time = i / 64.0f;
+
+        // Width slot interpolation
+        for (j = 0; j < 7; j++) {
+            if ((debinfo->wslot[j].t <= time) && (debinfo->wslot[j + 1].t >= time)) {
+                break;
+            }
+        }
+
+        dt = time - debinfo->wslot[j].t;
+        if (debinfo->wslot[j + 1].t - debinfo->wslot[j].t == 0.0f) {
+            vw = debinfo->wslot[j].w;
+        } else {
+            tt = debinfo->wslot[j + 1].t - debinfo->wslot[j].t;
+            vw = debinfo->wslot[j].w + (dt / tt) * (debinfo->wslot[j + 1].w - debinfo->wslot[j].w);
+        }
+
+        // Height slot interpolation
+        for (j = 0; j < 7; j++) {
+            if ((debinfo->hslot[j].t <= time) && (debinfo->hslot[j + 1].t >= time)) {
+                break;
+            }
+        }
+
+
+        dt = time - debinfo->hslot[j].t;
+        if (debinfo->hslot[j + 1].t - debinfo->hslot[j].t == 0.0f) {
+            vh = debinfo->hslot[j].h;
+        } else {
+            tt = debinfo->hslot[j + 1].t - debinfo->hslot[j].t;
+            vh = debinfo->hslot[j].h + (dt / (tt)) * (debinfo->hslot[j + 1].h - debinfo->hslot[j].h);
+        }
+
+        // Rotation slot interpolation
+        for (j = 0; j < 7; j++) {
+            if ((debinfo->rotslot[j].t <= time) && (debinfo->rotslot[j + 1].t >= time)) {
+                break;
+            }
+        }
+
+        dt = time - debinfo->rotslot[j].t;
+        tt = debinfo->rotslot[j + 1].t - debinfo->rotslot[j].t;
+        if (tt == 0.0f) {
+            vrot = debinfo->rotslot[j].r;
+        } else {
+            vrot = debinfo->rotslot[j].r + (dt / tt) * (debinfo->rotslot[j + 1].r - debinfo->rotslot[j].r);
+        }
+
+        // Calculate vertex positions
+        vh *= 0.25f;
+        vb *= 0.25f;
+
+        vjx = debinfo->jibxamp * NuTrigTable[(s32)((debinfo->jibxfreq * time) * 65536.0f) & 0xffff];
+        vjy = debinfo->jibyamp * NuTrigTable[(s32)((debinfo->jibyfreq * time) * 65536.0f) & 0xffff];
+
+        x0 = NuTrigTable[(s32)(vrot + 16384.0f) & 0xffff];
+        y0 = NuTrigTable[(s32)vrot & 0xffff];
+        
+        x1 = vh * x0;
+        y1 = vh * y0;
+
+        dx = -vw * x0 - x1 + vjx;
+        dy = vw * y0 - y1 + vjy;
+
+        PartData = &debinfo->DmaDebTypePointer->Data[i];
+        
+        PartData->vt[0].x = dx / 2048.0f;
+        PartData->vt[0].y = dy / 2048.0f;
+        PartData->vt[0].z = 0.0f;
+        
+        PartData->vt[1].x = (-vw * y0 - x1 + vjx) / 2048.0f;
+        PartData->vt[1].y = (-vw * x0 + y1 + vjy) / 2048.0f;
+        PartData->vt[1].z = 0.0f;
+        
+        PartData->vt[2].x = (vh * 0.5f * y0 + dx) / 2048.0f;
+        PartData->vt[2].y = (vh * 0.5f * x0 + dy) / 2048.0f;
+        PartData->vt[2].z = 0.0f;
+
+        // Color slot interpolation
+        for (j = 0; j < 7; j++) {
+            if ((debinfo->colslot[j].t <= time) && (debinfo->colslot[j + 1].t >= time)) {
+                break;
+            }
+        }
+
+        
+        dt = time - debinfo->colslot[j].t;
+        if (debinfo->colslot[j + 1].t - debinfo->colslot[j].t == 0.0f) {
+            if (time - debinfo->colslot[j].t >= 0.0f) {
+                vr = vg = vb = 255.0f;
+            } else {
+                vr = 0.0f;
+                vg = 0.0f;
+                // vb = 0.0f;
+            }
+        } else {
+            tt = debinfo->colslot[j + 1].t - debinfo->colslot[j].t;
+            vr = debinfo->colslot[j].r + (dt / tt) * (debinfo->colslot[j + 1].r - debinfo->colslot[j].r);
+            vg = debinfo->colslot[j].g + (dt / tt) * (debinfo->colslot[j + 1].g - debinfo->colslot[j].g);
+            vb = debinfo->colslot[j].b + (dt / tt) * (debinfo->colslot[j + 1].b - debinfo->colslot[j].b);
+        }
+
+        vr *= 2.0f;
+        if (vr > 255.0) {
+            vr = 255.0f;
+        }
+
+        vg *= 2.0f;
+        if (vg > 255.0) {
+            vg = 255.0f;
+        }
+
+        vb *= 2.0f;
+        if (vb > 255.0) {
+            vb = 255.0f;
+        }
+
+        // Alpha slot interpolation
+        for (j = 0; j < 7; j++) {
+            if ((debinfo->alpslot[j].t <= time) && (debinfo->alpslot[j + 1].t >= time)) {
+                break;
+            }
+        }
+
+        time -= debinfo->alpslot[j].t;
+        tt = debinfo->alpslot[j + 1].t - debinfo->alpslot[j].t;
+
+        if (tt == 0.0f) {
+            va = (time >= 0.0f) ? 255.0f : 0.0f;
+        } else {
+            va =  debinfo->alpslot[j].a + (time / tt) * (debinfo->alpslot[j + 1].a - debinfo->alpslot[j].a);
+        }
+
+        va *= 2.0f;
+        if (va > 255.0) {
+            va = 255.0f;
+        }
+
+        PartData->colour = (s32)vb << 0x10 | ((s32)vr << 8) | ((u32)vg) | ((u32)va << 0x18);
+    }
 }
 
 //MATCH NGC

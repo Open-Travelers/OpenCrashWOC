@@ -2110,6 +2110,43 @@ void DrawBazookaToken(void) {
 }
 
 //NGC MATCH
+s32 WeatherBossNextAction(void) {
+    s32 NextAction;
+    s32 Action;
+    s32 i;
+
+
+    if (WeatherBoss.Action == 0) {
+        NextAction = 0;
+        Action = WeatherBoss.LastNonSeekAction;
+        i = 1; 
+
+    
+        do {
+            Action++;
+            if (Action > 4) {
+                Action = 1;
+            }
+
+            if (WeatherBoss.HitPoints[Action - 1] > 0) {
+                NextAction = Action;
+            }
+
+      
+            if (i++ > 3) {
+                return NextAction;
+            }
+
+        } while (NextAction == 0);
+        
+        return NextAction;
+    }
+
+    WeatherBoss.LastNonSeekAction = WeatherBoss.Action;
+    return 0;
+}
+
+//NGC MATCH
 void ProcessWeatherBoss_a(struct BOSSSTRUCT *Boss) {
   s32 Type;
   s32 VulnerableOn;

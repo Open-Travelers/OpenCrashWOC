@@ -259,30 +259,25 @@ void GS_GetViewport(struct _GS_VIEWPORT* pViewport) {
   return;
 }
 
-//77% NGC
+//NGC MATCH
 void GS_SetupFog(s32 type,float startz,float endz,u32 colour) {
-    volatile union { struct _GXColor c; u32 u; } dumb;
-    struct _GXColor local_8;
-    u32 unused;
-    float var1, var2;
+    float nearz;
+    float farz;
+    struct _GXColor fogcolour;
 
-    dumb.u = colour;
-      local_8.a = colour >> 0x18;
-      local_8.r = (colour >> 0x10);
-      local_8.g = (colour >> 0x8);
-      local_8.b = (colour);
+    fogcolour.a = ((u8*)&colour)[0];
+    fogcolour.r = colour >> 16;
+    fogcolour.g = colour >> 8;
+    fogcolour.b = ((u8*)&colour)[3];
     
-  var1 = 0.3f;
-    var2 = 1000.0f;
- /* local_8 = *(struct _GXColor *)
-            ((colour & 0xff) << 8 |
-            (colour >> 8 & 0xff) << 0x10 | (colour >> 0x10) << 0x18 | colour >> 0x18);*/
-  if (type == 0) {
-      GXSetFog(GX_FOG_NONE,0.0f,0.0f,0.0f,0.0f,local_8);
-      return;
-  }
-  GXSetFog(GX_FOG_LIN,startz,endz,var1,var2,local_8);
-  return;
+    nearz = 0.3f;
+    farz = 1000.0f;
+    
+    if (type == 0) {
+        GXSetFog(GX_FOG_NONE, 0.0f, 0.0f, 0.0f, 0.0f, fogcolour);
+        return;
+    }
+    GXSetFog(GX_FOG_LIN, startz, endz, nearz, farz, fogcolour);
 }
 
 void GS_SetRenderState(s32 state,s32 data) {

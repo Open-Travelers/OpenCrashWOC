@@ -682,33 +682,31 @@ static inline void NuGHGFixupGobj(union variptr_u start, int fgoffset, struct NU
     }
 }
 
-//90% WIP
+//93% WIP
 struct NUHGOBJ_s* NuGHGRead(union variptr_u* buff, char* name) {
     union variptr_u mem;
     union variptr_u ptr;
     int check;
-    int iVar8;
     int* piVar25;
-    short* psVar28;
     struct NUCOLLISIONDATA_s* chdr;
     struct nutexanim_s* txanm;
     struct NUSHADOWDATA_s* shad;
     struct NUSHADOWMESH_s* smesh;
-    int iVar33; // struct?
-    int uVar35;
+    int iVar33;
+    int iVar8;
     struct nuhghhdr_s* hdr;
     struct NUHGOBJ_s* hgo;
     struct NULAYERDATA_s* flayers;
-    
+
     struct NuGobj** ppNVar37;
 
-    hgo = NULL;
+    //hgo = NULL;
     // mem.intaddr = ALIGN_ADDRESS(buff->voidptr, 0x10U);
-    mem.voidptr = (void*)ALIGN_ADDRESS(buff->voidptr, 0x10U);
+    buff->voidptr = (void*)ALIGN_ADDRESS(buff->voidptr, 0x10U);
     // local_b0 = (union variptr_u *)mem.intaddr;
     // hdr = (struct NUHGOBJ_s *)local_b0;
-    check = NuFileLoadBuffer(name, mem.voidptr, 0x7fffffff);
-    hdr = mem.voidptr;
+    check = NuFileLoadBuffer(name, buff->voidptr, 0x7fffffff);
+    hdr = buff->voidptr;
     if (check > 0) {
         if (ghg_version > hdr->version)
             NuErrorProlog("..\\nu2.ps2\\nu3d\\nuhgobj.c", 0x61a)(
@@ -720,12 +718,12 @@ struct NUHGOBJ_s* NuGHGRead(union variptr_u* buff, char* name) {
             );
 
         NuDebugMsgProlog("..\\nu2.ps2\\nu3d\\nuhgobj.c", 0x61f)("Reading %s", name);
-        hgo = (struct NUHGOBJ_s*)ALIGN_ADDRESS((*(int*)buff->voidptr + (int)(buff->voidptr)), 0x10U);
+        hgo = (struct NUHGOBJ_s*)ALIGN_ADDRESS((*(int*)buff->voidptr + (int)buff->voidptr), 0x10U);
         buff->voidptr = (void*)(hgo + 1);
         memset(hgo, 0, 0x84);
         hgo->loadtype = 1;
         if (hdr->txtrs != 0) {
-            hgo->tids = (short*)(int)mem.s16 + hdr->txtrs;
+            hgo->tids = (short*)((int)mem.s16 + hdr->txtrs);
             hgo->numtid = hdr->numtxtrs;
             piVar25 = (int*)((int)mem.voidptr + hdr->txtrs);
             for (iVar8 = 0; iVar8 < hgo->numtid; iVar8++) {
@@ -789,7 +787,7 @@ struct NUHGOBJ_s* NuGHGRead(union variptr_u* buff, char* name) {
         flayers = (struct NULAYERDATA_s*)((int)mem.voidptr + *(int*)&hdr->layers);
         hgo->layers = flayers;
         hgo->num_layers = hdr->num_layers;
-        for (iVar8 = 0; iVar8 < hgo->num_layers; iVar8++) {
+        for (iVar8 = 0; iVar8 < hgo->num_layers; iVar8++, flayers++) {
             if (flayers->name != NULL) {
                 flayers->name += (int)mem.s8;
             }
@@ -799,14 +797,14 @@ struct NUHGOBJ_s* NuGHGRead(union variptr_u* buff, char* name) {
                 for (iVar33 = 0; iVar33 < hgo->num_joints; iVar33++) {
                     piVar25 = (int*)(ppNVar37[iVar33]);
                     if (piVar25 != 0) {
-                        NuGHGFixupGobj(mem,(int)piVar25,hgo);
+                        NuGHGFixupGobj(mem, (int)piVar25, hgo);
                     }
                 }
             }
 
             if (flayers->skin_gobj != 0) {
                 flayers->skin_gobj = (struct NuGobj*)((int)&flayers->skin_gobj->sysnext + (int)mem.voidptr);
-                NuGHGFixupGobj(mem,(int)flayers->skin_gobj,hgo);
+                NuGHGFixupGobj(mem, (int)flayers->skin_gobj, hgo);
             }
 
             if (flayers->blend_gobjs != NULL) {
@@ -815,16 +813,15 @@ struct NUHGOBJ_s* NuGHGRead(union variptr_u* buff, char* name) {
                 for (iVar33 = 0; iVar33 < hgo->num_joints; iVar33++) {
                     piVar25 = (int*)(ppNVar37[iVar33]);
                     if (piVar25 != 0) {
-                        NuGHGFixupGobj(mem,(int)piVar25,hgo);
+                        NuGHGFixupGobj(mem, (int)piVar25, hgo);
                     }
                 }
             }
 
             if (flayers->blend_skin_gobj != NULL) {
                 flayers->blend_skin_gobj = (struct NuGobj*)((int)&flayers->blend_skin_gobj->sysnext + (int)mem.voidptr);
-                NuGHGFixupGobj(mem,(int)flayers->blend_skin_gobj,hgo);
+                NuGHGFixupGobj(mem, (int)flayers->blend_skin_gobj, hgo);
             }
-            flayers++;
         }
 
         hgo->sphere_radius = hdr->sphere_radius;
@@ -840,51 +837,39 @@ struct NUHGOBJ_s* NuGHGRead(union variptr_u* buff, char* name) {
             chdr = (struct NUCOLLISIONDATA_s*)(hdr->collision_data + (int)mem.voidptr);
             hgo->collision_data = chdr;
             chdr->hdrs = (struct NUCOLLISIONHDR_s*)((int)&chdr->hdrs->type + (int)mem.voidptr);
-            for (uVar35 = 0; uVar35 < chdr->nitems; uVar35++) {
-                chdr->hdrs[uVar35].data += (int) mem.voidptr;
+            for (iVar8 = 0; iVar8 < chdr->nitems; iVar8++) {
+                chdr->hdrs[iVar8].data += (int)mem.voidptr;
             }
         }
-
+        if (hdr->numtexanims != 0) {
         hgo->numtexanims = hdr->numtexanims;
         hgo->texanims = (struct nutexanim_s*)((int)mem.voidptr + (int)hdr->texanims);
-        // if (0 < iVar8) {
-        for (iVar33 = 0; iVar33 < hgo->numtexanims; iVar33++, txanm++) {
-            //iVar8 = iVar33 * 0x20;
-            //iVar33++;
-            txanm = hgo->texanims;
-            txanm->prev = NULL;
-            txanm->tids = (int)mem.voidptr + txanm->tids;
-            txanm->succ = NULL;
-            // if (0 < *(short *)(txanm + 3)) {
-            // iVar8 = txanm->tids;
-            for (iVar8 = 0; iVar8 < txanm->numtids; iVar8++) {
-                // iVar12 = (int)lVar23;
-                // lVar23 = (long)(iVar12 + 1);
-                // psVar28 = (short *)(iVar12 * 2 + iVar8);
-                *psVar28 = hgo->tids[txanm->tids[iVar8]];
-                // if (*(short *)(txanm + 3) <= lVar23) break;
-                // iVar8 = txanm->tids;
-            }
-            // }
-            txanm->mtl = hgo->mtls[(int)txanm->mtl];
-            txanm->ntaname = txanm->ntaname + (int)mem.s8;
-            txanm->scriptname = txanm->scriptname + (int)mem.s8;
-            // local_b0 = (union variptr_u *)((u32)((int)&local_b0->voidptr + 3U) & 0xfffffff0);
-            ALIGN_ADDRESS(ptr.voidptr, 0x10U);
-            txanm->env = NuTexAnimEnvCreate(buff, txanm->mtl, txanm->tids, NuTexAnimProgFind(txanm->scriptname));
-            // if (hgo->numtexanims <= iVar33) break;
-        }
-        // }
 
-        for (iVar8 = 0; iVar8 < hgo->numtexanims; iVar8++) {
-            iVar33 = iVar8 * 0x20;
-            piVar25 = (int*)(iVar33 + (int)hgo->texanims);
-            *piVar25 = (int)(piVar25 + 8);
-            iVar33 = iVar33 + (int)hgo->texanims;
-            *(int*)(iVar33 + 0x24) = iVar33;
+        
+            for (iVar33 = 0; iVar33 < hgo->numtexanims; iVar33++) {
+                txanm = &hgo->texanims[iVar33];
+                txanm->prev = NULL;
+                txanm->tids = (short*)((int)txanm->tids + (mem.intaddr << 1));
+                // txanm->tids = (int)mem.voidptr + txanm->tids;
+                txanm->succ = NULL;
+
+                for (iVar8 = 0; iVar8 < txanm->numtids; iVar8++) {
+                    txanm->tids[iVar8] = hgo->tids[txanm->tids[iVar8]];
+                }
+
+                txanm->mtl = hgo->mtls[(int)txanm->mtl];
+                txanm->ntaname = txanm->ntaname + (int)mem.s8;
+                txanm->scriptname = txanm->scriptname + (int)mem.s8;
+                ptr.voidptr = (void*)ALIGN_ADDRESS(ptr.voidptr, 0x10U);
+                txanm->env = NuTexAnimEnvCreate(&ptr, txanm->mtl, txanm->tids, NuTexAnimProgFind(txanm->scriptname));
+            }
+
+        for (iVar8 = 0; iVar8 < hgo->numtexanims - 1; iVar8++) {
+            hgo->texanims[iVar8].succ = &hgo->texanims[iVar8] + 1;
+            hgo->texanims[iVar8 + 1].prev = &hgo->texanims[iVar8];
         }
         NuTexAnimAddList(hgo->texanims);
-
+}
         hgo->shadow_data = NULL;
 
         if (hdr->shadow_data != 0) {
@@ -907,7 +892,6 @@ struct NUHGOBJ_s* NuGHGRead(union variptr_u* buff, char* name) {
                         smesh[iVar8].normals = (struct nuvec_s4_s*)((int)smesh[iVar8].normals + mem.intaddr);
                     }
                 }
-                
             }
         }
         buff->voidptr = (void*)ALIGN_ADDRESS(buff->voidptr, 0x10U);
@@ -918,6 +902,7 @@ struct NUHGOBJ_s* NuGHGRead(union variptr_u* buff, char* name) {
     }
     return hgo;
 }
+
 
 //85.65%
 
