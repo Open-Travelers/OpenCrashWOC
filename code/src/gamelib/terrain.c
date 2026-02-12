@@ -4,13 +4,13 @@
 #define POW2(x) ((x) * (x))
 
 //NGC MATCH
-s32 ReadTerrain(u8* name2, s32 situ, short** store, struct tempterr_s* Tempterr) {
-    struct sceneptr_s* sceneptr;
+s32 ReadTerrain(u8* name2, s32 situ, short** store, TERRSET* Tempterr) {
+    OffFileType* sceneptr;
     s32 lp;
     s32 count;
     char LevName[100];
     short* ts;
-    struct wallspl_s* wallspl;
+    WallSpline* wallspl;
     float minx;
     float maxx;
     float minz;
@@ -27,7 +27,7 @@ s32 ReadTerrain(u8* name2, s32 situ, short** store, struct tempterr_s* Tempterr)
     }
 
     ts = *store;
-    sceneptr = (struct sceneptr_s*)(ts + *(s32*)ts);
+    sceneptr = (OffFileType*)(ts + *(s32*)ts);
     sceneptr->count &= 0xffff;
     *store += 2;
     count = 0;
@@ -64,7 +64,7 @@ s32 ReadTerrain(u8* name2, s32 situ, short** store, struct tempterr_s* Tempterr)
         }
         *store = *store + sceneptr->offlist[lp].offset;
     }
-    for (wallspl = (struct wallspl_s*)Tempterr->wallinfo; wallspl != NULL; wallspl = ((struct wallspl_s**)wallspl)[-1])
+    for (wallspl = (WallSpline*)Tempterr->wallinfo; wallspl != NULL; wallspl = ((WallSpline**)wallspl)[-1])
     {
         for (a = 0; a < wallspl->count; a = a + 0x10) {
             if (wallspl->spl[a].y != FLOAT_INTMAX) {
@@ -112,8 +112,8 @@ void TerrFlush(void) {
 
 //NGC MATCH
 short * terraininit(int LevelNum, short **store, short *endstore, int opt, char *name, struct nugscn_s *gscene, int gsid) {
-    struct terr_s *mbuf;
-    struct scaleterrain_s *ter;
+    terrsitu *mbuf;
+    tertype *ter;
     short *modp;
     int c;
     int b;
@@ -136,13 +136,13 @@ short * terraininit(int LevelNum, short **store, short *endstore, int opt, char 
     float minz[2048];
     float maxz[2048];
     int platid;
-    struct tempterr_s *TempTerr;
+    TERRSET *TempTerr;
     short *rv;
     
     rv = *store;
-    TempTerr = (struct tempterr_s *)*store;
+    TempTerr = (TERRSET *)*store;
     *store = *store + 0x57a8;
-    TempTerr->terr = (struct terr_s *)*store;
+    TempTerr->terr = (terrsitu *)*store;
     *store = *store + 0xee00;
     
     for (lp = 0; lp < 9; lp++) {
@@ -210,7 +210,7 @@ short * terraininit(int LevelNum, short **store, short *endstore, int opt, char 
             
             while (*modp >= 0) {
                 b = *(modp + 1);
-                ter = (struct scaleterrain_s *)(modp + 10);
+                ter = (tertype *)(modp + 10);
                 
                 while (b > 0) {
                     if (ter->info[0] == 0xff) {
@@ -333,7 +333,7 @@ short * terraininit(int LevelNum, short **store, short *endstore, int opt, char 
                     termaxz = (*(float*)(modp + 8)) + mbuf->Location.z;
                 }
                 
-                ter = (struct scaleterrain_s*)(modp + 10);
+                ter = (tertype*)(modp + 10);
                 modp = (short *)&ter[b];
             }
         }
@@ -373,7 +373,7 @@ short * terraininit(int LevelNum, short **store, short *endstore, int opt, char 
                     maxz[c] = *(float*)(modp + 8) + mbuf->Location.z;
                 }
                 
-                ter = (struct scaleterrain_s*)(modp + 10);
+                ter = (tertype*)(modp + 10);
                 modp = (short *)&ter[b];
             }
 
@@ -512,7 +512,7 @@ void noterraininit(void)  {
 
 //NGC MATCH
 void TerrainSetCur(void *curterr) {
-  CurTerr = (struct CurTerr_s*)curterr;
+  CurTerr = (TERRSET*)curterr;
 }
 
 //NGC MATCH
@@ -543,7 +543,7 @@ void TerrainPlatformOldUpdate(void) {
 void TerrainPlatformNewUpdate(void) {
   s32 b;
   short *ttemp;
-  struct terr_s *mbuf2;
+  terrsitu *mbuf2;
   
   if (CurTerr == NULL) {
       return;
@@ -603,7 +603,7 @@ void RotateVec(struct nuvec_s *in,struct nuvec_s *out) {
 }
 
 //NGC MATCH
-void DeRotateTerrain(struct scaleterrain_s *ter) {
+void DeRotateTerrain(tertype *ter) {
   float sinax;
   float cosax;
   float sinay;
@@ -729,7 +729,7 @@ short InsidePolLines(float x,float y,float z,float x0,float y0,float z0,float x1
 }
 
 //NGC MATCH
-struct trackinfo_s* ScanTerrId(void *id) {
+TERRINFO* ScanTerrId(void *id) {
   s32 c;
   
   for(c = 0; c < 4; c++) {
@@ -741,7 +741,7 @@ struct trackinfo_s* ScanTerrId(void *id) {
 }
 
 //NGC MATCH
-struct trackinfo_s* AllocTerrId(void) {
+TERRINFO* AllocTerrId(void) {
   s32 c;
   
   for(c = 0; c < 4; c++) {
@@ -764,10 +764,10 @@ void NewScan(struct nuvec_s *ppos,s32 extramask,s32 platscan) {
   s32 lp;
   s32 curobj;
   short *CurData;
-  struct scaleterrain_s **curter;
-  struct scaleterrain_s *ter;
-  struct scaleterrain_s **HitData;
-  struct scaleterrain_s **MaxData;
+  tertype **curter;
+  tertype *ter;
+  tertype **HitData;
+  tertype **MaxData;
   short* LastWrite;
   short *ttemp;
   float maxx;
@@ -780,7 +780,7 @@ void NewScan(struct nuvec_s *ppos,s32 extramask,s32 platscan) {
   float minz;
   float tminx;
   float tminz;
-  struct terr_s *mbuf2;
+  terrsitu *mbuf2;
   short *modp;
 
   pos = *ppos;
@@ -819,7 +819,7 @@ void NewScan(struct nuvec_s *ppos,s32 extramask,s32 platscan) {
         while (*(short *)CurData > 0) {
             curobj = *(short *)(CurData + 1);  
             mbuf2 = CurTerr->terr + curobj;
-            curter = (struct scaleterrain_s**)(CurData + 2);
+            curter = (tertype**)(CurData + 2);
           if (((maxx >= mbuf2->min.x) && (maxz >= mbuf2->min.z)) &&
              ((minx <= mbuf2->max.x &&
               ((minz < mbuf2->max.z && (mbuf2->type != ~TERR_TYPE_NORMAL)))))) {
@@ -880,7 +880,7 @@ void NewScan(struct nuvec_s *ppos,s32 extramask,s32 platscan) {
                 modp = mbuf2->model;
                 while (*modp >= 0) {
                   c = (s32)modp[1];
-                  ter = (struct scaleterrain_s *)(modp + 10);
+                  ter = (tertype *)(modp + 10);
                   if ((tmaxx >= *(float *)(modp + 2)) && (tminx < *(float *)(modp + 4))) {
                      if ((tmaxz >= *(float *)(modp + 6)) && (tminz < *(float *)(modp + 8))) {
                         for (; c > 0; c--) {
@@ -928,7 +928,7 @@ void NewScan(struct nuvec_s *ppos,s32 extramask,s32 platscan) {
         while (*(short *)CurData > 0) {
           curobj = *(short *)(CurData + 1);
           mbuf2 = CurTerr->terr + curobj;
-          curter = (struct scaleterrain_s**)(CurData + 2);
+          curter = (tertype**)(CurData + 2);
           if (((maxx >= mbuf2->min.x) && (maxz >= mbuf2->min.z)) &&
              ((minx <= mbuf2->max.x &&
               ((minz < mbuf2->max.z && (mbuf2->type != ~TERR_TYPE_NORMAL)))))) {
@@ -1011,7 +1011,7 @@ void NewScan(struct nuvec_s *ppos,s32 extramask,s32 platscan) {
             modp = mbuf2->model;
             while (*modp >= 0) {
               c = (s32)modp[1];
-              ter = (struct scaleterrain_s *)(modp + 10);
+              ter = (tertype *)(modp + 10);
               if ((tmaxx >= *(float *)(modp + 2)) && (tminx < *(float *)(modp + 4))) {
                   if ((tmaxz >= *(float *)(modp + 6)) && (tminz < *(float *)(modp + 8))) {
                     for (; c > 0; c--) {
@@ -1061,10 +1061,10 @@ void NewScanRot(struct nuvec_s* ppos, s32 extramask) {
     s32 lp;
     s32 curobj;
     short* CurData;
-    struct scaleterrain_s** curter;
-    struct scaleterrain_s* ter;
-    struct scaleterrain_s** HitData;
-    struct scaleterrain_s** MaxData;
+    tertype** curter;
+    tertype* ter;
+    tertype** HitData;
+    tertype** MaxData;
     short* LastWrite;
     short* ttemp;
     s32 curscltemp;
@@ -1079,7 +1079,7 @@ void NewScanRot(struct nuvec_s* ppos, s32 extramask) {
     float minz;
     float tminx;
     float tminz;
-    struct terr_s* mbuf2;
+    terrsitu* mbuf2;
     short* modp;
 
     curscltemp = 0;
@@ -1120,7 +1120,7 @@ void NewScanRot(struct nuvec_s* ppos, s32 extramask) {
         while (*(short*)CurData > 0) {
             curobj = *(short*)(CurData + 1);
             mbuf2 = CurTerr->terr + curobj;
-            curter = (struct scaleterrain_s**)CurData + 1;
+            curter = (tertype**)CurData + 1;
             if (((maxx >= mbuf2->min.x) && (maxz >= mbuf2->min.z))
                 && ((minx <= mbuf2->max.x && ((minz < mbuf2->max.z && (mbuf2->type != ~TERR_TYPE_NORMAL))))))
             {
@@ -1156,7 +1156,7 @@ void NewScanRot(struct nuvec_s* ppos, s32 extramask) {
         TerI->hitcnt = 0;
         LastWrite = (short*)CurTerr->pollist[index].hitdata;
         HitData = CurTerr->pollist[index].hitdata + 1;
-        MaxData = (struct scaleterrain_s**)(HitData + 0x1fc);
+        MaxData = (tertype**)(HitData + 0x1fc);
         HitCnt = 0;
         maxx = pos.x + 1.0f;
         maxy = pos.y + 1.0f;
@@ -1181,7 +1181,7 @@ void NewScanRot(struct nuvec_s* ppos, s32 extramask) {
                         modp = (short*)mbuf2->model;
                         while ((*(short*)modp) >= 0) {
                             c = *(short*)(modp + 1);
-                            ter = (struct scaleterrain_s*)(modp + 10);
+                            ter = (tertype*)(modp + 10);
                             if ((tmaxx >= (*(float*)(modp + 2))) && ((tminx < *(float*)(modp + 4)))) {
                                 if ((tmaxz >= (*(float*)(modp + 6))) && ((tminz < *(float*)(modp + 8)))) {
                                     for (; c > 0; c--) {
@@ -1231,7 +1231,7 @@ void NewScanRot(struct nuvec_s* ppos, s32 extramask) {
         while (*(short*)CurData > 0) {
             curobj = *(short*)(CurData + 1);
             mbuf2 = CurTerr->terr + curobj;
-            curter = (struct scaleterrain_s**)CurData + 1;
+            curter = (tertype**)CurData + 1;
             if (((maxx >= mbuf2->min.x) && (maxz >= mbuf2->min.z))
                 && ((minx <= mbuf2->max.x && ((minz < mbuf2->max.z && (mbuf2->type != ~TERR_TYPE_NORMAL))))))
             {
@@ -1314,7 +1314,7 @@ void NewScanRot(struct nuvec_s* ppos, s32 extramask) {
                 modp = (short*)mbuf2->model;
                 while (*(short*)modp >= 0) {
                     c = *(short*)(modp + 1);
-                    for (ter = (struct scaleterrain_s *)(modp + 10); c > 0; c--) {
+                    for (ter = (tertype *)(modp + 10); c > 0; c--) {
                         if ((HitData < MaxData)
                             && ((ter->info[1] == 0 || (((uint)ter->info[1] & extramask) != 0))))
                         {
@@ -1404,7 +1404,7 @@ void NewScanRot(struct nuvec_s* ppos, s32 extramask) {
                                 curscltemp++;
                             }
                         }
-                        ter = (struct scaleterrain_s*)((s32)ter + 100);
+                        ter = (tertype*)((s32)ter + 100);
                     }
                     modp = (short*)ter;
                 }
@@ -1424,7 +1424,7 @@ void NewScanRot(struct nuvec_s* ppos, s32 extramask) {
             modp = (short*)mbuf2->model;
             while (*(short*)modp >= 0) {
                 c = *(short*)(modp + 1);
-                ter = (struct scaleterrain_s*)(modp + 10);
+                ter = (tertype*)(modp + 10);
                 if ((tmaxx >= (*(float*)(modp + 2))) && (tminx < (*(float*)(modp + 4)))) {
                     if ((tmaxz >= (*(float*)(modp + 6))) && (tminz < (*(float*)(modp + 8)))) {
                         for (; c > 0; c--) {
@@ -1463,22 +1463,22 @@ void NewScanRot(struct nuvec_s* ppos, s32 extramask) {
 //NGC MATCH
 float NewCast(struct nuvec_s* pos, float ytol) {
     short* CurData;
-    struct scaleterrain_s** curter;
-    struct scaleterrain_s* ter;
+    tertype** curter;
+    tertype* ter;
     short castnum2;
     short ecastnum2;
     float ht;
     float ht2;
     struct nuvec_s norm;
     struct nuvec_s norm2;
-    struct scaleterrain_s* terhit1;
-    struct scaleterrain_s* terhit2;
+    tertype* terhit1;
+    tertype* terhit2;
     float eht;
     float eht2;
     struct nuvec_s enorm;
     struct nuvec_s enorm2;
-    struct scaleterrain_s* eterhit1;
-    struct scaleterrain_s* eterhit2;
+    tertype* eterhit1;
+    tertype* eterhit2;
     s32 objnum;
     s32 lp;
     s32 t;
@@ -1506,10 +1506,10 @@ float NewCast(struct nuvec_s* pos, float ytol) {
         tx = pos->x - CurTerr->terr[*(short*)((s32)CurData + 2)].Location.x;
         tz = pos->z - CurTerr->terr[*(short*)((s32)CurData + 2)].Location.z;
         objnum = *(short*)((s32)CurData + 2);
-        curter = (struct scaleterrain_s**)(CurData + 2);
+        curter = (tertype**)(CurData + 2);
         lp = *(short*)CurData;
         for (; lp > 0; lp--, curter++) {
-            ter = (struct scaleterrain_s*)*curter;
+            ter = (tertype*)*curter;
             if (ter->norm[1].y > 65535.0f) {
                 t = 0;
                 if (ter->norm[0].y > 0.0f) {
@@ -1690,7 +1690,7 @@ float NewCast(struct nuvec_s* pos, float ytol) {
         EShadNorm.x = enorm2.x;
         EShadNorm.y = enorm2.y;
         EShadNorm.z = enorm2.z;
-        EShadPoly = (struct scaleterrain_s*)eterhit2;
+        EShadPoly = (tertype*)eterhit2;
         ecastnum = ecastnum2;
     } else {
         if (eht > -2000000.0f) {
@@ -1699,7 +1699,7 @@ float NewCast(struct nuvec_s* pos, float ytol) {
             EShadNorm.x = enorm.x;
             EShadNorm.y = enorm.y;
             EShadNorm.z = enorm.z;
-            EShadPoly = (struct scaleterrain_s*)eterhit1;
+            EShadPoly = (tertype*)eterhit1;
         } else {
             eshadhit = 3;
             EShadY = 2000000.0f;
@@ -1713,7 +1713,7 @@ float NewCast(struct nuvec_s* pos, float ytol) {
         ShadRoofNorm.x = norm2.x;
         ShadRoofNorm.y = norm2.y;
         ShadRoofNorm.z = norm2.z;
-        ShadRoofPoly = (struct scaleterrain_s*)terhit2;
+        ShadRoofPoly = (tertype*)terhit2;
         castroofnum = castnum2;
     } else {
         ShadRoofY = 2000000.0f;
@@ -1942,7 +1942,7 @@ s32 CheckSphereTer(struct nuvec_s *pnt,float radius) {
 }
 
 //NGC MATCH
-u32 HitPoly(float ps,float pe,float ps2,float pe2,struct scaleterrain_s *ter) {
+u32 HitPoly(float ps,float pe,float ps2,float pe2,tertype *ter) {
   struct nuvec_s hitpos;
   float time;
   s32 hit;
@@ -2211,8 +2211,8 @@ int HitWallSpline(void) {
 //NGC MATCH
 s32 HitTerrain() {
   short *CurData;
-  struct scaleterrain_s **currter;
-  struct scaleterrain_s *ter;
+  tertype **currter;
+  tertype *ter;
   struct nuvec_s pos;
   float ps;
   float pe;
@@ -2242,7 +2242,7 @@ asm("nop");
                   CurTerr->terr[*(CurData + 1)].Location.y;
       TerI->cez = ((TerI->curpos).z + (TerI->curvel).z) -
                   CurTerr->terr[*(CurData + 1)].Location.z;
-      currter = (struct scaleterrain_s **)CurData + 1;
+      currter = (tertype **)CurData + 1;
       for (lp = *CurData; lp > 0; lp--, currter++) {
         ter = *currter;
         check = 0;
@@ -2301,11 +2301,11 @@ void ScanTerrain(s32 platscan, s32 extramask) {
     s32 b;
     s32 c;
     s32 HitCnt;
-    struct scaleterrain_s** HitData;
-    struct scaleterrain_s** MaxData;
+    tertype** HitData;
+    tertype** MaxData;
     short* LastWrite;
     short* ttemp;
-    struct wallspl_s* WallSpl;
+    WallSpline* WallSpl;
     float maxx;
     float maxy;
     float maxz;
@@ -2320,8 +2320,8 @@ void ScanTerrain(s32 platscan, s32 extramask) {
     float tminy;
     float tminz;
     float tn;
-    struct terr_s* mbuf2;
-    struct scaleterrain_s* ter;
+    terrsitu* mbuf2;
+    tertype* ter;
     short* modp;
     s32 curscltemp;
     struct nuvec4_s pnts[4];
@@ -2411,7 +2411,7 @@ void ScanTerrain(s32 platscan, s32 extramask) {
                     modp = (short*)mbuf2->model;
                     while (*modp >= 0) {
                         c = modp[1];
-                        ter = (struct scaleterrain_s *)(modp + 10);
+                        ter = (tertype *)(modp + 10);
                         if (
                             (tmaxx >= *(float*)&modp[2]) 
                             && (tminx < *(float*)&modp[4])
@@ -2527,7 +2527,7 @@ void ScanTerrain(s32 platscan, s32 extramask) {
                 modp = (short*)mbuf2->model;
                 while (*modp >= 0) {
                     c = modp[1];
-                    ter = (struct scaleterrain_s *)(modp + 10);
+                    ter = (tertype *)(modp + 10);
                     if (
                         (tmaxx >= *(float*)&modp[2]) 
                         && (tminx < *(float*)&modp[4])
@@ -2678,7 +2678,7 @@ void ScanTerrain(s32 platscan, s32 extramask) {
                     modp = (short *)mbuf2->model;
                     while (*modp >= 0) {
                         c = modp[1];
-                        ter = (struct scaleterrain_s *)(modp + 10);
+                        ter = (tertype *)(modp + 10);
                         for (; c > 0; c--) {
                             platinrange = 1;
                             if (
@@ -2818,7 +2818,7 @@ void ScanTerrain(s32 platscan, s32 extramask) {
                 modp = (short *)mbuf2->model;
                 while (*modp >= 0) {
                     c = modp[1];
-                    ter = (struct scaleterrain_s *)(modp + 10);
+                    ter = (tertype *)(modp + 10);
                     if (
                         (tmaxx >= *(float*)&modp[2]) 
                         && (tminx < *(float*)&modp[4])
@@ -2916,7 +2916,7 @@ void ScanTerrain(s32 platscan, s32 extramask) {
     maxz += 0.02f;
     WallSplCount = 0;
 
-    for (WallSpl = (struct wallspl_s *)CurTerr->wallinfo; WallSpl != 0; WallSpl = (struct wallspl_s *)((int*)WallSpl)[-1]) { //check
+    for (WallSpl = (WallSpline *)CurTerr->wallinfo; WallSpl != 0; WallSpl = (WallSpline *)((int*)WallSpl)[-1]) { //check
         for (a = 0; a < WallSpl->count; a += 0x10) {
             if (WallSpl->spl[a].y != 0.02f) {
                 if (
@@ -3277,14 +3277,14 @@ s32 TerrainPlatformMoveCheck(struct nuvec_s *dest,struct nuvec_s *norm,s32 plati
 
 //NGC MATCH
 s32 TerrainPlatformEmbedded(struct nuvec_s* vvel) {
-    struct teri_s* TerITemp;
-    struct teri_s* TerITemp2;
+    TerTempInfoType* TerITemp;
+    TerTempInfoType* TerITemp2;
     s32 oldcurSphereter;
     char flags[2];
     s32 curscltemp;
-    struct terr_s* mbuf2;
-    struct scaleterrain_s** HitData;
-    struct scaleterrain_s* ter;
+    terrsitu* mbuf2;
+    tertype** HitData;
+    tertype* ter;
     short* LastWrite;
     short* modp;
     s32 platid;
@@ -3328,7 +3328,7 @@ s32 TerrainPlatformEmbedded(struct nuvec_s* vvel) {
         oldcurSphereter = curSphereter;
         curSphereter = 0;
         ScaleTerrain = ScaleTerrainT2;
-        TerI = (struct teri_s*)NuScratchAlloc32(0x930);
+        TerI = (TerTempInfoType*)NuScratchAlloc32(0x930);
         TerI->yscale = TerITemp->yscale;
         TerI->yscalesq = TerITemp->yscalesq;
         TerI->inyscale = TerITemp->inyscale;
@@ -3370,7 +3370,7 @@ s32 TerrainPlatformEmbedded(struct nuvec_s* vvel) {
         modp = mbuf2->model;
         if (TerI->yscale == 1.0f) {
             while (*(short*)modp >= 0) {
-                for (c = (s32) * ((short*)modp + 1), ter = (struct scaleterrain_s*)(modp + 10); c > 0; c--) {
+                for (c = (s32) * ((short*)modp + 1), ter = (tertype*)(modp + 10); c > 0; c--) {
                     *HitData = ter;
                     HitData++;
                     HitCnt++;
@@ -3380,7 +3380,7 @@ s32 TerrainPlatformEmbedded(struct nuvec_s* vvel) {
             }
         } else if ((s32)CurTerr->platdata[platid].status.rotate != 0) {
             while (*(short*)modp >= 0) {
-                for (c = (s32) * ((short*)modp + 1), ter = (struct scaleterrain_s*)(modp + 10); c > 0; c--) {
+                for (c = (s32) * ((short*)modp + 1), ter = (tertype*)(modp + 10); c > 0; c--) {
                     pnts[0].x = ter->pnts[0].x;
                     pnts[0].y = ter->pnts[0].y;
                     pnts[0].z = ter->pnts[0].z;
@@ -3461,7 +3461,7 @@ s32 TerrainPlatformEmbedded(struct nuvec_s* vvel) {
             }
         } else {
             while (*(short*)modp >= 0) {
-                for (c = (s32) * ((short*)modp + 1), ter = (struct scaleterrain_s*)(modp + 10); c > 0; c--) {
+                for (c = (s32) * ((short*)modp + 1), ter = (tertype*)(modp + 10); c > 0; c--) {
                     ScaleTerrain[curscltemp].info[0] = ter->info[0];
                     ScaleTerrain[curscltemp].info[1] = ter->info[1];
                     ScaleTerrain[curscltemp].info[2] = ter->info[2];
@@ -3623,8 +3623,8 @@ void StorePlatImpact(void) {
 
 //NGC MATCH
 s32 PlatformChecks(s32 itterationcnt, struct nuvec_s* vvel) {
-    struct teri_s* TerITemp;
-    struct teri_s* TerITemp2;
+    TerTempInfoType* TerITemp;
+    TerTempInfoType* TerITemp2;
     short* CurData;
     short* WriteData;
     s32 lp;
@@ -3645,7 +3645,7 @@ s32 PlatformChecks(s32 itterationcnt, struct nuvec_s* vvel) {
         return itterationcnt;
     }
     TerITemp = TerI;
-    TerI = TerITemp2 = (struct teri_s*)NuScratchAlloc32(0x930);
+    TerI = TerITemp2 = (TerTempInfoType*)NuScratchAlloc32(0x930);
     CurData = TerITemp->PlatScanStart;
     WriteData = (short*)&TerI->hitdata[0];
 
@@ -3853,7 +3853,7 @@ float NewShadow(struct nuvec_s *ppos,float size) {
   if (CurTerr == NULL) {
     return 2000000.0f;
   }
-    TerI = (struct teri_s *)NuScratchAlloc32(0x930);
+    TerI = (TerTempInfoType *)NuScratchAlloc32(0x930);
     pos = *ppos;
     NewScan(&pos,0,0);
     NewCast(&pos,5.0f);
@@ -3868,7 +3868,7 @@ float NewShadowMask(struct nuvec_s *ppos,float size,int extramask) {
   if (CurTerr == NULL) {
     return 2000000.0f;
   }
-    TerI = (struct teri_s *)NuScratchAlloc32(0x930);
+    TerI = (TerTempInfoType *)NuScratchAlloc32(0x930);
     pos = *ppos;
     NewScan(&pos,extramask,0);
     NewCast(&pos,5.0f);
@@ -3883,7 +3883,7 @@ float NewShadowPlat(struct nuvec_s *ppos,float size) {
   if (CurTerr == NULL) {
     return 2000000.0f;
   }
-    TerI = (struct teri_s *)NuScratchAlloc32(0x930);
+    TerI = (TerTempInfoType *)NuScratchAlloc32(0x930);
     pos = *ppos;
     NewScan(&pos,0,1);
     NewCast(&pos,5.0f);
@@ -3898,7 +3898,7 @@ float NewShadowMaskPlat(struct nuvec_s *ppos,float size,int extramask) {
   if (CurTerr == NULL) {
     return 2000000.0f;
   }
-    TerI = (struct teri_s *)NuScratchAlloc32(0x930);
+    TerI = (TerTempInfoType *)NuScratchAlloc32(0x930);
     pos = *ppos;
     NewScan(&pos,extramask,1);
     NewCast(&pos,5.0f);
@@ -3913,7 +3913,7 @@ float NewShadowMaskPlatRot(struct nuvec_s *ppos,float size,int extramask) {
   if (CurTerr == NULL) {
     return 2000000.0f;
   }
-    TerI = (struct teri_s *)NuScratchAlloc32(0x930);
+    TerI = (TerTempInfoType *)NuScratchAlloc32(0x930);
     v = *ppos;
     NewScanRot(&v,extramask);
     NewCast(&v,5.0f);
@@ -4072,7 +4072,7 @@ void NewTerrainScaleY(
     PlatCrush = 0;
     terrhitflags = 0;
     CurTrackInfo = ScanTerrId(flags);
-    TerI = (struct teri_s*)NuScratchAlloc32(0x930);
+    TerI = (TerTempInfoType*)NuScratchAlloc32(0x930);
     TerI->yscale = yscale;
     TerI->yscalesq = TerI->yscale * TerI->yscale;
     TerI->inyscale = 1.0f / yscale;
@@ -4199,7 +4199,7 @@ s32 NewRayCast(struct nuvec_s *vpos,struct nuvec_s *vvel,float size) {
     plathitid = -1;
     TerrPolyObj = -1;
     TerrPoly = NULL;
-    TerI = (struct teri_s *)NuScratchAlloc32(0x930);
+    TerI = (TerTempInfoType *)NuScratchAlloc32(0x930);
     TerI->inyscalesq = TerI->inyscale = TerI->yscalesq = TerI->yscale = 1.0f;
     TerI->size = size;
     TerI->sizediv = 1.0f / TerI->size;
@@ -4237,7 +4237,7 @@ s32 NewRayCastMask(struct nuvec_s* vpos, struct nuvec_s* vvel, float size, s32 m
     plathitid = -1;
     TerrPolyObj = -1;
     TerrPoly = NULL;
-    TerI = (struct teri_s*)NuScratchAlloc32(0x930);
+    TerI = (TerTempInfoType*)NuScratchAlloc32(0x930);
     TerI->inyscalesq = TerI->inyscale = TerI->yscalesq = TerI->yscale = 1.0f;
     TerI->size = size;
     TerI->sizediv = 1.0f / TerI->size;
@@ -4405,12 +4405,12 @@ short* NewScanHandelFull(struct nuvec_s* vpos, struct nuvec_s* vvel, float size,
     s32 b;
     s32 c;
     s32 HitCnt;
-    struct scaleterrain_s** HitData;
-    struct scaleterrain_s** MaxData;
+    tertype** HitData;
+    tertype** MaxData;
     short* LastWrite;
     short* ttemp;
     short* scandata;
-    struct wallspl_s* WallSpl;
+    WallSpline* WallSpl;
     struct nuvec_s** walldata;
     float maxx;
     float maxy;
@@ -4424,8 +4424,8 @@ short* NewScanHandelFull(struct nuvec_s* vpos, struct nuvec_s* vvel, float size,
     float tminx;
     float tminy;
     float tminz;
-    struct terr_s* mbuf2;
-    struct scaleterrain_s* ter;
+    terrsitu* mbuf2;
+    tertype* ter;
     short* modp;
     struct nuvec4_s pnts[4];
     struct nuvec4_s norm[2];
@@ -4436,13 +4436,13 @@ short* NewScanHandelFull(struct nuvec_s* vpos, struct nuvec_s* vvel, float size,
     curscltemp = 0;
     ScaleTerrain = ScaleTerrainT1;
     scandata = LastWrite = (short*)TempStackPtr;
-    HitData = (struct scaleterrain_s**)(LastWrite + 2);
-    MaxData = (struct scaleterrain_s**)(HitData + 0x1fc);
-    if (HitData > (struct scaleterrain_s**)debkeydata + 0x2d931) {
+    HitData = (tertype**)(LastWrite + 2);
+    MaxData = (tertype**)(HitData + 0x1fc);
+    if (HitData > (tertype**)debkeydata + 0x2d931) {
         return 0;
     }
-    if ((struct scaleterrain_s**)(debkeydata + 0x2dac0) < MaxData) {
-        MaxData = (struct scaleterrain_s**)(debkeydata + 0x2dac0);
+    if ((tertype**)(debkeydata + 0x2dac0) < MaxData) {
+        MaxData = (tertype**)(debkeydata + 0x2dac0);
     }
     HitCnt = 0;
     platinrange = 0;
@@ -4491,7 +4491,7 @@ short* NewScanHandelFull(struct nuvec_s* vpos, struct nuvec_s* vvel, float size,
                     modp = (short*)mbuf2->model;
                     while (*(short*)modp >= 0) {
                         c = (u32) * (short*)((s32)modp + 2);
-                        ter = (struct scaleterrain_s*)(short*)(modp + 10);
+                        ter = (tertype*)(short*)(modp + 10);
                         if ((tmaxx >= *(float*)(modp + 2)) && (tminx < *(float*)(modp + 4))) {
                             if ((tmaxz >= *(float*)(modp + 6)) && (tminz < *(float*)(modp + 8))) {
                                 for (; (s32)c > 0; c--) {
@@ -4598,7 +4598,7 @@ short* NewScanHandelFull(struct nuvec_s* vpos, struct nuvec_s* vvel, float size,
                     modp = (short*)mbuf2->model;
                     while (*(short*)modp >= 0) {
                         c = (u32) * (short*)((s32)modp + 2);
-                        ter = (struct scaleterrain_s*)(modp + 10);
+                        ter = (tertype*)(modp + 10);
                         if (tmaxx >= *(float*)(modp + 2) && (tminx < *(float*)(modp + 4))) {
                             if ((tmaxz >= *(float*)(modp + 6)) && (tminz < *(float*)(modp + 8))) {
                                 for (; 0 < (s32)c; c--) {
@@ -4636,7 +4636,7 @@ short* NewScanHandelFull(struct nuvec_s* vpos, struct nuvec_s* vvel, float size,
                     modp = (short*)mbuf2->model;
                     while (*(short*)modp >= 0) {
                         c = *(short*)(modp + 1);
-                        ter = (struct scaleterrain_s*)(modp + 10);
+                        ter = (tertype*)(modp + 10);
                         for (; c > 0; c--) {
                             platinrange = 1;
                             if ((HitData < MaxData) && ((ter->info[1] == 0 || ((ter->info[1] & extramask) != 0)))) {
@@ -4733,8 +4733,8 @@ short* NewScanHandelFull(struct nuvec_s* vpos, struct nuvec_s* vvel, float size,
     minz = minz - 0.02f;
     maxx = maxx + 0.02f;
     maxz = maxz + 0.02f;
-    for (WallSpl = (struct wallspl_s*)CurTerr->wallinfo; WallSpl != NULL;
-         WallSpl = (*(struct wallspl_s**)((s32)WallSpl - 4)))
+    for (WallSpl = (WallSpline*)CurTerr->wallinfo; WallSpl != NULL;
+         WallSpl = (*(WallSpline**)((s32)WallSpl - 4)))
     {
         for (a = 0; a < *(unsigned short*)WallSpl; a += 0x10) {
             if (WallSpl->spl[a].y != 2.1474836E+9f) {
@@ -4779,8 +4779,8 @@ short* NewScanHandelSubset(short* handel, struct nuvec_s* vpos, struct nuvec_s* 
     s32 HitCnt;
     s32 lp;
     s32 terrid;
-    struct scaleterrain_s** HitData;
-    struct scaleterrain_s** MaxData;
+    tertype** HitData;
+    tertype** MaxData;
     short* LastWrite;
     short* scandata;
     struct nuvec_s** walldata;
@@ -4800,20 +4800,20 @@ short* NewScanHandelSubset(short* handel, struct nuvec_s* vpos, struct nuvec_s* 
     float tminy;
     float tminz;
     float tn;
-    struct terr_s* mbuf2;
-    struct scaleterrain_s** curter;
+    terrsitu* mbuf2;
+    tertype** curter;
 
     if (handel == NULL) {
         return NULL;
     }
     scandata = LastWrite = (short*)TempStackPtr;
-    HitData = (struct scaleterrain_s**)(LastWrite + 2);
-    MaxData = (struct scaleterrain_s**)(HitData + 0x1fc);
-    if (HitData > (struct scaleterrain_s**)debkeydata + 0x2d931) {
+    HitData = (tertype**)(LastWrite + 2);
+    MaxData = (tertype**)(HitData + 0x1fc);
+    if (HitData > (tertype**)debkeydata + 0x2d931) {
         return NULL;
     }
-    if ((struct scaleterrain_s**)(debkeydata + 0x2dac0) < MaxData) {
-        MaxData = (struct scaleterrain_s**)(debkeydata + 0x2dac0);
+    if ((tertype**)(debkeydata + 0x2dac0) < MaxData) {
+        MaxData = (tertype**)(debkeydata + 0x2dac0);
     }
     if (vvel->x > 0.0f) {
         minx = vpos->x - 0.02f - size;
@@ -4887,7 +4887,7 @@ short* NewScanHandelSubset(short* handel, struct nuvec_s* vpos, struct nuvec_s* 
                 if ((((tmaxx >= mbuf2->min.x) && (tmaxy >= mbuf2->min.y)) && (tmaxz >= mbuf2->min.z))
                     && (((tminx <= mbuf2->max.x && (tminy < mbuf2->max.y)) && ((tminz < mbuf2->max.z)))))
                 {
-                    curter = (struct scaleterrain_s **)CurData + 1;
+                    curter = (tertype **)CurData + 1;
                     for (lp = *(short*)CurData; lp > 0; lp--, curter++) {
                         if ((((((tmaxx >= (*curter)->minx) && (tminx < (*curter)->maxx)) && (tmaxz >= (*curter)->minz))
                               && ((tminz < (*curter)->maxz && (tmaxy >= (*curter)->miny))))
@@ -4903,7 +4903,7 @@ short* NewScanHandelSubset(short* handel, struct nuvec_s* vpos, struct nuvec_s* 
                         }
                     }
                 } else {
-                    curter = (struct scaleterrain_s **)(short*)CurData + 1;
+                    curter = (tertype **)(short*)CurData + 1;
                     curter += *(short*)CurData;
                 }
             } else {
@@ -4912,7 +4912,7 @@ short* NewScanHandelSubset(short* handel, struct nuvec_s* vpos, struct nuvec_s* 
                         * (((maxy + miny) * 0.5f - mbuf2->Location.y) * TerI->inyscale)
                     + ((maxz + minz) * 0.5f - mbuf2->Location.z) * ((maxz + minz) * 0.5f - mbuf2->Location.z);
                 if (tn < mbuf2->radius + radmov) {
-                    curter = (struct scaleterrain_s **)CurData + 1;
+                    curter = (tertype **)CurData + 1;
                     for (lp = (s32) * (short*)CurData; lp > 0; lp--, curter++) {
                         if (((((HitData < MaxData)
                                && (((*curter)->info[1] == 0 || (((*curter)->info[1] & extramask) != 0))))
@@ -4943,7 +4943,7 @@ short* NewScanHandelSubset(short* handel, struct nuvec_s* vpos, struct nuvec_s* 
                         }
                     }
                 } else {
-                    curter = (struct scaleterrain_s **)(CurData + 2);
+                    curter = (tertype **)(CurData + 2);
                     curter += *(short*)CurData;
                 }
             }
@@ -4960,7 +4960,7 @@ short* NewScanHandelSubset(short* handel, struct nuvec_s* vpos, struct nuvec_s* 
                     && ((miny < mbuf2->max.y && (minz < mbuf2->max.z)))
                 )))
             {
-                curter = (struct scaleterrain_s **)(CurData + 2);
+                curter = (tertype **)(CurData + 2);
                 for (lp = (s32) * (short*)CurData; lp > 0; lp--, curter++) {
                     if ((((((tmaxx >= (*curter)->minx) && (tminx < (*curter)->maxx)) && (tmaxz >= (*curter)->minz))
                           && ((tminz < (*curter)->maxz && (tmaxy >= (*curter)->miny))))
@@ -4976,7 +4976,7 @@ short* NewScanHandelSubset(short* handel, struct nuvec_s* vpos, struct nuvec_s* 
                     }
                 }
             } else {
-                curter = (struct scaleterrain_s **)(CurData + 2);
+                curter = (tertype **)(CurData + 2);
                 curter += *(short*)CurData;
             }
         }
@@ -5032,8 +5032,8 @@ void ScanTerrainHandel(s32 extramask, short* Handel) {
     s32 HitCnt;
     s32 lp;
     s32 terrid;
-    struct scaleterrain_s** HitData;
-    struct scaleterrain_s** MaxData;
+    tertype** HitData;
+    tertype** MaxData;
     short* LastWrite;
     struct nuvec_s** spl;
     short* CurData;
@@ -5051,8 +5051,8 @@ void ScanTerrainHandel(s32 extramask, short* Handel) {
     float tminy;
     float tminz;
     float tn;
-    struct terr_s* mbuf2;
-    struct scaleterrain_s** curter;
+    terrsitu* mbuf2;
+    tertype** curter;
 
     if (Handel == NULL) {
         return;
@@ -5103,7 +5103,7 @@ void ScanTerrainHandel(s32 extramask, short* Handel) {
     while (*(short*)CurData > 0) {
         terrid = *(short*)((s32)CurData + 2);
         mbuf2 = CurTerr->terr + *(short*)((s32)CurData + 2);
-        curter = (struct scaleterrain_s**)CurData + 1;
+        curter = (tertype**)CurData + 1;
         if ((mbuf2->type == TERR_TYPE_PLATFORM) && (CurTerr->platdata[mbuf2->info].curmtx != NULL)) {
             if ((CurTerr->platdata[mbuf2->info].curmtx)->_30 > CurTerr->platdata[mbuf2->info].oldmtx._30) {
                 tminx = minx - mbuf2->Location.x;
@@ -5145,7 +5145,7 @@ void ScanTerrainHandel(s32 extramask, short* Handel) {
                     - mbuf2->Location.z;
             }
             if (mbuf2->info == TerrPlatDis) {
-                curter = (struct scaleterrain_s**)CurData + 1;
+                curter = (tertype**)CurData + 1;
                 curter = curter + *(short*)CurData;
             } else if ((s32)CurTerr->platdata[mbuf2->info].status.rotate == 0) {
                 if ((((tmaxx >= mbuf2->min.x) && (tmaxy >= mbuf2->min.y))
@@ -5167,7 +5167,7 @@ void ScanTerrainHandel(s32 extramask, short* Handel) {
                         }
                     }
                 } else {
-                    curter = (struct scaleterrain_s**)CurData + 1;
+                    curter = (tertype**)CurData + 1;
                     curter = curter + *(short*)CurData;
                 }
             } else {
@@ -5207,7 +5207,7 @@ void ScanTerrainHandel(s32 extramask, short* Handel) {
                         }
                     }
                 } else {
-                    curter = (struct scaleterrain_s**)CurData + 1;
+                    curter = (tertype**)CurData + 1;
                     curter = curter + *(short*)CurData;
                 }
             }
@@ -5242,7 +5242,7 @@ void ScanTerrainHandel(s32 extramask, short* Handel) {
                 }
             }
         } else {
-            curter = (struct scaleterrain_s**)CurData + 1;
+            curter = (tertype**)CurData + 1;
             curter = curter + *(short*)CurData;
         }
         if (HitCnt != 0) {
@@ -5293,7 +5293,7 @@ s32 NewRayCastSetHandel(struct nuvec_s *vpos,struct nuvec_s *vvel,float size,flo
     plathitid = -1;
     TerrPolyObj = -1;
     TerrPoly = NULL;
-    TerI = (struct teri_s *)NuScratchAlloc32(0x930);
+    TerI = (TerTempInfoType *)NuScratchAlloc32(0x930);
     TerI->inyscalesq = TerI->inyscale = TerI->yscalesq = TerI->yscale = 1.0f;
     TerI->size = size;
     TerI->sizediv = 1.0f / TerI->size;
@@ -5345,8 +5345,8 @@ void ScanTerrainPlatform(s32 msituid, s32 extramask) {
     s32 a;
     s32 c;
     s32 HitCnt;
-    struct scaleterrain_s** HitData;
-    struct scaleterrain_s** MaxData;
+    tertype** HitData;
+    tertype** MaxData;
     short* LastWrite;
     float maxx;
     float maxy;
@@ -5362,8 +5362,8 @@ void ScanTerrainPlatform(s32 msituid, s32 extramask) {
     float tminy;
     float tminz;
     float tn;
-    struct terr_s* mbuf2;
-    struct scaleterrain_s* ter;
+    terrsitu* mbuf2;
+    tertype* ter;
     short* modp;
     s32 curscltemp;
     struct nuvec4_s pnts[4];
@@ -5472,7 +5472,7 @@ void ScanTerrainPlatform(s32 msituid, s32 extramask) {
         if ((mbuf2->type != ~TERR_TYPE_NORMAL) && (tminx < mbuf2->radius + radmov)) {
             modp = (short*)mbuf2->model;
             while (*(short*)modp >= 0) {
-                for (c = *(short*)(modp + 1), ter = (struct scaleterrain_s*)(modp + 10); 0 < c; c--) {
+                for (c = *(short*)(modp + 1), ter = (tertype*)(modp + 10); 0 < c; c--) {
                     platinrange = 1;
                     if ((HitData < MaxData) && ((ter->info[1] == 0 || ((ter->info[1] & extramask) != 0)))) {
                         pnts[0].x = ter->pnts[0].x;
@@ -5571,7 +5571,7 @@ void ScanTerrainPlatform(s32 msituid, s32 extramask) {
         modp = (short*)mbuf2->model;
         while (*(short*)modp >= 0) {
             c = *(short*)(modp + 1);
-            ter = (struct scaleterrain_s*)(modp + 10);
+            ter = (tertype*)(modp + 10);
             if ((tmaxx >= *(float*)(modp + 2)) && (tminx < *(float*)(modp + 4))) {
                 if ((tmaxz >= *(float*)(modp + 6)) && (tminz < *(float*)(modp + 8))) {
                     for (; c > 0; c--) {
@@ -5667,7 +5667,7 @@ s32 NewRayCastPlatForm(struct nuvec_s *vpos,struct nuvec_s *vvel,float size,floa
     plathitid = -1;
     TerrPolyObj = -1;
     TerrPoly = NULL;
-    TerI = (struct teri_s *)NuScratchAlloc32(0x930);
+    TerI = (TerTempInfoType *)NuScratchAlloc32(0x930);
     TerI->inyscalesq = TerI->inyscale = TerI->yscalesq = TerI->yscale = 1.0f;
     TerI->size = size;
     TerI->sizediv = 1.0f / TerI->size;
